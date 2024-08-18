@@ -27,7 +27,7 @@ jobs:
           python -m pip install --upgrade pip
           pip install -e .
 
-      - name: Import Python files directly to check for syntax errors
+      - name: Run Python files directly to check for code errors
         run: |
           python -c "import initializer"
           python -c "import opamp"
