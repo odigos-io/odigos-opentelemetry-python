@@ -9,17 +9,19 @@ from opentelemetry.sdk.resources import ProcessResourceDetector, OTELResourceDet
 from opentelemetry.sdk.trace import TracerProvider
 from opentelemetry.sdk.trace.export import BatchSpanProcessor
 from opentelemetry.trace import set_tracer_provider
-from opentelemetry.sdk.trace.sampling import ParentBased
 
 from .lib_handling import reorder_python_path, reload_distro_modules
 from .version import VERSION
-from .odigos_sampler import OdigosSampler
+
+# from .odigos_sampler import OdigosSampler
+# from opentelemetry.sdk.trace.sampling import ParentBased
+
 from opamp.http_client import OpAMPHTTPClient
 
 
 MINIMUM_PYTHON_SUPPORTED_VERSION = (3, 8)
         
-def _initialize_components(exporter_names = None, exporter_processors = None):
+def _initialize_components(trace_exporters = None, metric_exporters = None, log_exporters = None , span_processor = None):
     resource_attributes_event = threading.Event()
     client = None
     
@@ -31,11 +33,6 @@ def _initialize_components(exporter_names = None, exporter_processors = None):
         received_value = client.resource_attributes
         
         if received_value:    
-            trace_exporters, metric_exporters, log_exporters = sdk_config._import_exporters(
-                sdk_config._get_exporter_names("traces"),
-                sdk_config._get_exporter_names("metrics"),
-                sdk_config._get_exporter_names("logs"),
-            )
 
             auto_resource = {
                 "telemetry.distro.name": "odigos",
@@ -63,30 +60,37 @@ def _initialize_components(exporter_names = None, exporter_processors = None):
             client.shutdown(custom_failure_message=str(e))
         
 
-def initialize_traces_if_enabled(trace_exporters, resource) -> ParentBased:
+def initialize_traces_if_enabled(trace_exporters, resource, span_processor = None):
     traces_enabled = os.getenv(sdk_config.OTEL_TRACES_EXPORTER, "none").strip().lower()
     if traces_enabled != "none":
         id_generator_name = sdk_config._get_id_generator()
         id_generator = sdk_config._import_id_generator(id_generator_name)
         
-        odigos_sampler = OdigosSampler()
-        sampler = ParentBased(odigos_sampler)
+        # TODO: uncomment once the OdigosSampler is implemented
+        # odigos_sampler = OdigosSampler()
+        # sampler = ParentBased(odigos_sampler)
         
         
         provider = TracerProvider(
             id_generator=id_generator,
-            sampler=sampler,
+            # sampler=sampler,
             resource=resource,
         )
         set_tracer_provider(provider)
 
         for _, exporter_class in trace_exporters.items():
             exporter_args = {}
-            provider.add_span_processor(
-                BatchSpanProcessor(exporter_class(**exporter_args))
-            )
+            if span_processor is not None:
+                provider.add_span_processor(
+                    span_processor(exporter_class(**exporter_args))
+                    )
+            else:
+                # Default to BatchSpanProcessor if no span processor is provided
+                provider.add_span_processor(
+                    BatchSpanProcessor(exporter_class(**exporter_args))
+                )
             
-    return sampler
+    # return sampler
 
 def initialize_metrics_if_enabled(metric_exporters, resource):
     metrics_enabled = os.getenv(sdk_config.OTEL_METRICS_EXPORTER, "none").strip().lower()
