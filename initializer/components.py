@@ -45,7 +45,7 @@ def _initialize_components(trace_exporters = None, metric_exporters = None, log_
                 .merge(OTELResourceDetector().detect()) \
                 .merge(ProcessResourceDetector().detect())
 
-            initialize_traces_if_enabled(trace_exporters, resource)
+            initialize_traces_if_enabled(trace_exporters, resource, span_processor)
             initialize_metrics_if_enabled(metric_exporters, resource)
             initialize_logging_if_enabled(log_exporters, resource)
 
@@ -63,32 +63,31 @@ def _initialize_components(trace_exporters = None, metric_exporters = None, log_
 def initialize_traces_if_enabled(trace_exporters, resource, span_processor = None):
     traces_enabled = os.getenv(sdk_config.OTEL_TRACES_EXPORTER, "none").strip().lower()
     if traces_enabled != "none":
-        id_generator_name = sdk_config._get_id_generator()
-        id_generator = sdk_config._import_id_generator(id_generator_name)
+        
+        provider = TracerProvider(resource=resource)
         
         # TODO: uncomment once the OdigosSampler is implemented
         # odigos_sampler = OdigosSampler()
         # sampler = ParentBased(odigos_sampler)
         
-        
-        provider = TracerProvider(
-            id_generator=id_generator,
-            # sampler=sampler,
-            resource=resource,
-        )
-        set_tracer_provider(provider)
-
-        for _, exporter_class in trace_exporters.items():
-            exporter_args = {}
-            if span_processor is not None:
-                provider.add_span_processor(
-                    span_processor(exporter_class(**exporter_args))
-                    )
-            else:
-                # Default to BatchSpanProcessor if no span processor is provided
+        # Exporting using exporters
+        if trace_exporters is not None:            
+            id_generator_name = sdk_config._get_id_generator()
+            id_generator = sdk_config._import_id_generator(id_generator_name)            
+            provider.id_generator = id_generator
+            
+            set_tracer_provider(provider)
+            
+            for _, exporter_class in trace_exporters.items():
+                exporter_args = {}
                 provider.add_span_processor(
                     BatchSpanProcessor(exporter_class(**exporter_args))
                 )
+                
+        # Exporting using EBPF
+        else:
+            if span_processor is not None:
+                provider.add_span_processor(span_processor)
             
     # return sampler
 
