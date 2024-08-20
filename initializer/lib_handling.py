@@ -1,7 +1,7 @@
 import sys
 
 def reorder_python_path():
-    paths_to_move = [path for path in sys.path if path.startswith('/var/odigos/python')]
+    paths_to_move = [path for path in sys.path if path.startswith('/var/odigos/')]
     
     for path in paths_to_move:
         sys.path.remove(path)
