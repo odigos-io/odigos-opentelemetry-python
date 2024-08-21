@@ -18,4 +18,15 @@ docker build -t local-pypi-server -f debug.Dockerfile . && docker run --rm --nam
 2. Update the Development Configuration:  
 The setup.py / requirements.txt should point to the local pypi repo to pull the python package.  
 setup.py e.g:  
-`odigos-opentelemetry-python @ http://host.docker.internal:8080/packages/odigos_opentelemetry_python-0.1.1-py3-none-any.whl"`
+```
+install_requires = [
+odigos-opentelemetry-python @ http://localhost:8080/packages/odigos_opentelemetry_python-0.1.1-py3-none-any.whl
+...
+]
+```
+requirements.txt e.g:  
+```
+..
+..
+odigos-opentelemetry-python @ http://localhost:8080/packages/odigos_opentelemetry_python-0.1.1-py3-none-any.whl
+```
