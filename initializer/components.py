@@ -21,7 +21,7 @@ from opamp.http_client import OpAMPHTTPClient
 
 MINIMUM_PYTHON_SUPPORTED_VERSION = (3, 8)
         
-def _initialize_components(trace_exporters = None, metric_exporters = None, log_exporters = None , span_processor = None):
+def initialize_components(trace_exporters = None, metric_exporters = None, log_exporters = None , span_processor = None):
     resource_attributes_event = threading.Event()
     client = None
     
