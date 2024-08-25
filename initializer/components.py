@@ -86,6 +86,7 @@ def initialize_traces_if_enabled(trace_exporters, resource, span_processor = Non
                 
         # Exporting using EBPF
         else:
+            set_tracer_provider(provider)
             if span_processor is not None:
                 provider.add_span_processor(span_processor)
             
@@ -93,12 +94,12 @@ def initialize_traces_if_enabled(trace_exporters, resource, span_processor = Non
 
 def initialize_metrics_if_enabled(metric_exporters, resource):
     metrics_enabled = os.getenv(sdk_config.OTEL_METRICS_EXPORTER, "none").strip().lower()
-    if metrics_enabled != "none":
+    if metrics_enabled != "none" and metric_exporters:
         sdk_config._init_metrics(metric_exporters, resource)
 
 def initialize_logging_if_enabled(log_exporters, resource):
     logging_enabled = os.getenv(sdk_config.OTEL_LOGS_EXPORTER, "none").strip().lower()
-    if logging_enabled != "none":
+    if logging_enabled != "none" and log_exporters:
         sdk_config._init_logging(log_exporters, resource)
 
 
