@@ -63,15 +63,14 @@ def initialize_components(trace_exporters = None, metric_exporters = None, log_e
 def initialize_traces_if_enabled(trace_exporters, resource, span_processor = None):
     traces_enabled = os.getenv(sdk_config.OTEL_TRACES_EXPORTER, "none").strip().lower()
     if traces_enabled != "none":
-        
-        provider = TracerProvider(resource=resource)
-        
+                
         # TODO: uncomment once the OdigosSampler is implemented
         # odigos_sampler = OdigosSampler()
         # sampler = ParentBased(odigos_sampler)
         
         # Exporting using exporters
         if trace_exporters is not None:            
+            provider = TracerProvider(resource=resource)
             id_generator_name = sdk_config._get_id_generator()
             id_generator = sdk_config._import_id_generator(id_generator_name)            
             provider.id_generator = id_generator
@@ -86,6 +85,7 @@ def initialize_traces_if_enabled(trace_exporters, resource, span_processor = Non
                 
         # Exporting using EBPF
         else:
+            provider = TracerProvider()
             set_tracer_provider(provider)
             if span_processor is not None:
                 provider.add_span_processor(span_processor)
