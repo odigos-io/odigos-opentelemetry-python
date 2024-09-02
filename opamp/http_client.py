@@ -35,6 +35,7 @@ class OpAMPHTTPClient:
         self.next_sequence_num = 0
         self.instance_uid = uuid7().__str__()
         self.remote_config_status = None
+        self.sampling_config = None 
 
 
     def start(self, python_version_supported: bool = None):
