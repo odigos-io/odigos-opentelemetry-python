@@ -2,7 +2,7 @@ import os
 import sys
 import time
 import threading
-import requests
+import requests_odigos
 import logging
 
 from uuid_extensions import uuid7
@@ -141,8 +141,8 @@ class OpAMPHTTPClient:
                         server_to_agent = self.send_agent_to_server_message(agent_to_server)
                         
                         self.update_remote_config_status(server_to_agent)
-
-                except requests.RequestException as e:
+                
+                except requests_odigos.RequestException as e:
                     opamp_logger.error(f"Error fetching data: {e}")
                 self.condition.wait(30)
 
@@ -151,7 +151,7 @@ class OpAMPHTTPClient:
         try:
             agent_to_server = opamp_pb2.AgentToServer(remote_config_status=self.remote_config_status)
             return self.send_agent_to_server_message(agent_to_server)
-        except requests.RequestException as e:
+        except requests_odigos.RequestException as e:
             opamp_logger.error(f"Error sending heartbeat to OpAMP server: {e}")
 
     def get_agent_description(self) -> opamp_pb2.AgentDescription:
@@ -208,12 +208,12 @@ class OpAMPHTTPClient:
         
         try:
             agent_message = attach(set_value(_SUPPRESS_HTTP_INSTRUMENTATION_KEY, True))
-            response = requests.post(self.server_url, data=message_bytes, headers=headers, timeout=5)
+            response = requests_odigos.post(self.server_url, data=message_bytes, headers=headers, timeout=5)
             response.raise_for_status()
-        except requests.Timeout:
+        except requests_odigos.Timeout:
             opamp_logger.error("Timeout sending message to OpAMP server")
             return opamp_pb2.ServerToAgent()
-        except requests.ConnectionError as e:
+        except requests_odigos.ConnectionError as e:
             opamp_logger.error(f"Error sending message to OpAMP server: {e}")
             return opamp_pb2.ServerToAgent()
         finally:

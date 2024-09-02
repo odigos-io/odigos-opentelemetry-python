@@ -16,6 +16,10 @@ from .version import VERSION
 # from .odigos_sampler import OdigosSampler
 # from opentelemetry.sdk.trace.sampling import ParentBased
 
+# Reorder the python sys.path to ensure that the user application's dependencies take precedence over the agent's dependencies.
+# This is necessary because the user application's dependencies may be incompatible with those used by the agent.
+reorder_python_path()
+
 from opamp.http_client import OpAMPHTTPClient
 
 
@@ -49,10 +53,7 @@ def initialize_components(trace_exporters = None, metric_exporters = None, log_e
             initialize_metrics_if_enabled(metric_exporters, resource)
             initialize_logging_if_enabled(log_exporters, resource)
 
-        # Reorder the python sys.path to ensure that the user application's dependencies take precedence over the agent's dependencies.
-        # This is necessary because the user application's dependencies may be incompatible with those used by the agent.
-        reorder_python_path()
-        # Reload distro modules to ensure the new path is used.
+        # # Reload distro modules to ensure the new path is used.
         reload_distro_modules()
         
     except Exception as e:
