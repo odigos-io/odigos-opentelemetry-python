@@ -22,7 +22,7 @@ deprecated==1.2.14
     #   opentelemetry-exporter-otlp-proto-http
 googleapis-common-protos==1.65.0
     # via opentelemetry-exporter-otlp-proto-http
-idna==3.4
+idna==3.8
     # via
     #   odigos-requests
     #   requests
