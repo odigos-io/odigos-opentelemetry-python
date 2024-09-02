@@ -16,6 +16,10 @@ from .version import VERSION
 # from .odigos_sampler import OdigosSampler
 # from opentelemetry.sdk.trace.sampling import ParentBased
 
+# Reorder the python sys.path to ensure that the user application's dependencies take precedence over the agent's dependencies.
+# This is necessary because the user application's dependencies may be incompatible with those used by the agent.
+reorder_python_path()
+
 from opamp.http_client import OpAMPHTTPClient
 
 
@@ -49,10 +53,7 @@ def initialize_components(trace_exporters = None, metric_exporters = None, log_e
             initialize_metrics_if_enabled(metric_exporters, resource)
             initialize_logging_if_enabled(log_exporters, resource)
 
-        # Reorder the python sys.path to ensure that the user application's dependencies take precedence over the agent's dependencies.
-        # This is necessary because the user application's dependencies may be incompatible with those used by the agent.
-        reorder_python_path()
-        # Reload distro modules to ensure the new path is used.
+        # # Reload distro modules to ensure the new path is used.
         reload_distro_modules()
         
     except Exception as e:
@@ -63,15 +64,14 @@ def initialize_components(trace_exporters = None, metric_exporters = None, log_e
 def initialize_traces_if_enabled(trace_exporters, resource, span_processor = None):
     traces_enabled = os.getenv(sdk_config.OTEL_TRACES_EXPORTER, "none").strip().lower()
     if traces_enabled != "none":
-        
-        provider = TracerProvider(resource=resource)
-        
+                
         # TODO: uncomment once the OdigosSampler is implemented
         # odigos_sampler = OdigosSampler()
         # sampler = ParentBased(odigos_sampler)
         
         # Exporting using exporters
         if trace_exporters is not None:            
+            provider = TracerProvider(resource=resource)
             id_generator_name = sdk_config._get_id_generator()
             id_generator = sdk_config._import_id_generator(id_generator_name)            
             provider.id_generator = id_generator
@@ -86,6 +86,8 @@ def initialize_traces_if_enabled(trace_exporters, resource, span_processor = Non
                 
         # Exporting using EBPF
         else:
+            provider = TracerProvider()
+            set_tracer_provider(provider)
             if span_processor is not None:
                 provider.add_span_processor(span_processor)
             
@@ -93,12 +95,12 @@ def initialize_traces_if_enabled(trace_exporters, resource, span_processor = Non
 
 def initialize_metrics_if_enabled(metric_exporters, resource):
     metrics_enabled = os.getenv(sdk_config.OTEL_METRICS_EXPORTER, "none").strip().lower()
-    if metrics_enabled != "none":
+    if metrics_enabled != "none" and metric_exporters:
         sdk_config._init_metrics(metric_exporters, resource)
 
 def initialize_logging_if_enabled(log_exporters, resource):
     logging_enabled = os.getenv(sdk_config.OTEL_LOGS_EXPORTER, "none").strip().lower()
-    if logging_enabled != "none":
+    if logging_enabled != "none" and log_exporters:
         sdk_config._init_logging(log_exporters, resource)
 
 

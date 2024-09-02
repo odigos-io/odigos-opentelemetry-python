@@ -9,22 +9,30 @@ asgiref==3.8.1
     #   opentelemetry-instrumentation-asgi
     #   opentelemetry-test-utils
 certifi==2023.5.7
-    # via requests
+    # via
+    #   odigos-requests
+    #   requests
 charset-normalizer==3.2.0
-    # via requests
+    # via
+    #   odigos-requests
+    #   requests
 deprecated==1.2.14
     # via
     #   opentelemetry-api
     #   opentelemetry-exporter-otlp-proto-http
-googleapis-common-protos==1.63.2
+googleapis-common-protos==1.65.0
     # via opentelemetry-exporter-otlp-proto-http
 idna==3.4
-    # via requests
+    # via
+    #   odigos-requests
+    #   requests
 importlib-metadata==7.0.0
     # via
     #   opentelemetry-api
     #   opentelemetry-instrumentation-flask
-opentelemetry-api==1.24.0
+odigos-requests==2.32.3.dev0
+    # via odigos-opentelemetry-python (setup.py)
+opentelemetry-api==1.25.0
     # via
     #   opentelemetry-distro
     #   opentelemetry-exporter-otlp-proto-http
@@ -69,6 +77,7 @@ opentelemetry-api==1.24.0
     #   opentelemetry-instrumentation-sqlite3
     #   opentelemetry-instrumentation-starlette
     #   opentelemetry-instrumentation-system-metrics
+    #   opentelemetry-instrumentation-threading
     #   opentelemetry-instrumentation-tornado
     #   opentelemetry-instrumentation-tortoiseorm
     #   opentelemetry-instrumentation-urllib
@@ -76,16 +85,17 @@ opentelemetry-api==1.24.0
     #   opentelemetry-instrumentation-wsgi
     #   opentelemetry-propagator-aws-xray
     #   opentelemetry-sdk
+    #   opentelemetry-semantic-conventions
     #   opentelemetry-test-utils
-opentelemetry-distro==0.45b0
-    # via odigos-python-configurator (setup.py)
-opentelemetry-exporter-otlp-proto-common==1.24.0
+opentelemetry-distro==0.46b0
+    # via odigos-opentelemetry-python (setup.py)
+opentelemetry-exporter-otlp-proto-common==1.25.0
     # via opentelemetry-exporter-otlp-proto-http
-opentelemetry-exporter-otlp-proto-http==1.24.0
-    # via odigos-python-configurator (setup.py)
-opentelemetry-instrumentation==0.45b0
+opentelemetry-exporter-otlp-proto-http==1.25.0
+    # via odigos-opentelemetry-python (setup.py)
+opentelemetry-instrumentation==0.46b0
     # via
-    #   odigos-python-configurator (setup.py)
+    #   odigos-opentelemetry-python (setup.py)
     #   opentelemetry-distro
     #   opentelemetry-instrumentation-aio-pika
     #   opentelemetry-instrumentation-aiohttp-client
@@ -127,41 +137,42 @@ opentelemetry-instrumentation==0.45b0
     #   opentelemetry-instrumentation-sqlite3
     #   opentelemetry-instrumentation-starlette
     #   opentelemetry-instrumentation-system-metrics
+    #   opentelemetry-instrumentation-threading
     #   opentelemetry-instrumentation-tornado
     #   opentelemetry-instrumentation-tortoiseorm
     #   opentelemetry-instrumentation-urllib
     #   opentelemetry-instrumentation-urllib3
     #   opentelemetry-instrumentation-wsgi
-opentelemetry-instrumentation-aio-pika==0.45b0
-    # via odigos-python-configurator (setup.py)
-opentelemetry-instrumentation-aiohttp-client==0.45b0
-    # via odigos-python-configurator (setup.py)
-opentelemetry-instrumentation-aiopg==0.45b0
-    # via odigos-python-configurator (setup.py)
-opentelemetry-instrumentation-asgi==0.45b0
+opentelemetry-instrumentation-aio-pika==0.46b0
+    # via odigos-opentelemetry-python (setup.py)
+opentelemetry-instrumentation-aiohttp-client==0.46b0
+    # via odigos-opentelemetry-python (setup.py)
+opentelemetry-instrumentation-aiopg==0.46b0
+    # via odigos-opentelemetry-python (setup.py)
+opentelemetry-instrumentation-asgi==0.46b0
     # via
-    #   odigos-python-configurator (setup.py)
+    #   odigos-opentelemetry-python (setup.py)
     #   opentelemetry-instrumentation-fastapi
     #   opentelemetry-instrumentation-starlette
-opentelemetry-instrumentation-asyncio==0.45b0
-    # via odigos-python-configurator (setup.py)
-opentelemetry-instrumentation-asyncpg==0.45b0
-    # via odigos-python-configurator (setup.py)
-opentelemetry-instrumentation-boto==0.45b0
-    # via odigos-python-configurator (setup.py)
-opentelemetry-instrumentation-boto3sqs==0.45b0
-    # via odigos-python-configurator (setup.py)
-opentelemetry-instrumentation-botocore==0.45b0
-    # via odigos-python-configurator (setup.py)
-opentelemetry-instrumentation-cassandra==0.45b0
-    # via odigos-python-configurator (setup.py)
-opentelemetry-instrumentation-celery==0.45b0
-    # via odigos-python-configurator (setup.py)
-opentelemetry-instrumentation-confluent-kafka==0.45b0
-    # via odigos-python-configurator (setup.py)
-opentelemetry-instrumentation-dbapi==0.45b0
+opentelemetry-instrumentation-asyncio==0.46b0
+    # via odigos-opentelemetry-python (setup.py)
+opentelemetry-instrumentation-asyncpg==0.46b0
+    # via odigos-opentelemetry-python (setup.py)
+opentelemetry-instrumentation-boto==0.46b0
+    # via odigos-opentelemetry-python (setup.py)
+opentelemetry-instrumentation-boto3sqs==0.46b0
+    # via odigos-opentelemetry-python (setup.py)
+opentelemetry-instrumentation-botocore==0.46b0
+    # via odigos-opentelemetry-python (setup.py)
+opentelemetry-instrumentation-cassandra==0.46b0
+    # via odigos-opentelemetry-python (setup.py)
+opentelemetry-instrumentation-celery==0.46b0
+    # via odigos-opentelemetry-python (setup.py)
+opentelemetry-instrumentation-confluent-kafka==0.46b0
+    # via odigos-opentelemetry-python (setup.py)
+opentelemetry-instrumentation-dbapi==0.46b0
     # via
-    #   odigos-python-configurator (setup.py)
+    #   odigos-opentelemetry-python (setup.py)
     #   opentelemetry-instrumentation-aiopg
     #   opentelemetry-instrumentation-mysql
     #   opentelemetry-instrumentation-mysqlclient
@@ -169,89 +180,89 @@ opentelemetry-instrumentation-dbapi==0.45b0
     #   opentelemetry-instrumentation-psycopg2
     #   opentelemetry-instrumentation-pymysql
     #   opentelemetry-instrumentation-sqlite3
-opentelemetry-instrumentation-django==0.45b0
-    # via odigos-python-configurator (setup.py)
-opentelemetry-instrumentation-elasticsearch==0.45b0
-    # via odigos-python-configurator (setup.py)
-opentelemetry-instrumentation-falcon==0.45b0
-    # via odigos-python-configurator (setup.py)
-opentelemetry-instrumentation-fastapi==0.45b0
-    # via odigos-python-configurator (setup.py)
-opentelemetry-instrumentation-flask==0.45b0
-    # via odigos-python-configurator (setup.py)
-opentelemetry-instrumentation-grpc==0.45b0
-    # via odigos-python-configurator (setup.py)
-opentelemetry-instrumentation-httpx==0.45b0
-    # via odigos-python-configurator (setup.py)
-opentelemetry-instrumentation-jinja2==0.45b0
-    # via odigos-python-configurator (setup.py)
-opentelemetry-instrumentation-kafka-python==0.45b0
-    # via odigos-python-configurator (setup.py)
-opentelemetry-instrumentation-logging==0.45b0
-    # via odigos-python-configurator (setup.py)
-opentelemetry-instrumentation-mysql==0.45b0
-    # via odigos-python-configurator (setup.py)
-opentelemetry-instrumentation-mysqlclient==0.45b0
-    # via odigos-python-configurator (setup.py)
-opentelemetry-instrumentation-pika==0.45b0
-    # via odigos-python-configurator (setup.py)
-opentelemetry-instrumentation-psycopg==0.45b0
-    # via odigos-python-configurator (setup.py)
-opentelemetry-instrumentation-psycopg2==0.45b0
-    # via odigos-python-configurator (setup.py)
-opentelemetry-instrumentation-pymemcache==0.45b0
-    # via odigos-python-configurator (setup.py)
-opentelemetry-instrumentation-pymongo==0.45b0
-    # via odigos-python-configurator (setup.py)
-opentelemetry-instrumentation-pymysql==0.45b0
-    # via odigos-python-configurator (setup.py)
-opentelemetry-instrumentation-pyramid==0.45b0
-    # via odigos-python-configurator (setup.py)
-opentelemetry-instrumentation-redis==0.45b0
-    # via odigos-python-configurator (setup.py)
-opentelemetry-instrumentation-remoulade==0.45b0
-    # via odigos-python-configurator (setup.py)
-opentelemetry-instrumentation-requests==0.45b0
-    # via odigos-python-configurator (setup.py)
-opentelemetry-instrumentation-sklearn==0.45b0
-    # via odigos-python-configurator (setup.py)
-opentelemetry-instrumentation-sqlalchemy==0.45b0
-    # via odigos-python-configurator (setup.py)
-opentelemetry-instrumentation-sqlite3==0.45b0
-    # via odigos-python-configurator (setup.py)
-opentelemetry-instrumentation-starlette==0.45b0
-    # via odigos-python-configurator (setup.py)
-opentelemetry-instrumentation-system-metrics==0.45b0
-    # via odigos-python-configurator (setup.py)
-opentelemetry-instrumentation-tornado==0.45b0
-    # via odigos-python-configurator (setup.py)
-opentelemetry-instrumentation-tortoiseorm==0.45b0
-    # via odigos-python-configurator (setup.py)
-opentelemetry-instrumentation-urllib==0.45b0
-    # via odigos-python-configurator (setup.py)
-opentelemetry-instrumentation-urllib3==0.45b0
-    # via odigos-python-configurator (setup.py)
-opentelemetry-instrumentation-wsgi==0.45b0
+opentelemetry-instrumentation-django==0.46b0
+    # via odigos-opentelemetry-python (setup.py)
+opentelemetry-instrumentation-elasticsearch==0.46b0
+    # via odigos-opentelemetry-python (setup.py)
+opentelemetry-instrumentation-falcon==0.46b0
+    # via odigos-opentelemetry-python (setup.py)
+opentelemetry-instrumentation-fastapi==0.46b0
+    # via odigos-opentelemetry-python (setup.py)
+opentelemetry-instrumentation-flask==0.46b0
+    # via odigos-opentelemetry-python (setup.py)
+opentelemetry-instrumentation-grpc==0.46b0
+    # via odigos-opentelemetry-python (setup.py)
+opentelemetry-instrumentation-httpx==0.46b0
+    # via odigos-opentelemetry-python (setup.py)
+opentelemetry-instrumentation-jinja2==0.46b0
+    # via odigos-opentelemetry-python (setup.py)
+opentelemetry-instrumentation-kafka-python==0.46b0
+    # via odigos-opentelemetry-python (setup.py)
+opentelemetry-instrumentation-logging==0.46b0
+    # via odigos-opentelemetry-python (setup.py)
+opentelemetry-instrumentation-mysql==0.46b0
+    # via odigos-opentelemetry-python (setup.py)
+opentelemetry-instrumentation-mysqlclient==0.46b0
+    # via odigos-opentelemetry-python (setup.py)
+opentelemetry-instrumentation-pika==0.46b0
+    # via odigos-opentelemetry-python (setup.py)
+opentelemetry-instrumentation-psycopg==0.46b0
+    # via odigos-opentelemetry-python (setup.py)
+opentelemetry-instrumentation-psycopg2==0.46b0
+    # via odigos-opentelemetry-python (setup.py)
+opentelemetry-instrumentation-pymemcache==0.46b0
+    # via odigos-opentelemetry-python (setup.py)
+opentelemetry-instrumentation-pymongo==0.46b0
+    # via odigos-opentelemetry-python (setup.py)
+opentelemetry-instrumentation-pymysql==0.46b0
+    # via odigos-opentelemetry-python (setup.py)
+opentelemetry-instrumentation-pyramid==0.46b0
+    # via odigos-opentelemetry-python (setup.py)
+opentelemetry-instrumentation-redis==0.46b0
+    # via odigos-opentelemetry-python (setup.py)
+opentelemetry-instrumentation-remoulade==0.46b0
+    # via odigos-opentelemetry-python (setup.py)
+opentelemetry-instrumentation-requests==0.46b0
+    # via odigos-opentelemetry-python (setup.py)
+opentelemetry-instrumentation-sklearn==0.46b0
+    # via odigos-opentelemetry-python (setup.py)
+opentelemetry-instrumentation-sqlalchemy==0.46b0
+    # via odigos-opentelemetry-python (setup.py)
+opentelemetry-instrumentation-sqlite3==0.46b0
+    # via odigos-opentelemetry-python (setup.py)
+opentelemetry-instrumentation-starlette==0.46b0
+    # via odigos-opentelemetry-python (setup.py)
+opentelemetry-instrumentation-system-metrics==0.46b0
+    # via odigos-opentelemetry-python (setup.py)
+opentelemetry-instrumentation-threading==0.46b0
+    # via odigos-opentelemetry-python (setup.py)
+opentelemetry-instrumentation-tornado==0.46b0
+    # via odigos-opentelemetry-python (setup.py)
+opentelemetry-instrumentation-tortoiseorm==0.46b0
+    # via odigos-opentelemetry-python (setup.py)
+opentelemetry-instrumentation-urllib==0.46b0
+    # via odigos-opentelemetry-python (setup.py)
+opentelemetry-instrumentation-urllib3==0.46b0
+    # via odigos-opentelemetry-python (setup.py)
+opentelemetry-instrumentation-wsgi==0.46b0
     # via
-    #   odigos-python-configurator (setup.py)
+    #   odigos-opentelemetry-python (setup.py)
     #   opentelemetry-instrumentation-django
     #   opentelemetry-instrumentation-falcon
     #   opentelemetry-instrumentation-flask
     #   opentelemetry-instrumentation-pyramid
 opentelemetry-propagator-aws-xray==1.0.1
     # via opentelemetry-instrumentation-botocore
-opentelemetry-proto==1.24.0
+opentelemetry-proto==1.25.0
     # via
     #   opentelemetry-exporter-otlp-proto-common
     #   opentelemetry-exporter-otlp-proto-http
-opentelemetry-sdk==1.24.0
+opentelemetry-sdk==1.25.0
     # via
     #   opentelemetry-distro
     #   opentelemetry-exporter-otlp-proto-http
-    #   opentelemetry-instrumentation-grpc
-    #   opentelemetry-instrumentation-system-metrics
     #   opentelemetry-test-utils
-opentelemetry-semantic-conventions==0.45b0
+opentelemetry-semantic-conventions==0.46b0
     # via
     #   opentelemetry-instrumentation-aiohttp-client
     #   opentelemetry-instrumentation-asgi
@@ -285,9 +296,9 @@ opentelemetry-semantic-conventions==0.45b0
     #   opentelemetry-instrumentation-urllib3
     #   opentelemetry-instrumentation-wsgi
     #   opentelemetry-sdk
-opentelemetry-test-utils==0.45b0
+opentelemetry-test-utils==0.46b0
     # via opentelemetry-instrumentation-asyncio
-opentelemetry-util-http==0.45b0
+opentelemetry-util-http==0.46b0
     # via
     #   opentelemetry-instrumentation-aiohttp-client
     #   opentelemetry-instrumentation-asgi
@@ -312,20 +323,21 @@ packaging==24.1
 protobuf==4.23.4
     # via
     #   googleapis-common-protos
-    #   odigos-python-configurator (setup.py)
     #   opentelemetry-proto
 psutil==5.9.8
     # via opentelemetry-instrumentation-system-metrics
-requests==2.31.0
-    # via
-    #   odigos-python-configurator (setup.py)
-    #   opentelemetry-exporter-otlp-proto-http
+requests==2.32.3
+    # via opentelemetry-exporter-otlp-proto-http
 typing-extensions==4.7.1
     # via opentelemetry-sdk
-urllib3==2.0.3
+urllib3==2.2.2
     # via requests
+urllib3-odigos==2.2.2
+    # via
+    #   odigos-opentelemetry-python (setup.py)
+    #   odigos-requests
 uuid7==0.1.0
-    # via odigos-python-configurator (setup.py)
+    # via odigos-opentelemetry-python (setup.py)
 wrapt==1.16.0
     # via
     #   deprecated
@@ -346,6 +358,7 @@ wrapt==1.16.0
     #   opentelemetry-instrumentation-pyramid
     #   opentelemetry-instrumentation-redis
     #   opentelemetry-instrumentation-sqlalchemy
+    #   opentelemetry-instrumentation-threading
     #   opentelemetry-instrumentation-urllib3
 zipp==3.19.2
     # via importlib-metadata

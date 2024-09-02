@@ -12,11 +12,10 @@ def reload_distro_modules() -> None:
     # Delete distro modules and their sub-modules, as they have been imported before the path was reordered.
     # The distro modules will be re-imported from the new path.
     needed_module_prefixes = [
-        'google.protobuf',
         'requests',
         'charset_normalizer',
         'certifi',
-        'asgiref'
+        'asgiref',
         'idna',
         'deprecated',
         'importlib_metadata',
@@ -28,7 +27,15 @@ def reload_distro_modules() -> None:
         'typing_extensions',
     ]
     
+    excluded_modules = [
+        'urllib3_odigos',
+        'requests_odigos'
+    ]
+    
     for module in list(sys.modules):
-        # Check if the module starts with any of the needed prefixes
+        # Check if the module starts with any of the needed prefixes, but not with any of the excluded prefixes.
+        if any(module.startswith(prefix) for prefix in excluded_modules):
+            continue
+        
         if any(module.startswith(prefix) for prefix in needed_module_prefixes):
             del sys.modules[module]    
