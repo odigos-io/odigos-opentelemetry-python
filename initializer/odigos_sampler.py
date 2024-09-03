@@ -1,6 +1,16 @@
+from .sampling_operators import SamplingOperators
 from opentelemetry.sdk.trace.sampling import Sampler, Decision, SamplingResult
 from threading import Lock
 import random
+import logging
+
+
+# Setup the Sampler logger
+sampler_logger = logging.getLogger(__name__)
+sampler_logger.setLevel(logging.DEBUG)
+handler = logging.StreamHandler()
+sampler_logger.addHandler(handler.setFormatter(logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')) or handler)
+sampler_logger.disabled = True # Comment this line to enable the logger
 
 class OdigosSampler(Sampler):
     def __init__(self):
@@ -9,43 +19,61 @@ class OdigosSampler(Sampler):
 
     def should_sample(self, parent_context, trace_id, name, kind, attributes, links):
         with self._lock:
-            print(f'attributes : {attributes}')
-            print(f'name : {name}')
-            print(f'kind : {kind}')     
+            sampler_logger.debug(f'Running Should_sample a span with the following attributes: {attributes}')
+        
             if self._config is None:
-                print('Recording and sampling- no config has been set')       
+                sampler_logger.debug('No configuration is set, returning RECORD_AND_SAMPLE')
                 return SamplingResult(Decision.RECORD_AND_SAMPLE)
         
+            rules = self._config.get('attributesAndSamplerRules', [])
+            global_fraction = self._config.get('fallbackFraction', 1) # default to 1 if not set which means always sample
             
-            rules = self._config.get('rules', [])
-            global_fraction = self._config.get('fallbackFraction', 1)
-            for rule in rules:
-                operands = rule.get('operands', [])
+            for rule in rules: # The first attribute rule that evaluates to true is used to determine the sampling decision based on its fraction.
+                and_attributes_sampler_rules = rule.get('attributeConditions', [])
                 
-                print(f'rule operands are: {operands}')
+                sampler_logger.debug(f'"AND" rule operands are: {and_attributes_sampler_rules}')
                 
-                rule_fraction = rule.get('fraction', 1)
-                for operand in operands: # TODO: implement AND logic
-                    key = operand.get('key')
-                    value = operand.get('value')
-                    print(f'Operand key : {key} and value : {value}')
+                and_rule_fraction = rule.get('fraction', 1) # default to 1 if not set which means always sample
+                and_rule_met = True
+                
+                for and_rule in and_attributes_sampler_rules:
+                    # If the "AND" rule is not met once, break the loop to avoid unnecessary checks
+                    if not and_rule_met:
+                        break
+                    
+                    key = and_rule.get('key')
+                    value = and_rule.get('val')
+                    operator = and_rule.get('operator') # equals / notEquals / endWith / startWith
+                    
                     if key in attributes:
-                        print(f'key is in attributes')
-                        print(f'attributes[key]: {attributes[key]}')
-                        if attributes[key] == value:
-                            print(f'attributes[key] == value')
-                            if random.random() < rule_fraction:
-                                print(f'sampling brcause the attribute {key} is {value} and the fraction is {rule_fraction}')
-                                return SamplingResult(Decision.RECORD_AND_SAMPLE)
-                            else:
-                                print(f'dropping because the attribute {key} is {value} and the fraction is {rule_fraction}')
-                                return SamplingResult(Decision.DROP)    
+                        operations = {
+                            SamplingOperators.EQUALS.value: lambda attr: attr == value,
+                            SamplingOperators.NOT_EQUALS.value: lambda attr: attr != value,
+                            SamplingOperators.END_WITH.value: lambda attr: attr.endswith(value),
+                            SamplingOperators.START_WITH.value: lambda attr: attr.startswith(value)
+                        }
 
+                        # Perform the corresponding operation
+                        if operator in operations and operations[operator](attributes[key]):
+                            sampler_logger.debug(f'Operator {operator} is true for the attribute {key} with value {value}')
+                        else:
+                            sampler_logger.debug(f'Operator {operator} is false, setting the "AND" rule flag to false')
+                            and_rule_met = False
+                            
+                if and_rule_met:
+                    # Perform the sampling decision
+                    if random.random() < and_rule_fraction:
+                        sampler_logger.debug(f'Trace [{trace_id}] is sampled "And rules" are met with fraction {and_rule_fraction}')
+                        return SamplingResult(Decision.RECORD_AND_SAMPLE)
+                    else:
+                        sampler_logger.debug(f'Trace [{trace_id}] is dropped "And rules" are met but fraction {and_rule_fraction} not met')
+                        return SamplingResult(Decision.DROP)
+                
+            # Fallback to the global fraction if no rule matches
+            sampler_logger.debug(f'No rule matched, falling back to the global fraction {global_fraction}')
             if random.random() < global_fraction:
-                print(f'sampling because the global fraction is {global_fraction} and no rule match')
                 return SamplingResult(Decision.RECORD_AND_SAMPLE)
             else:
-                print(f'dropping because the global fraction is {global_fraction} and no rule match')
                 return SamplingResult(Decision.DROP)
             
 
@@ -54,5 +82,5 @@ class OdigosSampler(Sampler):
     
     def update_config(self, new_config):
         with self._lock:
-            print('config is updated')
+            sampler_logger.debug(f'Updating the configuration with the new configuration: {new_config}')
             self._config = new_config
