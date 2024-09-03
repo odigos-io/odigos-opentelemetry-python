@@ -3,23 +3,43 @@
 # source: anyvalue.proto
 # Protobuf Python Version: 4.25.0
 """Generated protocol buffer code."""
-from google.protobuf import descriptor as _descriptor
-from google.protobuf import descriptor_pool as _descriptor_pool
-from google.protobuf import symbol_database as _symbol_database
-from google.protobuf.internal import builder as _builder
+from initializer.lib_handling import import_module_from_path, ODIGOS_PROTOBUF_PATH
+   
+# Import descriptor as _descriptor_odigos
+_descriptor_odigos= import_module_from_path(
+    unique_name="_descriptor_odigos",
+    path=f"{ODIGOS_PROTOBUF_PATH}/descriptor.py"
+)
+
+# Import descriptor_pool as _descriptor_pool_odigos
+_descriptor_pool_odigos = import_module_from_path(
+    unique_name="_descriptor_pool_odigos",
+    path=f"{ODIGOS_PROTOBUF_PATH}/descriptor_pool.py"
+)
+
+# Import symbol_database as _symbol_database_odigos
+_symbol_database_odigos = import_module_from_path(
+    unique_name="_symbol_database_odigos",
+    path=f"{ODIGOS_PROTOBUF_PATH}/symbol_database.py"
+)
+
+# Import builder as _builder_odigos
+_builder_odigos = import_module_from_path(
+    unique_name="_builder_odigos",
+    path=f"{ODIGOS_PROTOBUF_PATH}/internal/builder.py"
+)
+
 # @@protoc_insertion_point(imports)
 
-_sym_db = _symbol_database.Default()
+_sym_db = _symbol_database_odigos.Default()
 
 
-
-
-DESCRIPTOR = _descriptor_pool.Default().AddSerializedFile(b'\n\x0e\x61nyvalue.proto\x12\x0bopamp.proto\"\xbc\x02\n\x08\x41nyValue\x12#\n\x0cstring_value\x18\x01 \x01(\tH\x00R\x0bstringValue\x12\x1f\n\nbool_value\x18\x02 \x01(\x08H\x00R\tboolValue\x12\x1d\n\tint_value\x18\x03 \x01(\x03H\x00R\x08intValue\x12#\n\x0c\x64ouble_value\x18\x04 \x01(\x01H\x00R\x0b\x64oubleValue\x12:\n\x0b\x61rray_value\x18\x05 \x01(\x0b\x32\x17.opamp.proto.ArrayValueH\x00R\narrayValue\x12>\n\x0ckvlist_value\x18\x06 \x01(\x0b\x32\x19.opamp.proto.KeyValueListH\x00R\x0bkvlistValue\x12!\n\x0b\x62ytes_value\x18\x07 \x01(\x0cH\x00R\nbytesValueB\x07\n\x05value\";\n\nArrayValue\x12-\n\x06values\x18\x01 \x03(\x0b\x32\x15.opamp.proto.AnyValueR\x06values\"=\n\x0cKeyValueList\x12-\n\x06values\x18\x01 \x03(\x0b\x32\x15.opamp.proto.KeyValueR\x06values\"I\n\x08KeyValue\x12\x10\n\x03key\x18\x01 \x01(\tR\x03key\x12+\n\x05value\x18\x02 \x01(\x0b\x32\x15.opamp.proto.AnyValueR\x05valueB\xa0\x01\n\x0f\x63om.opamp.protoB\rAnyvalueProtoP\x01Z1github.com/odigos-io/odigos/opampserver/protobufs\xa2\x02\x03OPX\xaa\x02\x0bOpamp.Proto\xca\x02\x0bOpamp\\Proto\xe2\x02\x17Opamp\\Proto\\GPBMetadata\xea\x02\x0cOpamp::Protob\x06proto3')
+DESCRIPTOR = _descriptor_pool_odigos.Default().AddSerializedFile(b'\n\x0e\x61nyvalue.proto\x12\x0bopamp.proto\"\xbc\x02\n\x08\x41nyValue\x12#\n\x0cstring_value\x18\x01 \x01(\tH\x00R\x0bstringValue\x12\x1f\n\nbool_value\x18\x02 \x01(\x08H\x00R\tboolValue\x12\x1d\n\tint_value\x18\x03 \x01(\x03H\x00R\x08intValue\x12#\n\x0c\x64ouble_value\x18\x04 \x01(\x01H\x00R\x0b\x64oubleValue\x12:\n\x0b\x61rray_value\x18\x05 \x01(\x0b\x32\x17.opamp.proto.ArrayValueH\x00R\narrayValue\x12>\n\x0ckvlist_value\x18\x06 \x01(\x0b\x32\x19.opamp.proto.KeyValueListH\x00R\x0bkvlistValue\x12!\n\x0b\x62ytes_value\x18\x07 \x01(\x0cH\x00R\nbytesValueB\x07\n\x05value\";\n\nArrayValue\x12-\n\x06values\x18\x01 \x03(\x0b\x32\x15.opamp.proto.AnyValueR\x06values\"=\n\x0cKeyValueList\x12-\n\x06values\x18\x01 \x03(\x0b\x32\x15.opamp.proto.KeyValueR\x06values\"I\n\x08KeyValue\x12\x10\n\x03key\x18\x01 \x01(\tR\x03key\x12+\n\x05value\x18\x02 \x01(\x0b\x32\x15.opamp.proto.AnyValueR\x05valueB\xa0\x01\n\x0f\x63om.opamp.protoB\rAnyvalueProtoP\x01Z1github.com/odigos-io/odigos/opampserver/protobufs\xa2\x02\x03OPX\xaa\x02\x0bOpamp.Proto\xca\x02\x0bOpamp\\Proto\xe2\x02\x17Opamp\\Proto\\GPBMetadata\xea\x02\x0cOpamp::Protob\x06proto3')
 
 _globals = globals()
-_builder.BuildMessageAndEnumDescriptors(DESCRIPTOR, _globals)
-_builder.BuildTopDescriptorsAndMessages(DESCRIPTOR, 'anyvalue_pb2', _globals)
-if _descriptor._USE_C_DESCRIPTORS == False:
+_builder_odigos.BuildMessageAndEnumDescriptors(DESCRIPTOR, _globals)
+_builder_odigos.BuildTopDescriptorsAndMessages(DESCRIPTOR, 'anyvalue_pb2', _globals)
+if _descriptor_odigos._USE_C_DESCRIPTORS == False:
   _globals['DESCRIPTOR']._options = None
   _globals['DESCRIPTOR']._serialized_options = b'\n\017com.opamp.protoB\rAnyvalueProtoP\001Z1github.com/odigos-io/odigos/opampserver/protobufs\242\002\003OPX\252\002\013Opamp.Proto\312\002\013Opamp\\Proto\342\002\027Opamp\\Proto\\GPBMetadata\352\002\014Opamp::Proto'
   _globals['_ANYVALUE']._serialized_start=32
