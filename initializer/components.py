@@ -13,8 +13,8 @@ from opentelemetry.trace import set_tracer_provider
 from .lib_handling import reorder_python_path, reload_distro_modules
 from .version import VERSION
 
-# from .odigos_sampler import OdigosSampler
-# from opentelemetry.sdk.trace.sampling import ParentBased
+from .odigos_sampler import OdigosSampler
+from opentelemetry.sdk.trace.sampling import ParentBased
 
 # Reorder the python sys.path to ensure that the user application's dependencies take precedence over the agent's dependencies.
 # This is necessary because the user application's dependencies may be incompatible with those used by the agent.
@@ -49,7 +49,10 @@ def initialize_components(trace_exporters = None, metric_exporters = None, log_e
                 .merge(OTELResourceDetector().detect()) \
                 .merge(ProcessResourceDetector().detect())
 
-            initialize_traces_if_enabled(trace_exporters, resource, span_processor)
+            odigos_sampler = initialize_traces_if_enabled(trace_exporters, resource, span_processor)
+            
+            client.sampler = odigos_sampler
+            
             initialize_metrics_if_enabled(metric_exporters, resource)
             initialize_logging_if_enabled(log_exporters, resource)
 
@@ -64,14 +67,13 @@ def initialize_components(trace_exporters = None, metric_exporters = None, log_e
 def initialize_traces_if_enabled(trace_exporters, resource, span_processor = None):
     traces_enabled = os.getenv(sdk_config.OTEL_TRACES_EXPORTER, "none").strip().lower()
     if traces_enabled != "none":
-                
-        # TODO: uncomment once the OdigosSampler is implemented
-        # odigos_sampler = OdigosSampler()
-        # sampler = ParentBased(odigos_sampler)
+        
+        odigos_sampler = OdigosSampler()
+        sampler = ParentBased(odigos_sampler)
         
         # Exporting using exporters
         if trace_exporters is not None:            
-            provider = TracerProvider(resource=resource)
+            provider = TracerProvider(resource=resource, sampler=sampler)
             id_generator_name = sdk_config._get_id_generator()
             id_generator = sdk_config._import_id_generator(id_generator_name)            
             provider.id_generator = id_generator
@@ -86,12 +88,12 @@ def initialize_traces_if_enabled(trace_exporters, resource, span_processor = Non
                 
         # Exporting using EBPF
         else:
-            provider = TracerProvider()
+            provider = TracerProvider(sampler=sampler)
             set_tracer_provider(provider)
             if span_processor is not None:
                 provider.add_span_processor(span_processor)
             
-    # return sampler
+    return odigos_sampler
 
 def initialize_metrics_if_enabled(metric_exporters, resource):
     metrics_enabled = os.getenv(sdk_config.OTEL_METRICS_EXPORTER, "none").strip().lower()
