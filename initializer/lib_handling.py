@@ -1,9 +1,4 @@
 import sys
-import os
-import importlib.util
-
-# Constants
-ODIGOS_PROTOBUF_PATH = '/var/odigos/python/google/protobuf'
 
 def reorder_python_path():
     paths_to_move = [path for path in sys.path if path.startswith('/var/odigos/')]
@@ -44,17 +39,3 @@ def reload_distro_modules() -> None:
         
         if any(module.startswith(prefix) for prefix in needed_module_prefixes):
             del sys.modules[module]    
-
-
-def import_module_from_path(unique_name, path):
-    ''' Import a module from a file path and return it '''
-    if not os.path.isfile(path):
-        raise ImportError(f"Module '{unique_name}' not found at path '{path}'")
-    
-    spec = importlib.util.spec_from_file_location(unique_name, path)
-    
-    module = importlib.util.module_from_spec(spec)
-    
-    spec.loader.exec_module(module)
-    
-    return module
