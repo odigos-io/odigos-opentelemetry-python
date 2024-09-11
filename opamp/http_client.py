@@ -147,7 +147,7 @@ class OpAMPHTTPClient:
                     opamp_logger.error(f"Error fetching data: {e}")
                 self.condition.wait(30)
 
-    def send_heartbeat(self) -> opamp_pb2.ServerToAgent:
+    def send_heartbeat(self) -> opamp_pb2.ServerToAgent: # type: ignore
         opamp_logger.debug("Sending heartbeat to OpAMP server...") 
         try:
             agent_to_server = opamp_pb2.AgentToServer(remote_config_status=self.remote_config_status)
@@ -155,7 +155,7 @@ class OpAMPHTTPClient:
         except requests_odigos.RequestException as e:
             opamp_logger.error(f"Error sending heartbeat to OpAMP server: {e}")
 
-    def get_agent_description(self) -> opamp_pb2.AgentDescription:
+    def get_agent_description(self) -> opamp_pb2.AgentDescription: # type: ignore
         identifying_attributes = [
             anyvalue_pb2.KeyValue(
                 key=ResourceAttributes.SERVICE_INSTANCE_ID,
@@ -176,10 +176,10 @@ class OpAMPHTTPClient:
             non_identifying_attributes=[]
         )
         
-    def get_agent_disconnect(self) -> opamp_pb2.AgentDisconnect:
+    def get_agent_disconnect(self) -> opamp_pb2.AgentDisconnect: # type: ignore
         return opamp_pb2.AgentDisconnect()
     
-    def get_agent_health(self, component_health: bool = None, last_error : str = None, status: str = None) -> opamp_pb2.ComponentHealth:
+    def get_agent_health(self, component_health: bool = None, last_error : str = None, status: str = None) -> opamp_pb2.ComponentHealth: # type: ignore
         health = opamp_pb2.ComponentHealth(
         )
         if component_health is not None:
@@ -192,7 +192,7 @@ class OpAMPHTTPClient:
         return health
     
     
-    def send_agent_to_server_message(self, message: opamp_pb2.AgentToServer) -> opamp_pb2.ServerToAgent: 
+    def send_agent_to_server_message(self, message: opamp_pb2.AgentToServer) -> opamp_pb2.ServerToAgent: # type: ignore
         
         message.instance_uid = self.instance_uid.encode('utf-8')
         message.sequence_num = self.next_sequence_num    
@@ -256,7 +256,7 @@ class OpAMPHTTPClient:
         
         self.send_agent_to_server_message(disconnect_message)
         
-    def update_remote_config_status(self, server_to_agent: opamp_pb2.ServerToAgent) -> bool:
+    def update_remote_config_status(self, server_to_agent: opamp_pb2.ServerToAgent) -> bool: # type: ignore
         if server_to_agent.HasField("remote_config"):
             remote_config_hash = server_to_agent.remote_config.config_hash
             remote_config_status = opamp_pb2.RemoteConfigStatus(last_remote_config_hash=remote_config_hash)
