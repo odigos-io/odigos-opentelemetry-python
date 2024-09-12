@@ -148,7 +148,7 @@ class OpAMPHTTPClient:
                 self.condition.wait(30)
 
     def send_heartbeat(self) -> opamp_pb2.ServerToAgent: # type: ignore
-        opamp_logger.debug("Sending heartbeat to OpAMP server...") 
+        # opamp_logger.debug("Sending heartbeat to OpAMP server...") 
         try:
             agent_to_server = opamp_pb2.AgentToServer(remote_config_status=self.remote_config_status)
             return self.send_agent_to_server_message(agent_to_server)

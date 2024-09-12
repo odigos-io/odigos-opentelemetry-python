@@ -5,7 +5,7 @@ import logging
 
 # Setup the Sampler logger
 sampler_logger = logging.getLogger(__name__)
-sampler_logger.setLevel(logging.DEBUG)
+# sampler_logger.setLevel(logging.DEBUG)
 # handler = logging.StreamHandler()
 # sampler_logger.addHandler(handler.setFormatter(logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')) or handler)
 sampler_logger.disabled = True # Comment this line to enable the logger
@@ -38,10 +38,10 @@ class OdigosSampler(Sampler):
 
     def should_sample(self, parent_context, trace_id, name, kind, attributes, links):
         with self._lock:
-            sampler_logger.debug(f'Running Should_sample a span with the following attributes: {attributes}')
+            # sampler_logger.debug(f'Running Should_sample a span with the following attributes: {attributes}')
         
             if self._config is None:
-                sampler_logger.debug('No configuration is set, returning RECORD_AND_SAMPLE')
+                # sampler_logger.debug('No configuration is set, returning RECORD_AND_SAMPLE')
                 return SamplingResult(Decision.RECORD_AND_SAMPLE)
         
             rules = self._config.get('attributesAndSamplerRules', [])
@@ -50,7 +50,7 @@ class OdigosSampler(Sampler):
             for rule in rules: # The first attribute rule that evaluates to true is used to determine the sampling decision based on its fraction.
                 and_attributes_sampler_rules = rule.get('attributeConditions', [])
                 
-                sampler_logger.debug(f'"AND" rule operands are: {and_attributes_sampler_rules}')
+                # sampler_logger.debug(f'"AND" rule operands are: {and_attributes_sampler_rules}')
                 
                 and_rule_fraction = rule.get('fraction', 1) # default to 1 if not set which means always sample
                 and_rule_met = True
@@ -68,25 +68,26 @@ class OdigosSampler(Sampler):
 
                         # Perform the corresponding operation
                         if operator in self._operations and self._operations[operator](attributes[key], value):
-                            sampler_logger.debug(f'Operator {operator} is true for the attribute {key} with value {value}')
+                            # sampler_logger.debug(f'Operator {operator} is true for the attribute {key} with value {value}')
+                            pass
                         else:
-                            sampler_logger.debug(f'Operator {operator} is false, setting the "AND" rule flag to false')
+                            # sampler_logger.debug(f'Operator {operator} is false, setting the "AND" rule flag to false')
                             and_rule_met = False
                     else:
-                        sampler_logger.debug(f'Attribute {key} is not present in the span attributes, setting the "AND" rule flag to false')
+                        # sampler_logger.debug(f'Attribute {key} is not present in the span attributes, setting the "AND" rule flag to false')
                         and_rule_met = False
                             
                 if and_rule_met:
                     # Perform the sampling decision
                     if self._trace_id_based_sampling(trace_id, and_rule_fraction):
-                        sampler_logger.debug(f'Trace [{trace_id}] is sampled "And rules" are met with fraction {and_rule_fraction}')
+                        # sampler_logger.debug(f'Trace [{trace_id}] is sampled "And rules" are met with fraction {and_rule_fraction}')
                         return SamplingResult(Decision.RECORD_AND_SAMPLE)
                     else:
-                        sampler_logger.debug(f'Trace [{trace_id}] is dropped "And rules" are met but fraction {and_rule_fraction} not met')
+                        # sampler_logger.debug(f'Trace [{trace_id}] is dropped "And rules" are met but fraction {and_rule_fraction} not met')
                         return SamplingResult(Decision.DROP)
                 
             # Fallback to the global fraction if no rule matches
-            sampler_logger.debug(f'No rule matched, falling back to the global fraction {global_fraction}')
+            # sampler_logger.debug(f'No rule matched, falling back to the global fraction {global_fraction}')
             if self._trace_id_based_sampling(trace_id, global_fraction):
                 return SamplingResult(Decision.RECORD_AND_SAMPLE)
             else:
@@ -98,5 +99,5 @@ class OdigosSampler(Sampler):
     
     def update_config(self, new_config):
         with self._lock:
-            sampler_logger.debug(f'Updating the configuration with the new configuration: {new_config}')
+            # sampler_logger.debug(f'Updating the configuration with the new configuration: {new_config}')
             self._config = new_config
