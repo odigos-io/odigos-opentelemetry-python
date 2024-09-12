@@ -8,7 +8,7 @@ sampler_logger = logging.getLogger(__name__)
 # sampler_logger.setLevel(logging.DEBUG)
 # handler = logging.StreamHandler()
 # sampler_logger.addHandler(handler.setFormatter(logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')) or handler)
-# sampler_logger.disabled = True # Comment this line to enable the logger
+sampler_logger.disabled = True # Comment this line to enable the logger
 
 class OdigosSampler(Sampler):
     
