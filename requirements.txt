@@ -325,7 +325,7 @@ protobuf==3.19.4
     #   googleapis-common-protos
     #   odigos-opentelemetry-python (setup.py)
     #   opentelemetry-proto
-psutil==5.9.8
+psutil==6.0.0
     # via opentelemetry-instrumentation-system-metrics
 requests==2.32.3
     # via opentelemetry-exporter-otlp-proto-http
