@@ -30,3 +30,19 @@ requirements.txt e.g:
 ..
 odigos-opentelemetry-python @ http://localhost:8080/packages/odigos_opentelemetry_python-0.1.1-py3-none-any.whl
 ```
+
+
+## Publishing a New Version to PyPI
+1. Ensure all changes are merged into the `main` branch.
+
+2. Create a tag for the new version.
+```bash 
+git tag <TAG>
+```
+3. Push the tag to the remote repository.
+```bash
+git push origin <TAG>
+```
+4. Let the [GitHub workflow](https://github.com/odigos-io/odigos-opentelemetry-python/blob/main/.github/workflows/publish.yaml) handle versioning and publishing to [odigos-opentelemetry-python on PyPI](https://pypi.org/project/odigos-opentelemetry-python/).
+
+
