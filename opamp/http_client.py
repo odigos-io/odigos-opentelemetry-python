@@ -20,8 +20,17 @@ from opamp.health_status import AgentHealthStatus
 # Setup the logger
 opamp_logger = logging.getLogger(__name__)
 opamp_logger.setLevel(logging.DEBUG)
+opamp_logger.propagate = False # Prevent the log messages from being propagated to the root logger
 opamp_logger.disabled = True # Comment this line to enable the logger
 
+# Safely remove all attached handlers from the logger.
+# This ensures that any existing handlers, if present, are detached,
+# preventing them from processing or outputting any log messages.
+for handler in opamp_logger.handlers[:]:
+    try:
+        opamp_logger.removeHandler(handler)
+    except Exception:
+        pass
 
 class OpAMPHTTPClient:
     def __init__(self, event, condition: threading.Condition):
@@ -44,7 +53,7 @@ class OpAMPHTTPClient:
             python_version = f'{sys.version_info.major}.{sys.version_info.minor}.{sys.version_info.micro}'
             error_message = f"Opentelemetry SDK require Python in version 3.8 or higher [{python_version} is not supported]"
             
-            opamp_logger.warning(f"{error_message}, sending disconnect message to OpAMP server...")
+            # opamp_logger.warning(f"{error_message}, sending disconnect message to OpAMP server...")
             self.send_unsupported_version_disconnect_message(error_message=error_message)
             self.event.set()
             return
@@ -64,7 +73,7 @@ class OpAMPHTTPClient:
             self.worker()
             
         except Exception as e:
-            opamp_logger.error(f"Error running OpAMP client: {e}")
+            # opamp_logger.error(f"Error running OpAMP client: {e}")
             failure_message = self.get_agent_failure_disconnect_message(error_message=str(e))            
             self.send_agent_to_server_message(failure_message)
             
@@ -112,13 +121,14 @@ class OpAMPHTTPClient:
                 self.resource_attributes = utils.parse_first_message_to_resource_attributes(first_message_server_to_agent, opamp_logger)
                 
                 # Send healthy message to OpAMP server
-                opamp_logger.info("Reporting healthy to OpAMP server...")
+                # opamp_logger.info("Reporting healthy to OpAMP server...")
                 agent_health = self.get_agent_health(component_health=True, status=AgentHealthStatus.HEALTHY.value)
                 self.send_agent_to_server_message(opamp_pb2.AgentToServer(health=agent_health))
                 
                 break
             except Exception as e:
-                opamp_logger.error(f"Error sending full state to OpAMP server: {e}")
+                # opamp_logger.error(f"Error sending full state to OpAMP server: {e}")
+                pass
             
             if attempt < max_retries:
                 time.sleep(delay)
@@ -129,11 +139,12 @@ class OpAMPHTTPClient:
                 try:
                     server_to_agent = self.send_heartbeat()
                     if self.update_remote_config_status(server_to_agent):
-                        opamp_logger.info("Remote config updated, applying changes...")
+                        # opamp_logger.info("Remote config updated, applying changes...")
+                        pass
                         # TODO: implement changes based on the remote config
 
                     if server_to_agent.flags & opamp_pb2.ServerToAgentFlags_ReportFullState:
-                        opamp_logger.info("Received request to report full state")
+                        # opamp_logger.info("Received request to report full state")
                         
                         agent_description = self.get_agent_description()
                         agent_health = self.get_agent_health(component_health=True, status=AgentHealthStatus.HEALTHY.value)
@@ -144,7 +155,8 @@ class OpAMPHTTPClient:
                         self.update_remote_config_status(server_to_agent)
                 
                 except requests_odigos.RequestException as e:
-                    opamp_logger.error(f"Error fetching data: {e}")
+                    # opamp_logger.error(f"Error fetching data: {e}")
+                    pass
                 self.condition.wait(30)
 
     def send_heartbeat(self) -> opamp_pb2.ServerToAgent: # type: ignore
@@ -153,7 +165,8 @@ class OpAMPHTTPClient:
             agent_to_server = opamp_pb2.AgentToServer(remote_config_status=self.remote_config_status)
             return self.send_agent_to_server_message(agent_to_server)
         except requests_odigos.RequestException as e:
-            opamp_logger.error(f"Error sending heartbeat to OpAMP server: {e}")
+            # opamp_logger.error(f"Error sending heartbeat to OpAMP server: {e}")
+            pass
 
     def get_agent_description(self) -> opamp_pb2.AgentDescription: # type: ignore
         identifying_attributes = [
@@ -212,10 +225,10 @@ class OpAMPHTTPClient:
             response = requests_odigos.post(self.server_url, data=message_bytes, headers=headers, timeout=5)
             response.raise_for_status()
         except requests_odigos.Timeout:
-            opamp_logger.error("Timeout sending message to OpAMP server")
+            # opamp_logger.error("Timeout sending message to OpAMP server")
             return opamp_pb2.ServerToAgent()
         except requests_odigos.ConnectionError as e:
-            opamp_logger.error(f"Error sending message to OpAMP server: {e}")
+            # opamp_logger.error(f"Error sending message to OpAMP server: {e}")
             return opamp_pb2.ServerToAgent()
         finally:
             detach(agent_message)
@@ -224,7 +237,7 @@ class OpAMPHTTPClient:
         try:
             server_to_agent.ParseFromString(response.content)
         except NotImplementedError as e:
-            opamp_logger.error(f"Error parsing response from OpAMP server: {e}")
+            # opamp_logger.error(f"Error parsing response from OpAMP server: {e}")
             return opamp_pb2.ServerToAgent()
         return server_to_agent
         
@@ -236,14 +249,14 @@ class OpAMPHTTPClient:
         
         for env_var, value in mandatory_env_vars.items():
             if not value:
-                opamp_logger.error(f"{env_var} environment variable not set")
+                # opamp_logger.error(f"{env_var} environment variable not set")
                 return False
         
         return True        
     
     def shutdown(self, custom_failure_message: str = None):
         self.running = False
-        opamp_logger.info("Sending agent disconnect message to OpAMP server...")
+        # opamp_logger.info("Sending agent disconnect message to OpAMP server...")
         if custom_failure_message:
             disconnect_message = self.get_agent_failure_disconnect_message(error_message=custom_failure_message)
         else:
