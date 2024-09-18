@@ -276,4 +276,16 @@ class OpAMPHTTPClient:
             self.remote_config_status = remote_config_status
             return True
         
-        return False        
+        return False
+
+
+# Mock client class for non-OpAMP installations
+# This class simulates the OpAMP client when the OpAMP server is not available.
+# To activate it, set the environment variable DISABLE_OPAMP_CLIENT to true.
+class MockOpAMPClient:
+    def __init__(self, event, *args, **kwargs):
+        self.resource_attributes = {'odigos.opamp': 'disabled'}
+        event.set()
+
+    def shutdown(self, custom_failure_message=None):
+        pass

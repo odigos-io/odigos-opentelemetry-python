@@ -20,7 +20,7 @@ from opentelemetry.sdk.trace.sampling import ParentBased
 # This is necessary because the user application's dependencies may be incompatible with those used by the agent.
 reorder_python_path()
 
-from opamp.http_client import OpAMPHTTPClient
+from opamp.http_client import OpAMPHTTPClient, MockOpAMPClient
 
 
 MINIMUM_PYTHON_SUPPORTED_VERSION = (3, 8)
@@ -107,6 +107,10 @@ def initialize_logging_if_enabled(log_exporters, resource):
 
 
 def start_opamp_client(event):
+    
+    if os.getenv('DISABLE_OPAMP_CLIENT', 'false').strip().lower() == 'true':
+        return MockOpAMPClient(event)
+        
     condition = threading.Condition(threading.Lock())
     client = OpAMPHTTPClient(event, condition)
     
