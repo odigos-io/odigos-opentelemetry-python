@@ -22,6 +22,7 @@ reorder_python_path()
 
 from opamp.http_client import OpAMPHTTPClient, MockOpAMPClient
 
+from .odigos_tracer_provider import OdigosTracerProvider
 
 MINIMUM_PYTHON_SUPPORTED_VERSION = (3, 8)
         
@@ -73,7 +74,7 @@ def initialize_traces_if_enabled(trace_exporters, resource, span_processor = Non
         
         # Exporting using exporters
         if trace_exporters is not None:            
-            provider = TracerProvider(resource=resource, sampler=sampler)
+            provider = OdigosTracerProvider(resource=resource, sampler=sampler)
             id_generator_name = sdk_config._get_id_generator()
             id_generator = sdk_config._import_id_generator(id_generator_name)            
             provider.id_generator = id_generator
