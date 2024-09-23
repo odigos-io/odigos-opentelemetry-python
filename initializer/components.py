@@ -37,7 +37,6 @@ def initialize_components(trace_exporters = None, metric_exporters = None, log_e
         received_value = client.resource_attributes
         
         if received_value:    
-
             auto_resource = {
                 "telemetry.distro.name": "odigos",
                 "telemetry.distro.version": VERSION,
@@ -59,6 +58,8 @@ def initialize_components(trace_exporters = None, metric_exporters = None, log_e
             # Reload distro modules to ensure the new path is used.
             reload_distro_modules()            
         else:    
+            # Reload distro modules to ensure the new path is used.
+            reload_distro_modules()
             raise Exception("Did not receive resource attributes from the OpAMP server.")
         
     except Exception as e:
