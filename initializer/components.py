@@ -49,15 +49,11 @@ def initialize_components(trace_exporters = None, metric_exporters = None, log_e
                 .merge(ProcessResourceDetector().detect())
 
             odigos_sampler = initialize_traces_if_enabled(trace_exporters, resource, span_processor)
-            
             client.sampler = odigos_sampler
             initialize_metrics_if_enabled(metric_exporters, resource)
             initialize_logging_if_enabled(log_exporters, resource)
             
-            # Reload distro modules to ensure the new path is used.
-            reload_distro_modules()            
         else:    
-            # Reload distro modules to ensure the new path is used.
             raise Exception("Did not receive resource attributes from the OpAMP server.")
         
     except Exception as e:
