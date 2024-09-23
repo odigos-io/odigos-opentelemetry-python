@@ -117,7 +117,8 @@ class OpAMPHTTPClient:
                     agent_health = self.get_agent_health(component_health=True, status=AgentHealthStatus.HEALTHY.value)
                     self.send_agent_to_server_message(opamp_pb2.AgentToServer(health=agent_health))
                     
-                    break
+                    # Return if the first message was successfully sent
+                    return
             
             except Exception as e:
                 # opamp_logger.error(f"Attempt {attempt}/{max_retries} failed. Error sending full state to OpAMP server: {e}")
