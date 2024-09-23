@@ -18,19 +18,7 @@ from opamp import opamp_pb2, anyvalue_pb2, utils
 from opamp.health_status import AgentHealthStatus
 
 # Setup the logger
-opamp_logger = logging.getLogger(__name__)
-opamp_logger.setLevel(logging.DEBUG)
-opamp_logger.propagate = False # Prevent the log messages from being propagated to the root logger
-opamp_logger.disabled = True # Comment this line to enable the logger
-
-# Safely remove all attached handlers from the logger.
-# This ensures that any existing handlers, if present, are detached,
-# preventing them from processing or outputting any log messages.
-for handler in opamp_logger.handlers[:]:
-    try:
-        opamp_logger.removeHandler(handler)
-    except Exception:
-        pass
+opamp_logger = logging.getLogger('odigos')
 
 class OpAMPHTTPClient:
     def __init__(self, event, condition: threading.Condition):
@@ -110,6 +98,7 @@ class OpAMPHTTPClient:
     def send_first_message_with_retry(self) -> None:
         max_retries = 5
         delay = 2
+        
         for attempt in range(1, max_retries + 1):
             try:
                 # Send first message to OpAMP server, Health is false as the component is not initialized
@@ -117,21 +106,29 @@ class OpAMPHTTPClient:
                 agent_description = self.get_agent_description()
                 first_message_server_to_agent = self.send_agent_to_server_message(opamp_pb2.AgentToServer(agent_description=agent_description, health=agent_health))
                 
-                self.update_remote_config_status(first_message_server_to_agent)
-                self.resource_attributes = utils.parse_first_message_to_resource_attributes(first_message_server_to_agent, opamp_logger)
-                
-                # Send healthy message to OpAMP server
-                # opamp_logger.info("Reporting healthy to OpAMP server...")
-                agent_health = self.get_agent_health(component_health=True, status=AgentHealthStatus.HEALTHY.value)
-                self.send_agent_to_server_message(opamp_pb2.AgentToServer(health=agent_health))
-                
-                break
+                # Check if the response of the first message is empty
+                # It may happen if OpAMPServer is not available
+                if first_message_server_to_agent.ListFields(): 
+                    self.update_remote_config_status(first_message_server_to_agent)
+                    self.resource_attributes = utils.parse_first_message_to_resource_attributes(first_message_server_to_agent, opamp_logger)
+                    
+                    # Send healthy message to OpAMP server
+                    # opamp_logger.info("Reporting healthy to OpAMP server...")
+                    agent_health = self.get_agent_health(component_health=True, status=AgentHealthStatus.HEALTHY.value)
+                    self.send_agent_to_server_message(opamp_pb2.AgentToServer(health=agent_health))
+                    
+                    break
+            
             except Exception as e:
-                # opamp_logger.error(f"Error sending full state to OpAMP server: {e}")
+                # opamp_logger.error(f"Attempt {attempt}/{max_retries} failed. Error sending full state to OpAMP server: {e}")
                 pass
             
             if attempt < max_retries:
                 time.sleep(delay)
+        
+        # If all attempts failed, raise exception before starting the worker
+        raise Exception(f"Error sending first message to OpAMP server after {max_retries} attempts")
+
 
     def worker(self):
         while self.running:
