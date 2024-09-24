@@ -4,19 +4,7 @@ from threading import Lock
 import logging
 
 # Setup the Sampler logger
-sampler_logger = logging.getLogger(__name__)
-sampler_logger.setLevel(logging.DEBUG)
-sampler_logger.propagate = False # Prevent the log messages from being propagated to the root logger
-sampler_logger.disabled = True # Comment this line to enable the logger
-
-# Safely remove all attached handlers from the logger.
-# This ensures that any existing handlers, if present, are detached,
-# preventing them from processing or outputting any log messages.
-for handler in sampler_logger.handlers[:]:
-    try:
-        sampler_logger.removeHandler(handler)
-    except Exception:
-        pass
+sampler_logger = logging.getLogger('odigos')
 
 class OdigosSampler(Sampler):
     
