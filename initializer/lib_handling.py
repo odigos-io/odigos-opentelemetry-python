@@ -54,7 +54,6 @@ def reload_distro_modules() -> None:
 # TODO: Remove once the bug is fixed.
 def handle_django_instrumentation():
     if os.getenv('DJANGO_SETTINGS_MODULE', None) is None:
-        print('DJANGO_SETTINGS_MODULE is not set, disabling Django instrumentation.')
         os.environ.setdefault(OTEL_PYTHON_DJANGO_INSTRUMENT, 'False')
         
     else:
