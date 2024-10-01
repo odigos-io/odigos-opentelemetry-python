@@ -10,7 +10,7 @@ from opentelemetry.sdk.trace import TracerProvider
 from opentelemetry.sdk.trace.export import BatchSpanProcessor
 from opentelemetry.trace import set_tracer_provider
 
-from .lib_handling import reorder_python_path, reload_distro_modules
+from .lib_handling import reorder_python_path, reload_distro_modules, handle_django_instrumentation
 from .version import VERSION
 
 from .odigos_sampler import OdigosSampler
@@ -37,6 +37,9 @@ def initialize_components(trace_exporters = None, metric_exporters = None, log_e
         received_value = client.resource_attributes
         
         if received_value:    
+        
+            handle_django_instrumentation()
+            
             auto_resource = {
                 "telemetry.distro.name": "odigos",
                 "telemetry.distro.version": VERSION,
