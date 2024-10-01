@@ -1,4 +1,5 @@
 import sys
+import importlib
 import os
 from opentelemetry.instrumentation.django.environment_variables import (
     OTEL_PYTHON_DJANGO_INSTRUMENT,
@@ -53,8 +54,18 @@ def reload_distro_modules() -> None:
 # TODO: Remove once the bug is fixed.
 def handle_django_instrumentation():
     if os.getenv('DJANGO_SETTINGS_MODULE', None) is None:
+        print('DJANGO_SETTINGS_MODULE is not set, disabling Django instrumentation.')
         os.environ.setdefault(OTEL_PYTHON_DJANGO_INSTRUMENT, 'False')
-
-    cwd_path = os.getcwd()
-    if cwd_path not in sys.path:
-        sys.path.insert(0, cwd_path)    
+        
+    else:
+        cwd_path = os.getcwd()
+        if cwd_path not in sys.path:
+            sys.path.insert(0, cwd_path)    
+        
+        # As an additional safeguard, we're ensuring that DJANGO_SETTINGS_MODULE is importable.
+        # This is done to prevent instrumentation from being enabled if the Django settings module cannot be imported.
+        try:
+            importlib.import_module('DJANGO_SETTINGS_MODULE') 
+        except:
+            os.environ.setdefault(OTEL_PYTHON_DJANGO_INSTRUMENT, 'False')
+        
