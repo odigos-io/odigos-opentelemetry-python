@@ -1,9 +1,6 @@
 import sys
 import importlib
 import os
-from opentelemetry.instrumentation.django.environment_variables import (
-    OTEL_PYTHON_DJANGO_INSTRUMENT,
-)
 
 def reorder_python_path():
     paths_to_move = [path for path in sys.path if path.startswith('/var/odigos/')]
@@ -57,7 +54,7 @@ def handle_django_instrumentation():
     django_settings_module = os.getenv('DJANGO_SETTINGS_MODULE', None)
     
     if django_settings_module is None:
-        os.environ.setdefault(OTEL_PYTHON_DJANGO_INSTRUMENT, 'False')
+        os.environ.setdefault("OTEL_PYTHON_DJANGO_INSTRUMENT", 'False')
         
     else:
         cwd_path = os.getcwd()
@@ -69,5 +66,5 @@ def handle_django_instrumentation():
         try:
             importlib.import_module(django_settings_module) 
         except:
-            os.environ.setdefault(OTEL_PYTHON_DJANGO_INSTRUMENT, 'False')
+            os.environ.setdefault("OTEL_PYTHON_DJANGO_INSTRUMENT", 'False')
         
