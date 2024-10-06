@@ -1,9 +1,6 @@
 import sys
 import importlib
 import os
-from opentelemetry.instrumentation.django.environment_variables import (
-    OTEL_PYTHON_DJANGO_INSTRUMENT,
-)
 
 def reorder_python_path():
     paths_to_move = [path for path in sys.path if path.startswith('/var/odigos/')]
@@ -53,8 +50,11 @@ def reload_distro_modules() -> None:
 # These changes address this issue: https://github.com/open-telemetry/opentelemetry-python-contrib/issues/2495.
 # TODO: Remove once the bug is fixed.
 def handle_django_instrumentation():
-    if os.getenv('DJANGO_SETTINGS_MODULE', None) is None:
-        os.environ.setdefault(OTEL_PYTHON_DJANGO_INSTRUMENT, 'False')
+    # Get the DJANGO_SETTINGS_MODULE environment variable value.
+    django_settings_module = os.getenv('DJANGO_SETTINGS_MODULE', None)
+    
+    if django_settings_module is None:
+        os.environ.setdefault("OTEL_PYTHON_DJANGO_INSTRUMENT", 'False')
         
     else:
         cwd_path = os.getcwd()
@@ -64,7 +64,7 @@ def handle_django_instrumentation():
         # As an additional safeguard, we're ensuring that DJANGO_SETTINGS_MODULE is importable.
         # This is done to prevent instrumentation from being enabled if the Django settings module cannot be imported.
         try:
-            importlib.import_module('DJANGO_SETTINGS_MODULE') 
+            importlib.import_module(django_settings_module) 
         except:
-            os.environ.setdefault(OTEL_PYTHON_DJANGO_INSTRUMENT, 'False')
+            os.environ.setdefault("OTEL_PYTHON_DJANGO_INSTRUMENT", 'False')
         
