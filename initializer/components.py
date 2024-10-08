@@ -45,9 +45,9 @@ def initialize_components(trace_exporters = None, metric_exporters = None, log_e
                         
             auto_resource.update(received_value)
 
-            resource = Resource.create(auto_resource) \
+            resource = ProcessResourceDetector().detect() \
                 .merge(OTELResourceDetector().detect()) \
-                .merge(ProcessResourceDetector().detect())
+                .merge(Resource.create(auto_resource))
 
             odigos_sampler = initialize_traces_if_enabled(trace_exporters, resource, span_processor)
             
