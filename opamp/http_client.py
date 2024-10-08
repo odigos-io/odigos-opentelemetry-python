@@ -20,6 +20,13 @@ from opamp.health_status import AgentHealthStatus
 # Setup the logger
 opamp_logger = logging.getLogger('odigos')
 
+
+env_var_mappings = {
+    "ODIGOS_WORKLOAD_NAMESPACE": ResourceAttributes.K8S_NAMESPACE_NAME,
+    "ODIGOS_CONTAINER_NAME": ResourceAttributes.CONTAINER_NAME,
+    "ODIGOS_POD_NAME": ResourceAttributes.K8S_POD_NAME
+}
+
 class OpAMPHTTPClient:
     def __init__(self, event, condition: threading.Condition):
         self.server_host = os.getenv('ODIGOS_OPAMP_SERVER_HOST')
@@ -181,6 +188,17 @@ class OpAMPHTTPClient:
                 value=anyvalue_pb2.AnyValue(string_value="python")
             )
         ]
+        
+        # Add additional attributes from environment variables
+        for env_var, attribute_key in env_var_mappings.items():
+            value = os.environ.get(env_var)
+            if value:
+                identifying_attributes.append(
+                    anyvalue_pb2.KeyValue(
+                        key=attribute_key,
+                        value=anyvalue_pb2.AnyValue(string_value=value)
+                    )
+                )
         
         return opamp_pb2.AgentDescription(
             identifying_attributes=identifying_attributes,
