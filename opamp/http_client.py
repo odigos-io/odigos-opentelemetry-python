@@ -23,7 +23,7 @@ opamp_logger = logging.getLogger('odigos')
 
 env_var_mappings = {
     "ODIGOS_WORKLOAD_NAMESPACE": ResourceAttributes.K8S_NAMESPACE_NAME,
-    "ODIGOS_CONTAINER_NAME": ResourceAttributes.CONTAINER_NAME,
+    "ODIGOS_CONTAINER_NAME": ResourceAttributes.K8S_CONTAINER_NAME,
     "ODIGOS_POD_NAME": ResourceAttributes.K8S_POD_NAME
 }
 
