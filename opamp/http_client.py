@@ -76,13 +76,13 @@ class OpAMPHTTPClient:
             self.event.set()
             sys.exit()
 
-    def get_agent_failure_disconnect_message(self, error_message: str) -> None:
+    def get_agent_failure_disconnect_message(self, error_message: str, component_health: bool = False) -> None:
         agent_failure_message = opamp_pb2.AgentToServer()
         
         agent_disconnect = self.get_agent_disconnect()
         agent_failure_message.agent_disconnect.CopyFrom(agent_disconnect)
     
-        agent_health = self.get_agent_health(component_health=False, last_error=error_message, status=AgentHealthStatus.AGENT_FAILURE.value)
+        agent_health = self.get_agent_health(component_health=component_health, last_error=error_message, status=AgentHealthStatus.AGENT_FAILURE.value)
         agent_failure_message.health.CopyFrom(agent_health)
         
         return agent_failure_message
@@ -270,13 +270,13 @@ class OpAMPHTTPClient:
         
         return True        
     
-    def shutdown(self, custom_failure_message: str = None):
+    def shutdown(self, custom_failure_message: str = None, component_health: bool = False):
         self.running = False
         # opamp_logger.info("Sending agent disconnect message to OpAMP server...")
         if custom_failure_message:
-            disconnect_message = self.get_agent_failure_disconnect_message(error_message=custom_failure_message)
+            disconnect_message = self.get_agent_failure_disconnect_message(error_message=custom_failure_message, component_health=component_health)
         else:
-            agent_health = self.get_agent_health(component_health=False, last_error="Python runtime is exiting", status=AgentHealthStatus.TERMINATED.value)
+            agent_health = self.get_agent_health(component_health=component_health, last_error="Python runtime is exiting", status=AgentHealthStatus.TERMINATED.value)
             disconnect_message = opamp_pb2.AgentToServer(agent_disconnect=opamp_pb2.AgentDisconnect(), health=agent_health)
         
         with self.condition:
