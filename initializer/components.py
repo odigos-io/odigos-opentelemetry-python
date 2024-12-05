@@ -26,6 +26,14 @@ from opamp.http_client import OpAMPHTTPClient, MockOpAMPClient
 MINIMUM_PYTHON_SUPPORTED_VERSION = (3, 8)
 
 def initialize_components(trace_exporters = None, metric_exporters = None, log_exporters = None , span_processor = None):
+    
+    # In case of forking, the OpAMP client should be started in the child process.
+    # e.g when using gunicorn/celery with multiple workers.
+    os.register_at_fork(
+    after_in_child=start_opamp_client(threading.Event())
+    )  # pylint: disable=protected-access
+    
+    
     resource_attributes_event = threading.Event()
     client = None
     
