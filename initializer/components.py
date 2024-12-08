@@ -100,7 +100,7 @@ def initialize_traces_if_enabled(trace_exporters, resource, span_processor = Non
                 
         # Exporting using EBPF
         else:
-            provider = TracerProvider(sampler=sampler)
+            provider = TracerProvider(resource=resource, sampler=sampler)
             set_tracer_provider(provider)
             if span_processor is not None:
                 provider.add_span_processor(span_processor)
