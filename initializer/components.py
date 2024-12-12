@@ -153,6 +153,7 @@ def handle_instrumenation_of_sub_processes():
     # to prevent application logic disruption.
     # 
     # Given OpenTelemetry's path removal during Distro creation, we must manually restore the path.
+    # This addresses cases where applications using os.exec* are not properly instrumented.
     # 
     # Note: This is a temporary solution and should be refactored when:
     # - The environment override writer is removed
