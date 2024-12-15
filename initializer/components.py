@@ -26,14 +26,14 @@ from opamp.http_client import OpAMPHTTPClient, MockOpAMPClient
 MINIMUM_PYTHON_SUPPORTED_VERSION = (3, 8)
 
 def initialize_components(trace_exporters = None, metric_exporters = None, log_exporters = None , span_processor = None):
-    
     # In case of forking, the OpAMP client should be started in the child process.
     # e.g when using gunicorn/celery with multiple workers.
     os.register_at_fork(
     after_in_child=lambda: start_opamp_client(threading.Event()),
     )  # pylint: disable=protected-access
     
-    
+    handle_instrumenation_of_sub_processes()
+
     resource_attributes_event = threading.Event()
     client = None
     
@@ -119,7 +119,6 @@ def initialize_logging_if_enabled(log_exporters, resource):
 
 
 def start_opamp_client(event):
-    
     if os.getenv('DISABLE_OPAMP_CLIENT', 'false').strip().lower() == 'true':
         return MockOpAMPClient(event)
         
@@ -141,3 +140,25 @@ def start_opamp_client(event):
 
 def is_supported_python_version():
     return sys.version_info >= MINIMUM_PYTHON_SUPPORTED_VERSION
+
+def handle_instrumenation_of_sub_processes():
+    # Resolves a path management issue introduced by OpenTelemetry's sitecustomize implementation.
+    # OpenTelemetry removed auto_instrumentation from the path to address a specific bug 
+    # (ref: https://github.com/open-telemetry/opentelemetry-python-contrib/issues/1050).
+    # This modification does not impact our use case, as we utilize auto_instrumentation as a package 
+    # and do not rely on opentelemetry-instrument for running instrumentations.
+    # 
+    # We are reintroducing the path to enable parallel execution with other agent that inject themselves via sitecustomize.
+    # We've observed that agents attempt to import user-defined sitecustomize.py [OpenTelemetry one in this case] prior to their own execution 
+    # to prevent application logic disruption.
+    # 
+    # Given OpenTelemetry's path removal during Distro creation, we must manually restore the path.
+    # This addresses cases where applications using os.exec* are not properly instrumented.
+    # 
+    # Note: This is a temporary solution and should be refactored when:
+    # - The environment override writer is removed
+    # - Webhook integration is implemented
+    # - A custom distro creation mechanism is developed
+    auto_instrumentation_path = "/var/odigos/python/opentelemetry/instrumentation/auto_instrumentation"
+    if auto_instrumentation_path not in os.environ["PYTHONPATH"]:
+        os.environ["PYTHONPATH"] = f"{os.environ['PYTHONPATH']}:{auto_instrumentation_path}"
