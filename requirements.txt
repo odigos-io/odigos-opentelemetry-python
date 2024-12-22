@@ -20,7 +20,7 @@ deprecated==1.2.14
     # via
     #   opentelemetry-api
     #   opentelemetry-exporter-otlp-proto-http
-googleapis-common-protos==1.66.0
+googleapis-common-protos==1.56.4
     # via opentelemetry-exporter-otlp-proto-http
 idna==3.10
     # via
