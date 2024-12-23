@@ -10,7 +10,9 @@ setup(
     install_requires=[
         "uuid7 == 0.1.0",
         "urllib3-odigos == 2.2.2",
+        "urllib3 === 2.2.3",
         "odigos-requests == 2.32.3.dev0",
+        "requests == 2.32.3",
         "protobuf == 3.19.4",
         'opentelemetry-distro==0.46b0',
         'opentelemetry-exporter-otlp-proto-http==1.25.0',
