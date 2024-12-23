@@ -327,7 +327,7 @@ typing-extensions==4.12.2
     # via
     #   asgiref
     #   opentelemetry-sdk
-urllib3==2.2.2
+urllib3==2.3.0
     # via requests
 urllib3-odigos==2.2.2
     # via
