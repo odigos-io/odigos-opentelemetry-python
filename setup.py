@@ -13,7 +13,7 @@ setup(
         "urllib3 === 2.2.3",
         "odigos-requests == 2.32.3.dev0",
         "requests == 2.32.3",
-        "protobuf == 3.19.4",
+        "protobuf == 5.29.2",
         'opentelemetry-distro==0.46b0',
         'opentelemetry-exporter-otlp-proto-http==1.25.0',
         'opentelemetry-instrumentation==0.46b0',
