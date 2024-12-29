@@ -14,6 +14,7 @@ setup(
         "odigos-requests == 2.32.3.dev0",
         "requests == 2.32.3",
         'opentelemetry-distro==0.49b2',
+        'protobuf==5.29.2',
         'opentelemetry-exporter-otlp-proto-http==1.28.2',
         'opentelemetry-instrumentation==0.49b2',
         'opentelemetry-instrumentation-aio-pika==0.49b2',
