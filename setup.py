@@ -63,7 +63,7 @@ setup(
         'opentelemetry-instrumentation-urllib==0.49b2',
         'opentelemetry-instrumentation-urllib3==0.49b2',
         'opentelemetry-instrumentation-wsgi==0.49b2',
-        'setuptools==75.3.0'
+        'setuptools==75.6.0'
     ],
     python_requires=">=3.8",
 )
