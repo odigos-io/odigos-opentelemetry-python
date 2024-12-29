@@ -330,7 +330,7 @@ typing-extensions==4.12.2
     # via
     #   asgiref
     #   opentelemetry-sdk
-urllib3===2.2.3
+urllib3===2.3.0
     # via
     #   odigos-opentelemetry-python (setup.py)
     #   requests
