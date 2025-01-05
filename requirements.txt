@@ -27,7 +27,7 @@ idna==3.10
     #   requests
 importlib-metadata==8.5.0
     # via opentelemetry-api
-odigos-requests==2.32.3.dev0
+odigos-requests==2.32.3
     # via odigos-opentelemetry-python (setup.py)
 opentelemetry-api==1.28.2
     # via

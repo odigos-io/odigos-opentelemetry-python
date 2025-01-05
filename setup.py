@@ -11,7 +11,7 @@ setup(
         "uuid7 == 0.1.0",
         "urllib3-odigos == 2.2.2",
         "urllib3 === 2.2.3",
-        "odigos-requests == 2.32.3.dev0",
+        "odigos-requests == 2.32.3",
         "requests == 2.32.3",
         'opentelemetry-distro==0.49b2',
         'protobuf==5.29.2',
