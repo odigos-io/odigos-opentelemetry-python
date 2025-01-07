@@ -60,7 +60,9 @@ def initialize_components(trace_exporters = None, metric_exporters = None, log_e
                 .merge(Resource.create(auto_resource))
 
             odigos_sampler = initialize_traces_if_enabled(trace_exporters, resource, span_processor)
-            client.sampler = odigos_sampler
+            if odigos_sampler is not None :
+                client.sampler = odigos_sampler
+
             initialize_metrics_if_enabled(metric_exporters, resource)
             initialize_logging_if_enabled(log_exporters, resource)
             
@@ -105,7 +107,9 @@ def initialize_traces_if_enabled(trace_exporters, resource, span_processor = Non
             if span_processor is not None:
                 provider.add_span_processor(span_processor)
             
-    return odigos_sampler
+        return odigos_sampler
+
+    return None
 
 def initialize_metrics_if_enabled(metric_exporters, resource):
     metrics_enabled = os.getenv(sdk_config.OTEL_METRICS_EXPORTER, "none").strip().lower()
