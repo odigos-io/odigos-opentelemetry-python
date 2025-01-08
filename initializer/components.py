@@ -12,6 +12,7 @@ from opentelemetry.trace import set_tracer_provider
 
 from .lib_handling import reorder_python_path, reload_distro_modules, handle_django_instrumentation
 from .version import VERSION
+from .exit_hook import ExitHooks
 
 from .odigos_sampler import OdigosSampler
 from opentelemetry.sdk.trace.sampling import ParentBased
@@ -133,8 +134,16 @@ def start_opamp_client(event):
 
     client.start(python_version_supported)
     
+    hooks = ExitHooks()
+    hooks.hook()
+    
     def shutdown():
-        client.shutdown()
+        if hooks.exit_code is not None and hooks.exit_code != 0:
+            client.shutdown("Program exit with code: " + str(hooks.exit_code))
+        elif hooks.exception is not None:
+            client.shutdown("Program exit with exception: " + str(hooks.exception))
+        else:
+            client.shutdown("Program finished", component_health=True)
 
     # Ensure that the shutdown function is called on program exit
     atexit.register(shutdown)
