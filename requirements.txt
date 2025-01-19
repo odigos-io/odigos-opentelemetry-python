@@ -340,7 +340,7 @@ urllib3-odigos==2.2.2
     #   odigos-requests
 uuid7==0.1.0
     # via odigos-opentelemetry-python (setup.py)
-wrapt==1.17.0
+wrapt==1.17.2
     # via
     #   deprecated
     #   opentelemetry-instrumentation
