@@ -6,7 +6,7 @@
 #
 asgiref==3.8.1
     # via opentelemetry-instrumentation-asgi
-certifi==2024.12.14
+certifi==2025.1.31
     # via
     #   odigos-requests
     #   requests
@@ -14,7 +14,7 @@ charset-normalizer==3.4.1
     # via
     #   odigos-requests
     #   requests
-deprecated==1.2.15
+deprecated==1.2.18
     # via
     #   opentelemetry-api
     #   opentelemetry-exporter-otlp-proto-http
@@ -25,8 +25,10 @@ idna==3.10
     # via
     #   odigos-requests
     #   requests
-importlib-metadata==8.5.0
-    # via opentelemetry-api
+importlib-metadata==6.0.0
+    # via
+    #   odigos-opentelemetry-python (setup.py)
+    #   opentelemetry-api
 odigos-requests==2.32.3.dev0
     # via odigos-opentelemetry-python (setup.py)
 opentelemetry-api==1.28.2
@@ -321,6 +323,7 @@ packaging==24.2
 protobuf==5.29.2
     # via
     #   googleapis-common-protos
+    #   odigos-opentelemetry-python (setup.py)
     #   opentelemetry-proto
 requests==2.32.3
     # via
@@ -340,7 +343,7 @@ urllib3-odigos==2.2.2
     #   odigos-requests
 uuid7==0.1.0
     # via odigos-opentelemetry-python (setup.py)
-wrapt==1.17.0
+wrapt==1.17.2
     # via
     #   deprecated
     #   opentelemetry-instrumentation
