@@ -3,6 +3,7 @@ import importlib
 import os
 
 def reorder_python_path():
+    # Moves '/var/odigos/' paths to end of sys.path to prioritize user dependencies over odigos ones
     paths_to_move = [path for path in sys.path if path.startswith('/var/odigos/')]
     
     for path in paths_to_move:
