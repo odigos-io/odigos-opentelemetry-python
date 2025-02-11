@@ -4,12 +4,6 @@ import logging
 def get_sdk_config(config_map):
     """
     Extracts and parses the SDK configuration from the config map.
-
-    Args:
-        config_map (dict): The configuration map extracted from the message.
-
-    Returns:
-        dict: The parsed SDK configuration, or an empty dictionary if parsing fails.
     """
     if "SDK" not in config_map:
         return {}
