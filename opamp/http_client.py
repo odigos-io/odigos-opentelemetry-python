@@ -30,9 +30,9 @@ env_var_mappings = {
 class OpAMPHTTPClient:
     def __init__(self, event, condition: threading.Condition):
         self.server_host = os.getenv('ODIGOS_OPAMP_SERVER_HOST')
-        self.instrumentation_device_id = os.getenv('ODIGOS_INSTRUMENTATION_DEVICE_ID')
         self.server_url = f"http://{self.server_host}/v1/opamp"
         self.resource_attributes = {}
+        self.signals = {}
         self.running = True
         self.condition = condition
         self.event = event
@@ -117,7 +117,10 @@ class OpAMPHTTPClient:
                 # It may happen if OpAMPServer is not available
                 if first_message_server_to_agent.ListFields(): 
                     self.update_remote_config_status(first_message_server_to_agent)
-                    self.resource_attributes = utils.parse_first_message_to_resource_attributes(first_message_server_to_agent, opamp_logger)
+                    
+                    sdk_config = utils.get_sdk_config(first_message_server_to_agent.remote_config.config.config_map)
+                    self.resource_attributes = utils.parse_first_message_to_resource_attributes(sdk_config, opamp_logger)
+                    self.signals = utils.parse_first_message_signals(sdk_config, opamp_logger)
                     
                     # Send healthy message to OpAMP server
                     # opamp_logger.info("Reporting healthy to OpAMP server...")
@@ -233,7 +236,6 @@ class OpAMPHTTPClient:
         
         headers = {
             "Content-Type": "application/x-protobuf",
-            "X-Odigos-DeviceId": self.instrumentation_device_id
         }
         
         try:
@@ -260,7 +262,6 @@ class OpAMPHTTPClient:
     def mandatory_env_vars_set(self):
         mandatory_env_vars = {
             "ODIGOS_OPAMP_SERVER_HOST": self.server_host,
-            "ODIGOS_INSTRUMENTATION_DEVICE_ID": self.instrumentation_device_id
         }
         
         for env_var, value in mandatory_env_vars.items():

@@ -13,6 +13,7 @@ from opentelemetry.trace import set_tracer_provider
 from .lib_handling import reorder_python_path, reload_distro_modules, handle_django_instrumentation
 from .version import VERSION
 from .exit_hook import ExitHooks
+from .envs import set_static_otel_env, set_otel_exporter_env_vars
 
 from .odigos_sampler import OdigosSampler
 from opentelemetry.sdk.trace.sampling import ParentBased
@@ -22,7 +23,6 @@ from opentelemetry.sdk.trace.sampling import ParentBased
 reorder_python_path()
 
 from opamp.http_client import OpAMPHTTPClient, MockOpAMPClient
-
 
 MINIMUM_PYTHON_SUPPORTED_VERSION = (3, 8)
 
@@ -43,6 +43,7 @@ def initialize_components(trace_exporters = None, metric_exporters = None, log_e
         client = start_opamp_client(resource_attributes_event)
         resource_attributes_event.wait(timeout=30)  # Wait for the resource attributes to be received for 30 seconds
 
+        set_otel_exporter_env_vars(client.signals)
         received_value = client.resource_attributes
         
         if received_value:    
@@ -127,6 +128,9 @@ def start_opamp_client(event):
     if os.getenv('DISABLE_OPAMP_CLIENT', 'false').strip().lower() == 'true':
         return MockOpAMPClient(event)
         
+    # Setting static otel envs suck as log correlation and exporter protocols
+    set_static_otel_env()
+    
     condition = threading.Condition(threading.Lock())
     client = OpAMPHTTPClient(event, condition)
     
