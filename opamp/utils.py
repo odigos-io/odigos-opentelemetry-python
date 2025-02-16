@@ -1,19 +1,23 @@
 import json
 import logging
-from opamp import opamp_pb2
 
-def parse_first_message_to_resource_attributes(first_message_server_to_agent: opamp_pb2.ServerToAgent, logger: logging.Logger) -> dict: # type: ignore
-    config_map = first_message_server_to_agent.remote_config.config.config_map
-    
+def get_sdk_config(config_map):
+    """
+    Extracts and parses the SDK configuration from the config map.
+    """
     if "SDK" not in config_map:
-        # logger.error("SDK not found in config map, returning empty resource attributes")
+        return {}
+
+    try:
+        return json.loads(config_map["SDK"].body)
+    except json.JSONDecodeError:
         return {}
     
-    try:
-        sdk_config = json.loads(config_map["SDK"].body)
-    except json.JSONDecodeError as e:
-        # logger.error(f"Error decoding SDK config: {e}")
-        return {}
+
+def parse_first_message_to_resource_attributes(sdk_config, logger: logging.Logger) -> dict: # type: ignore
+    '''
+    Parses remote resource attributes from the SDK config.
+    '''
     
     remote_resource_attributes = sdk_config.get('remoteResourceAttributes', [])
     
@@ -22,3 +26,14 @@ def parse_first_message_to_resource_attributes(first_message_server_to_agent: op
         return {}
     
     return {item['key']: item['value'] for item in remote_resource_attributes}
+
+def parse_first_message_signals(sdk_config, logger: logging.Logger): # type: ignore
+    """
+    Parses the trace, logs, and metrics signals configuration from the SDK config.
+    """
+    
+    return {
+        "traceSignal": sdk_config.get("traceSignal", {}).get("enabled", False),
+        "metricsSignal": sdk_config.get("metricsSignal", {}).get("enabled", False),
+        "logsSignal": sdk_config.get("logsSignal", {}).get("enabled", False),
+    }
