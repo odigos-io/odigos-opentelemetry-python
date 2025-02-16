@@ -128,7 +128,7 @@ def start_opamp_client(event):
     if os.getenv('DISABLE_OPAMP_CLIENT', 'false').strip().lower() == 'true':
         return MockOpAMPClient(event)
         
-    # Setting static otel envs suck as log correlation and exporter protocols
+    # Setting static otel envs such as log correlation and exporter protocols
     set_static_otel_env()
     
     condition = threading.Condition(threading.Lock())
