@@ -13,7 +13,7 @@ from opentelemetry.trace import set_tracer_provider
 from .lib_handling import reorder_python_path, reload_distro_modules, handle_django_instrumentation
 from .version import VERSION
 from .exit_hook import ExitHooks
-from .envs import set_static_otel_env, set_otel_exporter_env_vars
+from .envs import set_static_otel_env
 
 from .odigos_sampler import OdigosSampler
 from opentelemetry.sdk.trace.sampling import ParentBased
@@ -26,7 +26,7 @@ from opamp.http_client import OpAMPHTTPClient, MockOpAMPClient
 
 MINIMUM_PYTHON_SUPPORTED_VERSION = (3, 8)
 
-def initialize_components(trace_exporters = None, metric_exporters = None, log_exporters = None , span_processor = None):
+def initialize_components(trace_exporters = False, span_processor = None):
     # In case of forking, the OpAMP client should be started in the child process.
     # e.g when using gunicorn/celery with multiple workers.
     os.register_at_fork(
@@ -43,7 +43,7 @@ def initialize_components(trace_exporters = None, metric_exporters = None, log_e
         client = start_opamp_client(resource_attributes_event)
         resource_attributes_event.wait(timeout=30)  # Wait for the resource attributes to be received for 30 seconds
 
-        set_otel_exporter_env_vars(client.signals)
+        supported_signals = client.signals
         received_value = client.resource_attributes
         
         if received_value:    
@@ -61,12 +61,12 @@ def initialize_components(trace_exporters = None, metric_exporters = None, log_e
                 .merge(OTELResourceDetector().detect()) \
                 .merge(Resource.create(auto_resource))
 
-            odigos_sampler = initialize_traces_if_enabled(trace_exporters, resource, span_processor)
+            odigos_sampler = initialize_traces_if_enabled(trace_exporters, resource, span_processor, supported_signals)
             if odigos_sampler is not None :
                 client.sampler = odigos_sampler
 
-            initialize_metrics_if_enabled(metric_exporters, resource)
-            initialize_logging_if_enabled(log_exporters, resource)
+            initialize_metrics_if_enabled(resource, supported_signals)
+            initialize_logging_if_enabled(resource, supported_signals)
             
         else:    
             raise Exception("Did not receive resource attributes from the OpAMP server.")
@@ -80,15 +80,17 @@ def initialize_components(trace_exporters = None, metric_exporters = None, log_e
         # Make sure the distro modules are reloaded even if an exception is raised.
         reload_distro_modules()
 
-def initialize_traces_if_enabled(trace_exporters, resource, span_processor = None):
-    traces_enabled = os.getenv(sdk_config.OTEL_TRACES_EXPORTER, "none").strip().lower()
-    if traces_enabled != "none":
+def initialize_traces_if_enabled(trace_exporters, resource, span_processor = None, signals = None):
+    # In case collectors signals support receiving traces, initialize the tracer provider with the exporters
+    traces_enabled = signals.get("traceSignal", False)
+    
+    if traces_enabled:
         
         odigos_sampler = OdigosSampler()
         sampler = ParentBased(odigos_sampler)
         
         # Exporting using exporters
-        if trace_exporters is not None:            
+        if trace_exporters:
             provider = TracerProvider(resource=resource, sampler=sampler)
             id_generator_name = sdk_config._get_id_generator()
             id_generator = sdk_config._import_id_generator(id_generator_name)            
@@ -96,7 +98,9 @@ def initialize_traces_if_enabled(trace_exporters, resource, span_processor = Non
             
             set_tracer_provider(provider)
             
-            for _, exporter_class in trace_exporters.items():
+            exporters, _, _ = sdk_config._import_exporters(["otlp_proto_http"], [], [])
+
+            for _, exporter_class in exporters.items():
                 exporter_args = {}
                 provider.add_span_processor(
                     BatchSpanProcessor(exporter_class(**exporter_args))
@@ -113,15 +117,23 @@ def initialize_traces_if_enabled(trace_exporters, resource, span_processor = Non
 
     return None
 
-def initialize_metrics_if_enabled(metric_exporters, resource):
-    metrics_enabled = os.getenv(sdk_config.OTEL_METRICS_EXPORTER, "none").strip().lower()
-    if metrics_enabled != "none" and metric_exporters:
-        sdk_config._init_metrics(metric_exporters, resource)
+def initialize_metrics_if_enabled(resource, signals):
+    # Currently we're not exporting metrics using the OTEL exporter.
+    metrics_enabled = False
+    
+    if metrics_enabled:
+        _, exporters, _ = sdk_config._import_exporters([], ["otlp_proto_http"], [])
+        
+        sdk_config._init_metrics(exporters, resource)
 
-def initialize_logging_if_enabled(log_exporters, resource):
-    logging_enabled = os.getenv(sdk_config.OTEL_LOGS_EXPORTER, "none").strip().lower()
-    if logging_enabled != "none" and log_exporters:
-        sdk_config._init_logging(log_exporters, resource)
+
+def initialize_logging_if_enabled(resource, signals):
+    # Logs are collected using the filelog receiver; currently, there is no need to export them using the OTEL exporter.
+    logging_enabled = False
+    
+    if logging_enabled:
+        _, _, exporters = sdk_config._import_exporters([], [], ["otlp_proto_http"])
+        sdk_config._init_logging(exporters, resource)
 
 
 def start_opamp_client(event):
