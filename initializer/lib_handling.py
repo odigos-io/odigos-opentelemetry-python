@@ -3,8 +3,9 @@ import importlib
 import os
 
 def reorder_python_path():
-    # Moves '/var/odigos/' paths to end of sys.path to prioritize user dependencies over odigos ones
-    paths_to_move = [path for path in sys.path if path.startswith('/var/odigos/')]
+    # Moves '/var/odigos/' [k8s] and '/etc/odigos-vmagent/' [vmagent] paths to end of sys.path
+    # to prioritize user dependencies over odigos ones
+    paths_to_move = [path for path in sys.path if path.startswith(('/var/odigos/', '/etc/odigos-vmagent/'))]
     
     for path in paths_to_move:
         sys.path.remove(path)
@@ -41,7 +42,8 @@ def reload_distro_modules() -> None:
             continue
         
         if any(module.startswith(prefix) for prefix in needed_module_prefixes):
-            del sys.modules[module]    
+            if '/etc/odigos-vmagent/' in sys.modules[module].__file__ or '/var/odigos/' in sys.modules[module].__file__:
+                del sys.modules[module]
 
 
 
@@ -69,3 +71,17 @@ def handle_django_instrumentation():
         except:
             os.environ.setdefault("OTEL_PYTHON_DJANGO_INSTRUMENT", 'False')
         
+
+def handle_eventlet_instrumentation():
+    """Checks if eventlet is importable and applies eventlet.monkey_patch if available."""
+    
+    # Currently should run only if no OPAMP client is running, as tested only for the VM agent.
+    if os.getenv('DISABLE_OPAMP_CLIENT', 'false').strip().lower() == 'true':
+        try:
+            eventlet = importlib.import_module("eventlet")
+            if not getattr(eventlet, "_opamp_patched", False):  # Avoid multiple patches
+                eventlet.monkey_patch()
+                eventlet._opamp_patched = True
+        except ImportError:
+            pass            
+            
