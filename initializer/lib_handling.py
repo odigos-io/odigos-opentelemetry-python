@@ -74,6 +74,9 @@ def handle_django_instrumentation():
 
 def handle_eventlet_instrumentation():
     """Checks if eventlet is importable and applies eventlet.monkey_patch if available."""
+    # Apply monkey_patch early to enable Eventlet's green threads for non-blocking I/O.
+    # Per Eventlet docs, it must run before imports or class definitions that use patched modules (e.g., socket).
+    # https://eventlet.readthedocs.io/en/v0.35.1/patching.html#monkey-patch
     
     # Currently should run only if no OPAMP client is running, as tested only for the VM agent.
     if os.getenv('DISABLE_OPAMP_CLIENT', 'false').strip().lower() == 'true':
