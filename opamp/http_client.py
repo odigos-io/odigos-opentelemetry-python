@@ -112,7 +112,7 @@ class OpAMPHTTPClient:
                 agent_health = self.get_agent_health(component_health=False, last_error="Python OpenTelemetry agent is starting", status=AgentHealthStatus.STARTING.value)
                 agent_description = self.get_agent_description()
                 first_message_server_to_agent = self.send_agent_to_server_message(opamp_pb2.AgentToServer(agent_description=agent_description, health=agent_health))
-                
+
                 # Check if the response of the first message is empty
                 # It may happen if OpAMPServer is not available
                 if first_message_server_to_agent.ListFields(): 
@@ -183,7 +183,7 @@ class OpAMPHTTPClient:
                 value=anyvalue_pb2.AnyValue(string_value=self.instance_uid)
             ),
             anyvalue_pb2.KeyValue(
-                key=ResourceAttributes.PROCESS_PID,
+                key="process.vpid", 
                 value=anyvalue_pb2.AnyValue(int_value=os.getpid())
             ),
             anyvalue_pb2.KeyValue(

@@ -2,10 +2,11 @@ import threading
 import atexit
 import sys
 import os
+from initializer.process_resource import ProcessResourceDetector
 import opentelemetry.sdk._configuration as sdk_config
 
 from opentelemetry.sdk.resources import Resource
-from opentelemetry.sdk.resources import ProcessResourceDetector, OTELResourceDetector
+from opentelemetry.sdk.resources import OTELResourceDetector
 from opentelemetry.sdk.trace import TracerProvider
 from opentelemetry.sdk.trace.export import BatchSpanProcessor
 from opentelemetry.trace import set_tracer_provider
