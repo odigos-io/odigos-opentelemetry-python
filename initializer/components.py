@@ -1,3 +1,7 @@
+from .lib_handling import reorder_python_path, reload_distro_modules, handle_django_instrumentation, handle_eventlet_instrumentation
+
+handle_eventlet_instrumentation()
+
 import threading
 import atexit
 import sys
@@ -10,7 +14,6 @@ from opentelemetry.sdk.trace import TracerProvider
 from opentelemetry.sdk.trace.export import BatchSpanProcessor
 from opentelemetry.trace import set_tracer_provider
 
-from .lib_handling import reorder_python_path, reload_distro_modules, handle_django_instrumentation
 from .version import VERSION
 from .exit_hook import ExitHooks
 from .envs import set_static_otel_env

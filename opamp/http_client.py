@@ -302,6 +302,7 @@ class OpAMPHTTPClient:
 class MockOpAMPClient:
     def __init__(self, event, *args, **kwargs):
         self.resource_attributes = {'odigos.opamp': 'disabled'}
+        self.signals = {'traceSignal': True}
         event.set()
 
     def shutdown(self, custom_failure_message=None):
