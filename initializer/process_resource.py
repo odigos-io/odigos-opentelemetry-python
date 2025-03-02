@@ -48,7 +48,7 @@ class OdigosProcessResourceDetector(ResourceDetector):
                 ),
             )
         )
-        _process_vpid = os.getpid()
+        _process_id = os.getpid()
         _process_executable_name = sys.executable
         _process_executable_path = os.path.dirname(_process_executable_name)
         _process_command = sys.argv[0]
@@ -64,9 +64,13 @@ class OdigosProcessResourceDetector(ResourceDetector):
             ResourceAttributes.PROCESS_COMMAND: _process_command,
             ResourceAttributes.PROCESS_COMMAND_LINE: _process_command_line,
             ResourceAttributes.PROCESS_COMMAND_ARGS: _process_command_args,
-            PROCESS_VPID: _process_vpid,  # No matching OTel attribute
         }
 
+        if os.getenv("DISABLE_OPAMP_CLIENT", "false").strip().lower() == "true":
+            resource_info[PROCESS_VPID] = _process_id # No matching OTel attribute
+        else:
+            resource_info[ResourceAttributes.PROCESS_PID] = _process_id
+        
         if hasattr(os, "getppid"):
             resource_info[ResourceAttributes.PROCESS_PARENT_PID] = os.getppid()
 
