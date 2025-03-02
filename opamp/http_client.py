@@ -192,14 +192,14 @@ class OpAMPHTTPClient:
         if os.getenv("DISABLE_OPAMP_CLIENT", "false").strip().lower() == "true":
             identifying_attributes.append(
                 anyvalue_pb2.KeyValue(
-                    key=PROCESS_VPID,
+                    key=ResourceAttributes.PROCESS_PID,
                     value=anyvalue_pb2.AnyValue(int_value=_process_id)
                 )
             )
         else:
             identifying_attributes.append(
                 anyvalue_pb2.KeyValue(
-                    key=ResourceAttributes.PROCESS_PID,
+                    key=PROCESS_VPID,
                     value=anyvalue_pb2.AnyValue(int_value=_process_id)
                 )
             )
