@@ -44,9 +44,12 @@ class OdigosProcessResourceDetector(ProcessResourceDetector):
         # Call the parent class's detect method to get the initial resource info
         resource_info = super().detect()
 
+        # Extract attributes as a dictionary (resource_info is a Resource object)
+        attributes = dict(resource_info.attributes)
+
         if os.getenv("DISABLE_OPAMP_CLIENT", "false").strip().lower() == "false":
-            resource_info.pop(ResourceAttributes.PROCESS_PID, None)  # Remove PROCESS_PID if exists
-            resource_info[PROCESS_VPID] = _process_id # No matching OTel attribute
+            attributes.pop(ResourceAttributes.PROCESS_PID, None)  # Remove PROCESS_PID if exists
+            attributes[PROCESS_VPID] = _process_id  # Add custom attribute
 
-
-        return Resource(resource_info)
+        # Return a new Resource instance with updated attributes
+        return Resource.create(attributes)

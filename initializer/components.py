@@ -2,9 +2,9 @@ import threading
 import atexit
 import sys
 import os
-from initializer.process_resource import ProcessResourceDetector
-import opentelemetry.sdk._configuration as sdk_config
 
+import opentelemetry.sdk._configuration as sdk_config
+from .process_resource import OdigosProcessResourceDetector
 from opentelemetry.sdk.resources import Resource
 from opentelemetry.sdk.resources import OTELResourceDetector
 from opentelemetry.sdk.trace import TracerProvider
@@ -58,7 +58,7 @@ def initialize_components(trace_exporters = False, span_processor = None):
                         
             auto_resource.update(received_value)
 
-            resource = ProcessResourceDetector().detect() \
+            resource = OdigosProcessResourceDetector().detect() \
                 .merge(OTELResourceDetector().detect()) \
                 .merge(Resource.create(auto_resource))
 
