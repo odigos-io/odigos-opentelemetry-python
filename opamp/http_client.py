@@ -188,7 +188,18 @@ class OpAMPHTTPClient:
                 value=anyvalue_pb2.AnyValue(string_value="python")
             )
         ]
-             
+
+        # The "DISABLE_OPAMP_CLIENT" environment variable is defined only in our VMs environments. 
+        # Here we use it exclusively to distinguish between virtual machine and Kubernetes environments.
+        #
+        # - If "DISABLE_OPAMP_CLIENT" is set to "true", it indicates that the service is running in a VM, 
+        #   so we use "PROCESS_PID" for identification.
+        # - Otherwise, the service is assumed to be running in a K8s environment, 
+        #   and we use "PROCESS_VPID" instead.
+        #
+        # This ensures the correct process identification mechanism is applied based on the runtime environment.
+
+            
         if os.getenv("DISABLE_OPAMP_CLIENT", "false").strip().lower() == "true":
             identifying_attributes.append(
                 anyvalue_pb2.KeyValue(
