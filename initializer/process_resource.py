@@ -23,7 +23,7 @@ except ImportError:
     pass
 
 PROCESS_VPID = "process.vpid"
-_process_id = os.getpid()
+process_id = os.getpid()
 
 # Custom implementation of ProcessResourceDetector.
 # 
@@ -49,7 +49,7 @@ class OdigosProcessResourceDetector(ProcessResourceDetector):
 
         if os.getenv("DISABLE_OPAMP_CLIENT", "false").strip().lower() == "false":
             attributes.pop(ResourceAttributes.PROCESS_PID, None)  # Remove PROCESS_PID if exists
-            attributes[PROCESS_VPID] = _process_id  # Add custom attribute
+            attributes[PROCESS_VPID] = process_id  # Add custom attribute
 
         # Return a new Resource instance with updated attributes
         return Resource.create(attributes)

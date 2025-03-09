@@ -16,7 +16,7 @@ from opentelemetry.context import (
 
 from opamp import opamp_pb2, anyvalue_pb2, utils
 from opamp.health_status import AgentHealthStatus
-from initializer.process_resource import PROCESS_VPID, _process_id
+from initializer.process_resource import PROCESS_VPID, process_id
 
 # Setup the logger
 opamp_logger = logging.getLogger('odigos')
@@ -188,19 +188,19 @@ class OpAMPHTTPClient:
                 value=anyvalue_pb2.AnyValue(string_value="python")
             )
         ]
-        
+             
         if os.getenv("DISABLE_OPAMP_CLIENT", "false").strip().lower() == "true":
             identifying_attributes.append(
                 anyvalue_pb2.KeyValue(
                     key=ResourceAttributes.PROCESS_PID,
-                    value=anyvalue_pb2.AnyValue(int_value=_process_id)
+                    value=anyvalue_pb2.AnyValue(int_value=process_id)
                 )
             )
         else:
             identifying_attributes.append(
                 anyvalue_pb2.KeyValue(
                     key=PROCESS_VPID,
-                    value=anyvalue_pb2.AnyValue(int_value=_process_id)
+                    value=anyvalue_pb2.AnyValue(int_value=process_id)
                 )
             )
 
