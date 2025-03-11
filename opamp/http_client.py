@@ -41,6 +41,7 @@ class OpAMPHTTPClient:
         self.instance_uid = uuid7().__str__()
         self.remote_config_status = None
         self.sampler = None # OdigosSampler instance
+        self.pid = os.getpid()
 
 
     def start(self, python_version_supported: bool = None):
@@ -178,17 +179,6 @@ class OpAMPHTTPClient:
             pass
 
     def get_agent_description(self) -> opamp_pb2.AgentDescription: # type: ignore
-        identifying_attributes = [
-            anyvalue_pb2.KeyValue(
-                key=ResourceAttributes.SERVICE_INSTANCE_ID,
-                value=anyvalue_pb2.AnyValue(string_value=self.instance_uid)
-            ),
-            anyvalue_pb2.KeyValue(
-                key=ResourceAttributes.TELEMETRY_SDK_LANGUAGE,
-                value=anyvalue_pb2.AnyValue(string_value="python")
-            )
-        ]
-
         # The "DISABLE_OPAMP_CLIENT" environment variable is defined only in our VMs environments. 
         # Here we use it exclusively to distinguish between virtual machine and Kubernetes environments.
         #
@@ -199,21 +189,27 @@ class OpAMPHTTPClient:
         #
         # This ensures the correct process identification mechanism is applied based on the runtime environment.
 
-            
+        # Add additional attributes from environment variables
+                
         if os.getenv("DISABLE_OPAMP_CLIENT", "false").strip().lower() == "true":
-            identifying_attributes.append(
-                anyvalue_pb2.KeyValue(
-                    key=ResourceAttributes.PROCESS_PID,
-                    value=anyvalue_pb2.AnyValue(int_value=process_id)
-                )
-            )
+            process_id_key = ResourceAttributes.PROCESS_PID
         else:
-            identifying_attributes.append(
-                anyvalue_pb2.KeyValue(
-                    key=PROCESS_VPID,
-                    value=anyvalue_pb2.AnyValue(int_value=process_id)
-                )
+            process_id_key = PROCESS_VPID
+                        
+        identifying_attributes = [
+            anyvalue_pb2.KeyValue(
+                key=ResourceAttributes.SERVICE_INSTANCE_ID,
+                value=anyvalue_pb2.AnyValue(string_value=self.instance_uid)
+            ),
+            anyvalue_pb2.KeyValue(
+                key=ResourceAttributes.TELEMETRY_SDK_LANGUAGE,
+                value=anyvalue_pb2.AnyValue(string_value="python")
+            ),
+            anyvalue_pb2.KeyValue(
+                key=process_id_key,
+                value=anyvalue_pb2.AnyValue(int_value=self.pid)
             )
+        ]
 
         # Add additional attributes from environment variables
         for env_var, attribute_key in env_var_mappings.items():

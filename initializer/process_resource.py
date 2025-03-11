@@ -37,7 +37,8 @@ process_id = os.getpid()
 
 # ProcessResourceDetector
 class OdigosProcessResourceDetector(ProcessResourceDetector):
-    def __init__(self):
+    def __init__(self, pid):
+        self.pid = pid
         super().__init__()  # Initialize parent class
 
     def detect(self):
@@ -49,7 +50,7 @@ class OdigosProcessResourceDetector(ProcessResourceDetector):
 
         if os.getenv("DISABLE_OPAMP_CLIENT", "false").strip().lower() == "false":
             attributes.pop(ResourceAttributes.PROCESS_PID, None)  # Remove PROCESS_PID if exists
-            attributes[PROCESS_VPID] = process_id  # Add custom attribute
+            attributes[PROCESS_VPID] = self.pid
 
         # Return a new Resource instance with updated attributes
         return Resource.create(attributes)

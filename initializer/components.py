@@ -58,7 +58,7 @@ def initialize_components(trace_exporters = False, span_processor = None):
                         
             auto_resource.update(received_value)
 
-            resource = OdigosProcessResourceDetector().detect() \
+            resource = OdigosProcessResourceDetector(client.pid).detect() \
                 .merge(OTELResourceDetector().detect()) \
                 .merge(Resource.create(auto_resource))
 
