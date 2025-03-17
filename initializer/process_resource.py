@@ -14,16 +14,7 @@ from typing import Optional
 from opentelemetry.sdk.resources import Resource, ProcessResourceDetector
 from opentelemetry.semconv.resource import ResourceAttributes
 
-psutil: Optional[ModuleType] = None
-
-try:
-    import psutil as psutil_module
-    psutil = psutil_module
-except ImportError:
-    pass
-
 PROCESS_VPID = "process.vpid"
-process_id = os.getpid()
 
 # Custom implementation of ProcessResourceDetector.
 # 

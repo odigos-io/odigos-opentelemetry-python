@@ -16,7 +16,7 @@ from opentelemetry.context import (
 
 from opamp import opamp_pb2, anyvalue_pb2, utils
 from opamp.health_status import AgentHealthStatus
-from initializer.process_resource import PROCESS_VPID, process_id
+from initializer.process_resource import PROCESS_VPID
 
 # Setup the logger
 opamp_logger = logging.getLogger('odigos')
