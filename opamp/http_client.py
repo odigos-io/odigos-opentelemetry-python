@@ -16,6 +16,7 @@ from opentelemetry.context import (
 
 from opamp import opamp_pb2, anyvalue_pb2, utils
 from opamp.health_status import AgentHealthStatus
+from initializer.process_resource import PROCESS_VPID
 
 # Setup the logger
 opamp_logger = logging.getLogger('odigos')
@@ -40,6 +41,7 @@ class OpAMPHTTPClient:
         self.instance_uid = uuid7().__str__()
         self.remote_config_status = None
         self.sampler = None # OdigosSampler instance
+        self.pid = os.getpid()
 
 
     def start(self, python_version_supported: bool = None):
@@ -112,7 +114,7 @@ class OpAMPHTTPClient:
                 agent_health = self.get_agent_health(component_health=False, last_error="Python OpenTelemetry agent is starting", status=AgentHealthStatus.STARTING.value)
                 agent_description = self.get_agent_description()
                 first_message_server_to_agent = self.send_agent_to_server_message(opamp_pb2.AgentToServer(agent_description=agent_description, health=agent_health))
-                
+
                 # Check if the response of the first message is empty
                 # It may happen if OpAMPServer is not available
                 if first_message_server_to_agent.ListFields(): 
@@ -177,21 +179,38 @@ class OpAMPHTTPClient:
             pass
 
     def get_agent_description(self) -> opamp_pb2.AgentDescription: # type: ignore
+        # The "DISABLE_OPAMP_CLIENT" environment variable is defined only in our VMs environments. 
+        # Here we use it exclusively to distinguish between virtual machine and Kubernetes environments.
+        #
+        # - If "DISABLE_OPAMP_CLIENT" is set to "true", it indicates that the service is running in a VM, 
+        #   so we use "PROCESS_PID" for identification.
+        # - Otherwise, the service is assumed to be running in a K8s environment, 
+        #   and we use "PROCESS_VPID" instead.
+        #
+        # This ensures the correct process identification mechanism is applied based on the runtime environment.
+
+        # Add additional attributes from environment variables
+                
+        if os.getenv("DISABLE_OPAMP_CLIENT", "false").strip().lower() == "true":
+            process_id_key = ResourceAttributes.PROCESS_PID
+        else:
+            process_id_key = PROCESS_VPID
+                        
         identifying_attributes = [
             anyvalue_pb2.KeyValue(
                 key=ResourceAttributes.SERVICE_INSTANCE_ID,
                 value=anyvalue_pb2.AnyValue(string_value=self.instance_uid)
             ),
             anyvalue_pb2.KeyValue(
-                key=ResourceAttributes.PROCESS_PID,
-                value=anyvalue_pb2.AnyValue(int_value=os.getpid())
-            ),
-            anyvalue_pb2.KeyValue(
                 key=ResourceAttributes.TELEMETRY_SDK_LANGUAGE,
                 value=anyvalue_pb2.AnyValue(string_value="python")
+            ),
+            anyvalue_pb2.KeyValue(
+                key=process_id_key,
+                value=anyvalue_pb2.AnyValue(int_value=self.pid)
             )
         ]
-        
+
         # Add additional attributes from environment variables
         for env_var, attribute_key in env_var_mappings.items():
             value = os.environ.get(env_var)
