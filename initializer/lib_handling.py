@@ -42,7 +42,8 @@ def reload_distro_modules() -> None:
             continue
         
         if any(module.startswith(prefix) for prefix in needed_module_prefixes):
-            if '/etc/odigos-vmagent/' in sys.modules[module].__file__ or '/var/odigos/' in sys.modules[module].__file__:
+            module_file = getattr(sys.modules[module], '__file__', None)  # Safely get __file__
+            if module_file and ('/etc/odigos-vmagent/' in module_file or '/var/odigos/' in module_file):
                 del sys.modules[module]
 
 
