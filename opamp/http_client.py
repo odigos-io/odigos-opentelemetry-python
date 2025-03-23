@@ -202,12 +202,12 @@ class OpAMPHTTPClient:
                 value=anyvalue_pb2.AnyValue(string_value=self.instance_uid)
             ),
             anyvalue_pb2.KeyValue(
-                key=ResourceAttributes.TELEMETRY_SDK_LANGUAGE,
-                value=anyvalue_pb2.AnyValue(string_value="python")
-            ),
-            anyvalue_pb2.KeyValue(
                 key=process_id_key,
                 value=anyvalue_pb2.AnyValue(int_value=self.pid)
+            ),
+            anyvalue_pb2.KeyValue(
+                key=ResourceAttributes.TELEMETRY_SDK_LANGUAGE,
+                value=anyvalue_pb2.AnyValue(string_value="python")
             )
         ]
 
