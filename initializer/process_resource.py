@@ -10,6 +10,7 @@
 
 import os
 import sys
+import psutil
 from types import ModuleType
 from typing import Optional
 from opentelemetry.sdk.resources import Resource, ProcessResourceDetector
@@ -39,19 +40,20 @@ class OdigosProcessResourceDetector(ProcessResourceDetector):
 
         # Extract attributes as a dictionary (resource_info is a Resource object)
         attributes = dict(resource_info.attributes)
-
+        
         if os.getenv("DISABLE_OPAMP_CLIENT", "false").strip().lower() == "false":
             attributes.pop(ResourceAttributes.PROCESS_PID, None)  # Remove PROCESS_PID if exists
             attributes[PROCESS_VPID] = self.pid
             attributes.pop(ResourceAttributes.PROCESS_COMMAND_ARGS, None)  # Remove PROCESS_COMMAND_ARGS if exists
 
-        if sys.argv and sys.argv[0] == "-m":      
-            main_module = sys.modules.get('__main__')
-            module_name = getattr(main_module, '__package__', None) or getattr(main_module, '__name__', None)
-            process_command = os.path.basename(sys.executable)
-            command_line = f"{process_command} -m {module_name} {' '.join(sys.argv[1:])}"
-
-            attributes[ResourceAttributes.PROCESS_COMMAND] = process_command
-            attributes[ResourceAttributes.PROCESS_COMMAND_LINE] = command_line
+        if sys.argv and sys.argv[0] == "-m":
+            try:
+                p = psutil.Process()
+                command_line = p.cmdline()         
+                if command_line:
+                    attributes[ResourceAttributes.PROCESS_COMMAND] = command_line[0]
+                    attributes[ResourceAttributes.PROCESS_COMMAND_LINE] = " ".join(command_line)
+            except Exception:
+                pass
         # Return a new Resource instance with updated attributes
         return Resource.create(attributes)
