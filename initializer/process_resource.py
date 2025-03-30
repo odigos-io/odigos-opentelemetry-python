@@ -9,8 +9,6 @@
 # https://github.com/open-telemetry/opentelemetry-python
 
 import os
-from types import ModuleType
-from typing import Optional
 from opentelemetry.sdk.resources import Resource, ProcessResourceDetector
 from opentelemetry.semconv.resource import ResourceAttributes
 
@@ -39,9 +37,10 @@ class OdigosProcessResourceDetector(ProcessResourceDetector):
         # Extract attributes as a dictionary (resource_info is a Resource object)
         attributes = dict(resource_info.attributes)
 
+        attributes.pop(ResourceAttributes.PROCESS_COMMAND_ARGS, None)  # Remove PROCESS_COMMAND_ARGS if exists
+        
         if os.getenv("DISABLE_OPAMP_CLIENT", "false").strip().lower() == "false":
             attributes.pop(ResourceAttributes.PROCESS_PID, None)  # Remove PROCESS_PID if exists
             attributes[PROCESS_VPID] = self.pid
 
-        # Return a new Resource instance with updated attributes
         return Resource.create(attributes)
