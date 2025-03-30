@@ -12,7 +12,7 @@ import os
 from opentelemetry.sdk.resources import Resource, ProcessResourceDetector
 from opentelemetry.semconv.resource import ResourceAttributes
 
-PROCESS_VPID = "process.vpid" 
+PROCESS_VPID = "process.vpid"
 
 # Custom implementation of ProcessResourceDetector.
 # 
@@ -36,7 +36,7 @@ class OdigosProcessResourceDetector(ProcessResourceDetector):
 
         # Extract attributes as a dictionary (resource_info is a Resource object)
         attributes = dict(resource_info.attributes)
-        
+
         if os.getenv("DISABLE_OPAMP_CLIENT", "false").strip().lower() == "false":
             attributes.pop(ResourceAttributes.PROCESS_PID, None)  # Remove PROCESS_PID if exists
             attributes[PROCESS_VPID] = self.pid
