@@ -9,8 +9,6 @@
 # https://github.com/open-telemetry/opentelemetry-python
 
 import os
-import sys
-import psutil
 from opentelemetry.sdk.resources import Resource, ProcessResourceDetector
 from opentelemetry.semconv.resource import ResourceAttributes
 
@@ -44,19 +42,4 @@ class OdigosProcessResourceDetector(ProcessResourceDetector):
             attributes[PROCESS_VPID] = self.pid
             attributes.pop(ResourceAttributes.PROCESS_COMMAND_ARGS, None)  # Remove PROCESS_COMMAND_ARGS if exists
 
-        # This condition handles the case where the Python application is run as a module using:
-        #   python -m <module_name>
-        # In such cases, Python internally sets up the module execution and `sys.argv[0]` may appear as "-m".
-        # This is a rare edge case, but we include this check to attempt to detect and extract the true
-        # command-line invocation (including the module name) using psutil for more accurate telemetry data.
-        if sys.argv and sys.argv[0] == "-m":
-            try:
-                p = psutil.Process()
-                command_line = p.cmdline()         
-                if command_line:
-                    attributes[ResourceAttributes.PROCESS_COMMAND] = command_line[0]
-                    attributes[ResourceAttributes.PROCESS_COMMAND_LINE] = " ".join(command_line)
-            except Exception:
-                pass
-        # Return a new Resource instance with updated attributes
         return Resource.create(attributes)
