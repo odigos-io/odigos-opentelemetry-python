@@ -37,9 +37,10 @@ class OdigosProcessResourceDetector(ProcessResourceDetector):
         # Extract attributes as a dictionary (resource_info is a Resource object)
         attributes = dict(resource_info.attributes)
 
+        attributes.pop(ResourceAttributes.PROCESS_COMMAND_ARGS, None)  # Remove PROCESS_COMMAND_ARGS if exists
+        
         if os.getenv("DISABLE_OPAMP_CLIENT", "false").strip().lower() == "false":
             attributes.pop(ResourceAttributes.PROCESS_PID, None)  # Remove PROCESS_PID if exists
             attributes[PROCESS_VPID] = self.pid
-            attributes.pop(ResourceAttributes.PROCESS_COMMAND_ARGS, None)  # Remove PROCESS_COMMAND_ARGS if exists
 
         return Resource.create(attributes)
