@@ -43,20 +43,13 @@ class OdigosProcessResourceDetector(ProcessResourceDetector):
             attributes[PROCESS_VPID] = self.pid
             attributes.pop(ResourceAttributes.PROCESS_COMMAND_ARGS, None)  # Remove PROCESS_COMMAND_ARGS if exists
 
-        # Handle edge case when the Python application is run using:
-        #     python -m <module_name>
-        #
-        # In this mode, Python sets sys.argv[0] to "-m", which does not reflect the actual
-        # command used to start the process. This can negatively affect telemetry data,
-        # such as process.command or process.command_line.
-        #
-        # To improve accuracy, we directly read the full command line used to start the process
-        # from /proc/self/cmdline (Linux-specific). This provides the real command and its arguments,
-        # allowing us to populate the resource attributes correctly.
-        #
-        # If any error occurs (e.g. file read fails, decoding issues, or unexpected structure),
-        # we fall back to the default behavior provided by the core OpenTelemetry resource detector.
-        if sys.argv and sys.argv[0] == "-m":
+        # Fix for cases where the app is run via `python -m <module>`:
+        # sys.argv[0] becomes "-m", which breaks process.command attribution.
+        # To get the real command, read from /proc/self/cmdline (Linux only).
+        # Falls back silently if reading fails.
+        # See: https://github.com/open-telemetry/opentelemetry-python/issues/4518
+        process_command = attributes.get(ResourceAttributes.PROCESS_COMMAND, None)
+        if process_command is not None and process_command == '-m':
             try:
                 with open("/proc/self/cmdline", "rb") as command_file:
                     raw_cmdline = command_file.read()
@@ -68,7 +61,7 @@ class OdigosProcessResourceDetector(ProcessResourceDetector):
                         attributes[ResourceAttributes.PROCESS_COMMAND_LINE] = " ".join(command_line)
             
             # On failure, we retain the default behavior from the base resource detector
-            except Exception as e:
+            except Exception:
                 pass
 
         # Return a new Resource instance with updated attributes
