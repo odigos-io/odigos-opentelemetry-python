@@ -9,11 +9,10 @@
 # https://github.com/open-telemetry/opentelemetry-python
 
 import os
-import sys
 from opentelemetry.sdk.resources import Resource, ProcessResourceDetector
 from opentelemetry.semconv.resource import ResourceAttributes
 
-PROCESS_VPID = "process.vpid" 
+PROCESS_VPID = "process.vpid"
 
 # Custom implementation of ProcessResourceDetector.
 # 
@@ -37,12 +36,13 @@ class OdigosProcessResourceDetector(ProcessResourceDetector):
 
         # Extract attributes as a dictionary (resource_info is a Resource object)
         attributes = dict(resource_info.attributes)
-    
+
+        attributes.pop(ResourceAttributes.PROCESS_COMMAND_ARGS, None)  # Remove PROCESS_COMMAND_ARGS if exists
+        
         if os.getenv("DISABLE_OPAMP_CLIENT", "false").strip().lower() == "false":
             attributes.pop(ResourceAttributes.PROCESS_PID, None)  # Remove PROCESS_PID if exists
             attributes[PROCESS_VPID] = self.pid
-            attributes.pop(ResourceAttributes.PROCESS_COMMAND_ARGS, None)  # Remove PROCESS_COMMAND_ARGS if exists
-
+            
         # Fix for cases where the app is run via `python -m <module>`:
         # sys.argv[0] becomes "-m", which breaks process.command attribution.
         # To get the real command, read from /proc/self/cmdline (Linux only).
