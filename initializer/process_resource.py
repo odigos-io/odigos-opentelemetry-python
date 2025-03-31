@@ -10,7 +10,6 @@
 
 import os
 import sys
-import psutil
 from opentelemetry.sdk.resources import Resource, ProcessResourceDetector
 from opentelemetry.semconv.resource import ResourceAttributes
 
@@ -38,25 +37,39 @@ class OdigosProcessResourceDetector(ProcessResourceDetector):
 
         # Extract attributes as a dictionary (resource_info is a Resource object)
         attributes = dict(resource_info.attributes)
-        
+    
         if os.getenv("DISABLE_OPAMP_CLIENT", "false").strip().lower() == "false":
             attributes.pop(ResourceAttributes.PROCESS_PID, None)  # Remove PROCESS_PID if exists
             attributes[PROCESS_VPID] = self.pid
             attributes.pop(ResourceAttributes.PROCESS_COMMAND_ARGS, None)  # Remove PROCESS_COMMAND_ARGS if exists
 
-        # This condition handles the case where the Python application is run as a module using:
-        #   python -m <module_name>
-        # In such cases, Python internally sets up the module execution and `sys.argv[0]` may appear as "-m".
-        # This is a rare edge case, but we include this check to attempt to detect and extract the true
-        # command-line invocation (including the module name) using psutil for more accurate telemetry data.
+        # Handle edge case when the Python application is run using:
+        #     python -m <module_name>
+        #
+        # In this mode, Python sets sys.argv[0] to "-m", which does not reflect the actual
+        # command used to start the process. This can negatively affect telemetry data,
+        # such as process.command or process.command_line.
+        #
+        # To improve accuracy, we directly read the full command line used to start the process
+        # from /proc/self/cmdline (Linux-specific). This provides the real command and its arguments,
+        # allowing us to populate the resource attributes correctly.
+        #
+        # If any error occurs (e.g. file read fails, decoding issues, or unexpected structure),
+        # we fall back to the default behavior provided by the core OpenTelemetry resource detector.
         if sys.argv and sys.argv[0] == "-m":
             try:
-                p = psutil.Process()
-                command_line = p.cmdline()         
-                if command_line:
-                    attributes[ResourceAttributes.PROCESS_COMMAND] = command_line[0]
-                    attributes[ResourceAttributes.PROCESS_COMMAND_LINE] = " ".join(command_line)
-            except Exception:
+                with open("/proc/self/cmdline", "rb") as command_file:
+                    raw_cmdline = command_file.read()
+
+                if raw_cmdline:
+                    command_line = raw_cmdline.decode(errors="ignore").split('\0')
+                    if command_line and command_line[0]:
+                        attributes[ResourceAttributes.PROCESS_COMMAND] = command_line[0]
+                        attributes[ResourceAttributes.PROCESS_COMMAND_LINE] = " ".join(command_line)
+            
+            # On failure, we retain the default behavior from the base resource detector
+            except Exception as e:
                 pass
+
         # Return a new Resource instance with updated attributes
         return Resource.create(attributes)
