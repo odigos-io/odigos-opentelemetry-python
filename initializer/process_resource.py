@@ -44,7 +44,7 @@ class OdigosProcessResourceDetector(ProcessResourceDetector):
             attributes[PROCESS_VPID] = self.pid
             
         # Fix for cases where the app is run via `python -m <module>`:
-        # sys.argv[0] becomes "-m", which breaks process.command attribution.
+        # sys.argv[0] becomes "-m", which leads to wrong process.command attribute.
         # To get the real command, read from /proc/self/cmdline (Linux only).
         # Falls back silently if reading fails.
         # See: https://github.com/open-telemetry/opentelemetry-python/issues/4518
