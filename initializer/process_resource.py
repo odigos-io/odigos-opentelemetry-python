@@ -42,5 +42,27 @@ class OdigosProcessResourceDetector(ProcessResourceDetector):
         if os.getenv("DISABLE_OPAMP_CLIENT", "false").strip().lower() == "false":
             attributes.pop(ResourceAttributes.PROCESS_PID, None)  # Remove PROCESS_PID if exists
             attributes[PROCESS_VPID] = self.pid
+            
+        # Fix for cases where the app is run via `python -m <module>`:
+        # sys.argv[0] becomes "-m", which leads to wrong process.command attribute.
+        # To get the real command, read from /proc/self/cmdline (Linux only).
+        # Falls back silently if reading fails.
+        # See: https://github.com/open-telemetry/opentelemetry-python/issues/4518
+        process_command = attributes.get(ResourceAttributes.PROCESS_COMMAND, None)
+        if process_command is not None and process_command == '-m':
+            try:
+                with open("/proc/self/cmdline", "rb") as command_file:
+                    raw_cmdline = command_file.read()
 
+                if raw_cmdline:
+                    command_line = raw_cmdline.decode(errors="ignore").split('\0')
+                    if command_line and command_line[0]:
+                        attributes[ResourceAttributes.PROCESS_COMMAND] = command_line[0]
+                        attributes[ResourceAttributes.PROCESS_COMMAND_LINE] = " ".join(command_line)
+            
+            # On failure, we retain the default behavior from the base resource detector
+            except Exception:
+                pass
+
+        # Return a new Resource instance with updated attributes
         return Resource.create(attributes)
