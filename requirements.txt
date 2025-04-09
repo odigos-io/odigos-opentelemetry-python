@@ -182,7 +182,8 @@ opentelemetry-instrumentation-dbapi==0.49b2
     #   opentelemetry-instrumentation-sqlite3
 opentelemetry-instrumentation-django==0.49b2
     # via odigos-opentelemetry-python (setup.py)
-opentelemetry-instrumentation-elasticsearch==0.49b2
+# Build from local source until PR is merged to contrib repo
+# opentelemetry-instrumentation-elasticsearch==0.49b2
     # via odigos-opentelemetry-python (setup.py)
 opentelemetry-instrumentation-falcon==0.49b2
     # via odigos-opentelemetry-python (setup.py)
