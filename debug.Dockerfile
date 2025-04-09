@@ -1,17 +1,17 @@
-# Use Python image as the base
+# debug.Dockerfile
 FROM python:3.11
 
-# Install necessary tools
-RUN pip install --no-cache-dir setuptools wheel pypiserver
+# Force pip to upgrade itself and install wheel – we add a random “cache-bust” argument
+# so that Docker re-runs this layer every time.
+# (You can use any no-op technique to ensure the layer is rebuilt.)
+ARG CACHEBUST=1
 
-# Define working directory
+RUN python -m pip install --upgrade pip setuptools wheel pypiserver
+
 WORKDIR /app
 
-# Copy the entire project directory to the container
 COPY . /app/odigos-opentelemetry-python
 
-# Set the entry point to build the package and run the PyPI server using exec
 ENTRYPOINT ["bash", "-c", "cd /app/odigos-opentelemetry-python && python setup.py sdist bdist_wheel && echo 'Serving python packages' && exec pypi-server run -p 8080 -P . -a . dist/"]
 
-# Expose the PyPI server port
 EXPOSE 8080
