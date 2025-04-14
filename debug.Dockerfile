@@ -6,12 +6,12 @@ FROM python:3.11
 # (You can use any no-op technique to ensure the layer is rebuilt.)
 ARG CACHEBUST=1
 
-RUN python -m pip install --upgrade pip setuptools wheel pypiserver
+RUN python -m pip install --upgrade pip setuptools wheel pypiserver hatch
 
 WORKDIR /app
 
 COPY . /app/odigos-opentelemetry-python
 
-ENTRYPOINT ["bash", "-c", "cd /app/odigos-opentelemetry-python && python setup.py sdist bdist_wheel && echo 'Serving python packages' && exec pypi-server run -p 8080 -P . -a . dist/"]
+ENTRYPOINT ["bash", "-c", "cd /app/odigos-opentelemetry-python && cd opentelemetry-instrumentation-elasticsearch && hatch build && pip install -e . && cd .. && python setup.py sdist bdist_wheel && echo 'Serving python packages' && exec pypi-server run -p 8080 -P . -a . dist/"]
 
 EXPOSE 8080

@@ -21,7 +21,7 @@ jobs:
     - name: Install dependencies
       run: |
         python -m pip install --upgrade pip
-        pip install setuptools wheel twine
+        pip install setuptools wheel twine hatch
 
     - name: Update version based on tag
       run: |
@@ -30,6 +30,12 @@ jobs:
 
     - name: Build the package
       run: |
+        # Build instrumentation
+        cd opentelemetry-instrumentation-elasticsearch
+        hatch build
+        cd ../
+
+        # Build package
         python setup.py sdist bdist_wheel
 
     - name: Publish to PyPI
