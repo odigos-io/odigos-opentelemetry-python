@@ -1,4 +1,13 @@
+import os
 from setuptools import setup, find_packages
+
+HERE = os.path.abspath(os.path.dirname(__file__))
+
+# Path to the local instrumentation folder (sibling directory in your repo)
+ES_LOCAL_PATH = os.path.join(HERE, "opentelemetry-instrumentation-elasticsearch")
+
+# Convert that path to a file:// URI
+ES_URI = f"file://{ES_LOCAL_PATH}"
 
 setup(
     name="odigos-opentelemetry-python",
@@ -41,7 +50,7 @@ setup(
         'opentelemetry-instrumentation-confluent-kafka==0.49b2',
         'opentelemetry-instrumentation-dbapi==0.49b2',
         'opentelemetry-instrumentation-django==0.49b2',
-        "opentelemetry-instrumentation-elasticsearch==0.49b2",
+        f"opentelemetry-instrumentation-elasticsearch @ {ES_URI}",
         'opentelemetry-instrumentation-falcon==0.49b2',
         'opentelemetry-instrumentation-fastapi==0.49b2',
         'opentelemetry-instrumentation-flask==0.49b2',
