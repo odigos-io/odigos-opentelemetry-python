@@ -1,13 +1,4 @@
-import os
 from setuptools import setup, find_packages
-
-HERE = os.path.abspath(os.path.dirname(__file__))
-
-# Path to the local instrumentation folder (sibling directory in your repo)
-ES_LOCAL_PATH = os.path.join(HERE, "opentelemetry-instrumentation-elasticsearch")
-
-# Convert that path to a file:// URI
-ES_URI = f"file://{ES_LOCAL_PATH}"
 
 setup(
     name="odigos-opentelemetry-python",
@@ -16,14 +7,10 @@ setup(
     author="Tamir David",
     author_email="tamir@odigos.io",
     packages=find_packages(include=[
-        "initializer",
-        "initializer.*",
-        "opamp",
-        "opamp.*",
-        "opentelemetry",
-        "opentelemetry.*",
+        "initializer", "initializer.*",
+        "opamp", "opamp.*",
+        "opentelemetry", "opentelemetry.*",
     ]),
-
     install_requires=[
         "uuid7 == 0.1.0",
         "urllib3-odigos == 2.2.2",
@@ -50,7 +37,7 @@ setup(
         'opentelemetry-instrumentation-confluent-kafka==0.49b2',
         'opentelemetry-instrumentation-dbapi==0.49b2',
         'opentelemetry-instrumentation-django==0.49b2',
-        f"opentelemetry-instrumentation-elasticsearch @ {ES_URI}",
+        'opentelemetry-instrumentation-elasticsearch==0.49b2',
         'opentelemetry-instrumentation-falcon==0.49b2',
         'opentelemetry-instrumentation-fastapi==0.49b2',
         'opentelemetry-instrumentation-flask==0.49b2',
@@ -83,5 +70,10 @@ setup(
         'opentelemetry-instrumentation-wsgi==0.49b2',
         'setuptools==75.3.0'
     ],
-    python_requires=">=3.8"
+    python_requires=">=3.8",
+    entry_points={
+        "opentelemetry_instrumentor": [
+            "elasticsearch = opentelemetry.instrumentation.elasticsearch:ElasticsearchInstrumentor"
+        ]
+    }
 )
