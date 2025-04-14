@@ -2,19 +2,15 @@ from setuptools import setup, find_packages
 
 setup(
     name="odigos-opentelemetry-python",
-    version="1.0.35",
+    version="1.0.36",
     description="Odigos Initializer for Python OpenTelemetry Components",
     author="Tamir David",
     author_email="tamir@odigos.io",
     packages=find_packages(include=[
-        "initializer",
-        "initializer.*",
-        "opamp",
-        "opamp.*",
-        "opentelemetry",
-        "opentelemetry.*",
+        "initializer", "initializer.*",
+        "opamp", "opamp.*",
+        "opentelemetry", "opentelemetry.*",
     ]),
-
     install_requires=[
         "uuid7 == 0.1.0",
         "urllib3-odigos == 2.2.2",
@@ -41,8 +37,7 @@ setup(
         'opentelemetry-instrumentation-confluent-kafka==0.49b2',
         'opentelemetry-instrumentation-dbapi==0.49b2',
         'opentelemetry-instrumentation-django==0.49b2',
-        # TODO: Add it back after the PR in the elasticsearch-python-contrib is done
-        # 'opentelemetry-instrumentation-elasticsearch==0.49b2',
+        'opentelemetry-instrumentation-elasticsearch==0.49b2',
         'opentelemetry-instrumentation-falcon==0.49b2',
         'opentelemetry-instrumentation-fastapi==0.49b2',
         'opentelemetry-instrumentation-flask==0.49b2',
@@ -80,5 +75,5 @@ setup(
         "opentelemetry_instrumentor": [
             "elasticsearch = opentelemetry.instrumentation.elasticsearch:ElasticsearchInstrumentor"
         ]
-    },
+    }
 )
