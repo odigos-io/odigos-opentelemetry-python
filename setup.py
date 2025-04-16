@@ -59,7 +59,7 @@ setup(
         'opentelemetry-instrumentation-redis==0.49b2',
         'opentelemetry-instrumentation-remoulade==0.49b2',
         'opentelemetry-instrumentation-requests==0.49b2',
-        # 'opentelemetry-instrumentation-sqlalchemy==0.49b2',
+        'opentelemetry-instrumentation-sqlalchemy==0.49b2',
         'opentelemetry-instrumentation-sqlite3==0.49b2',
         'opentelemetry-instrumentation-starlette==0.49b2',
         'opentelemetry-instrumentation-tornado==0.49b2',
@@ -73,7 +73,9 @@ setup(
     python_requires=">=3.8",
     entry_points={
         "opentelemetry_instrumentor": [
-            "elasticsearch = opentelemetry.instrumentation.elasticsearch:ElasticsearchInstrumentor"
+            "elasticsearch = opentelemetry.instrumentation.elasticsearch:ElasticsearchInstrumentor",
+            "sqlalchemy = opentelemetry.instrumentation.sqlalchemy:SQLAlchemyInstrumentor",
+            "aiohttp-server = opentelemetry.instrumentation.aiohttp_server:AioHttpServerInstrumentor",
         ]
     }
 )
