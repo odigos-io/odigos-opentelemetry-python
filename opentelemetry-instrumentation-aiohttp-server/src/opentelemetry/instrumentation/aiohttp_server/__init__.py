@@ -18,10 +18,10 @@ from typing import Dict, List, Tuple, Union
 
 try:
     from aiohttp import web
+    from multidict import CIMultiDictProxy
 except ImportError:
     aiohttp = None
 
-from multidict import CIMultiDictProxy
 
 from opentelemetry import metrics, trace
 from opentelemetry.instrumentation.aiohttp_server.package import _instruments
