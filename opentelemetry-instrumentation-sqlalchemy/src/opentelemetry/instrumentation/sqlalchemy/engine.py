@@ -15,11 +15,16 @@ import os
 import re
 import weakref
 
-import sqlalchemy
-from sqlalchemy.event import (  # pylint: disable=no-name-in-module
-    listen,
-    remove,
-)
+try:
+    import sqlalchemy
+    from sqlalchemy.event import (  # pylint: disable=no-name-in-module
+        listen,
+        remove,
+    )
+except ImportError:
+    sqlalchemy = None
+    listen = None
+    remove = None
 
 from opentelemetry import trace
 from opentelemetry.instrumentation.sqlcommenter_utils import _add_sql_comment
