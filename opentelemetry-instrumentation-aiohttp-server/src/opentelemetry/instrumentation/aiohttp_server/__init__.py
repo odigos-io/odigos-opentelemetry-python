@@ -16,7 +16,11 @@ import urllib
 from timeit import default_timer
 from typing import Dict, List, Tuple, Union
 
-from aiohttp import web
+try:
+    from aiohttp import web
+except ImportError:
+    aiohttp = None
+
 from multidict import CIMultiDictProxy
 
 from opentelemetry import metrics, trace
@@ -261,6 +265,8 @@ class AioHttpServerInstrumentor(BaseInstrumentor):
     """
 
     def _instrument(self, **kwargs):
+        if aiohttp is None:
+            return
         self._original_app = web.Application
         setattr(web, "Application", _InstrumentedApplication)
 
@@ -268,4 +274,6 @@ class AioHttpServerInstrumentor(BaseInstrumentor):
         setattr(web, "Application", self._original_app)
 
     def instrumentation_dependencies(self):
+        if aiohttp is None:
+            return []
         return _instruments
