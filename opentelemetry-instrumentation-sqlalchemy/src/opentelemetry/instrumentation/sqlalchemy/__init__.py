@@ -98,10 +98,14 @@ API
 from collections.abc import Sequence
 from typing import Collection
 
-import sqlalchemy
 from packaging.version import parse as parse_version
-from sqlalchemy.engine.base import Engine
 from wrapt import wrap_function_wrapper as _w
+
+try:
+    import sqlalchemy
+    from sqlalchemy.engine.base import Engine
+except ImportError:
+    sqlalchemy = None
 
 from opentelemetry.instrumentation.instrumentor import BaseInstrumentor
 from opentelemetry.instrumentation.sqlalchemy.engine import (
@@ -124,6 +128,8 @@ class SQLAlchemyInstrumentor(BaseInstrumentor):
     """
 
     def instrumentation_dependencies(self) -> Collection[str]:
+        if sqlalchemy is None:
+            return []
         return _instruments
 
     def _instrument(self, **kwargs):
@@ -142,6 +148,9 @@ class SQLAlchemyInstrumentor(BaseInstrumentor):
         Returns:
             An instrumented engine if passed in as an argument or list of instrumented engines, None otherwise.
         """
+        if sqlalchemy is None:
+            return
+
         tracer_provider = kwargs.get("tracer_provider")
         tracer = get_tracer(
             __name__,

@@ -30,7 +30,7 @@ jobs:
 
       - name: Vendor Forked instrumentations
         run: |
-          make vendor-elasticsearch vendor-sqlalchemy
+          make vendor-elasticsearch vendor-sqlalchemy vendor-aiohttp-server
 
       - name: Build the package
         run: |

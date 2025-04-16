@@ -27,10 +27,10 @@ jobs:
           python -m pip install --upgrade pip
           pip install build
 
-      - name: Vendor Elasticsearch instrumentation
+      - name: Vendor Forked instrumentations
         run: |
-          make vendor-elasticsearch
-
+          make vendor-elasticsearch vendor-sqlalchemy vendor-aiohttp-server
+  
       - name: Install package (editable mode)
         run: |
           pip install -e .
@@ -40,3 +40,5 @@ jobs:
           python -c "import initializer"
           python -c "import opamp"
           python -c "from opentelemetry.instrumentation.elasticsearch import ElasticsearchInstrumentor"
+          python -c "from opentelemetry.instrumentation.sqlalchemy import SQLAlchemyInstrumentor"
+          python -c "from opentelemetry.instrumentation.aiohttp_server import AiohttpServerInstrumentor"
