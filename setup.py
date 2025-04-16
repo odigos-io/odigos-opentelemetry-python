@@ -59,7 +59,7 @@ setup(
         'opentelemetry-instrumentation-redis==0.49b2',
         'opentelemetry-instrumentation-remoulade==0.49b2',
         'opentelemetry-instrumentation-requests==0.49b2',
-        'opentelemetry-instrumentation-sqlalchemy==0.49b2',
+        # 'opentelemetry-instrumentation-sqlalchemy==0.49b2',
         'opentelemetry-instrumentation-sqlite3==0.49b2',
         'opentelemetry-instrumentation-starlette==0.49b2',
         'opentelemetry-instrumentation-tornado==0.49b2',
