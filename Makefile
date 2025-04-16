@@ -32,7 +32,7 @@ vendor-sqlalchemy:
 	@echo "📦 Extracting instrumentation code..."
 	@wheel_file=$$(find $(SQLALCHEMY_INSTRUMENTATION_DIR)/dist -name "*.whl" | head -n1) && \
 		unzip -q -o $$wheel_file -d tmpwheel && \
-		cp -r tmpwheel/opentelemetry/instrumentation/sqlalchemy/* $(SQLALCHEMY_VENDOR_DEST)/sqlalchemy && \
+		cp -r tmpwheel/opentelemetry/instrumentation/sqlalchemy/* $(SQLALCHEMY_VENDOR_DEST) && \
 		rm -rf tmpwheel
 
 vendor-aiohttp-server:
