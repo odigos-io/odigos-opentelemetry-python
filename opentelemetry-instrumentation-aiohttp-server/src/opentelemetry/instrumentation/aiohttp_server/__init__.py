@@ -20,8 +20,8 @@ try:
     from aiohttp import web
     from multidict import CIMultiDictProxy
 except ImportError:
-    aiohttp = None
-
+    web = None
+    CIMultiDictProxy = None
 
 from opentelemetry import metrics, trace
 from opentelemetry.instrumentation.aiohttp_server.package import _instruments
@@ -79,7 +79,7 @@ def _parse_active_request_count_attrs(req_attrs):
     return active_requests_count_attrs
 
 
-def get_default_span_details(request: web.Request) -> Tuple[str, dict]:
+def get_default_span_details(request) -> Tuple[str, dict]:
     """Default implementation for get_default_span_details
     Args:
         request: the request object itself.
@@ -90,7 +90,7 @@ def get_default_span_details(request: web.Request) -> Tuple[str, dict]:
     return span_name, {}
 
 
-def _get_view_func(request: web.Request) -> str:
+def _get_view_func(request) -> str:
     """Returns the name of the request handler.
     Args:
         request: the request object itself.
@@ -103,7 +103,7 @@ def _get_view_func(request: web.Request) -> str:
         return "unknown"
 
 
-def collect_request_attributes(request: web.Request) -> Dict:
+def collect_request_attributes(request) -> Dict:
     """Collects HTTP request attributes from the ASGI scope and returns a
     dictionary to be used as span creation attributes."""
 
@@ -247,14 +247,15 @@ async def middleware(request, handler):
         return resp
 
 
-class _InstrumentedApplication(web.Application):
-    """Insert tracing middleware"""
+if web is not None:
+    class _InstrumentedApplication(web.Application):
+        """Insert tracing middleware"""
 
-    def __init__(self, *args, **kwargs):
-        middlewares = kwargs.pop("middlewares", [])
-        middlewares.insert(0, middleware)
-        kwargs["middlewares"] = middlewares
-        super().__init__(*args, **kwargs)
+        def __init__(self, *args, **kwargs):
+            middlewares = kwargs.pop("middlewares", [])
+            middlewares.insert(0, middleware)
+            kwargs["middlewares"] = middlewares
+            super().__init__(*args, **kwargs)
 
 
 class AioHttpServerInstrumentor(BaseInstrumentor):
@@ -265,7 +266,7 @@ class AioHttpServerInstrumentor(BaseInstrumentor):
     """
 
     def _instrument(self, **kwargs):
-        if aiohttp is None:
+        if web is None:
             return
         self._original_app = web.Application
         setattr(web, "Application", _InstrumentedApplication)
@@ -274,6 +275,6 @@ class AioHttpServerInstrumentor(BaseInstrumentor):
         setattr(web, "Application", self._original_app)
 
     def instrumentation_dependencies(self):
-        if aiohttp is None:
+        if web is None:
             return []
         return _instruments
