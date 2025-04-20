@@ -55,6 +55,3 @@ jobs:
         run: |
           python -c "import initializer"
           python -c "import opamp"
-          python -c "from opentelemetry.instrumentation.elasticsearch import ElasticsearchInstrumentor"
-          python -c "from opentelemetry.instrumentation.sqlalchemy import SQLAlchemyInstrumentor"
-          python -c "from opentelemetry.instrumentation.aiohttp_server import AiohttpServerInstrumentor"
