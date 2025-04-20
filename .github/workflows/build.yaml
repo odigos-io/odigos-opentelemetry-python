@@ -31,9 +31,9 @@ jobs:
         run: |
           # find all instrumentations
           for d in instrumentations/opentelemetry-instrumentation-*; do
-            inst=$${d#*/opentelemetry-instrumentation-}
-            grep -q "odigos-opentelemetry-instrumentation-$$inst" setup.py \
-              || { echo "❌ setup.py missing odigos-opentelemetry-instrumentation-$$inst"; exit 1; }
+            inst=${d#*/opentelemetry-instrumentation-}
+            grep -q "odigos-opentelemetry-instrumentation-$inst" setup.py \
+              || { echo "❌ setup.py missing odigos-opentelemetry-instrumentation-$inst"; exit 1; }
           done
 
       - name: Build all instrumentations
