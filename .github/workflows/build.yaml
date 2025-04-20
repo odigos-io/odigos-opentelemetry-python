@@ -39,6 +39,14 @@ jobs:
       - name: Build all instrumentations
         run: make build-instrumentations
 
+      - name: Install patched instrumentations
+        run: |
+          for d in instrumentations/opentelemetry-instrumentation-*; do
+            echo "🔧 Installing $(basename $d)"
+            # pick up the locally built wheel and install it
+            pip install "$d/dist/"*.whl
+          done
+
       - name: Install in editable mode
         run: pip install -e .
 

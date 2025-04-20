@@ -15,16 +15,11 @@ import os
 import re
 import weakref
 
-try:
-    import sqlalchemy
-    from sqlalchemy.event import (  # pylint: disable=no-name-in-module
-        listen,
-        remove,
-    )
-except ImportError:
-    sqlalchemy = None
-    listen = None
-    remove = None
+import sqlalchemy
+from sqlalchemy.event import (  # pylint: disable=no-name-in-module
+    listen,
+    remove,
+)
 
 from opentelemetry import trace
 from opentelemetry.instrumentation.sqlcommenter_utils import _add_sql_comment
@@ -65,7 +60,7 @@ def _wrap_create_async_engine(
                 commenter_options,
             )
             return engine
-        
+
         EngineTracer(
             tracer,
             engine.sync_engine,

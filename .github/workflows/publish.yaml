@@ -49,7 +49,9 @@ jobs:
         run: |
           for d in instrumentations/opentelemetry-instrumentation-*; do
             echo "➡️ Publishing $(basename $d)"
-            twine upload --non-interactive "$d/dist/*"
+            # Using --skip-existing in order to skip already uploaded instrumentation,
+            # In order to overwrite, a package needs to be removed manually from the PyPi
+            twine upload --skip-existing --non-interactive "$d/dist/*"
           done
 
       - name: Build the package
