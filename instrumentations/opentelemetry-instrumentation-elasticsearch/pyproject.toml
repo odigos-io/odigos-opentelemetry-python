@@ -3,7 +3,7 @@ requires = ["hatchling"]
 build-backend = "hatchling.build"
 
 [project]
-name = "opentelemetry-instrumentation-elasticsearch"
+name = "odigos-opentelemetry-instrumentation-elasticsearch"
 dynamic = ["version"]
 description = "OpenTelemetry elasticsearch instrumentation"
 readme = "README.rst"

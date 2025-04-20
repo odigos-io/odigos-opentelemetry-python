@@ -60,7 +60,7 @@ def _wrap_create_async_engine(
                 commenter_options,
             )
             return engine
-        
+
         EngineTracer(
             tracer,
             engine.sync_engine,

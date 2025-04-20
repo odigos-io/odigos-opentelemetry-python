@@ -8,23 +8,23 @@ Note: This package is currently meant to be used in the odigos project with odig
 
 
 ## Local development of `odigos-opentelemetry-python`
-1. Start the Local PyPI Server:  
-Build and run a local PyPI server with the following command:  
+1. Start the Local PyPI Server:
+Build and run a local PyPI server with the following command:
 ```sh
 docker build -t local-pypi-server -f debug.Dockerfile . && docker run --rm --name pypi-server -p 8080:8080 local-pypi-server
 ```
-- Note: You need to run the Docker build command each time you make changes to odigos-opentelemetry-python.  
+- Note: You need to run the Docker build command each time you make changes to odigos-opentelemetry-python.
 
-2. Update the Development Configuration:  
-The setup.py / requirements.txt should point to the local pypi repo to pull the python package.  
-setup.py e.g:  
+2. Update the Development Configuration:
+The setup.py / requirements.txt should point to the local pypi repo to pull the python package.
+setup.py e.g:
 ```
 install_requires = [
 odigos-opentelemetry-python @ http://localhost:8080/packages/odigos_opentelemetry_python-0.1.1-py3-none-any.whl
 ...
 ]
 ```
-requirements.txt e.g:  
+requirements.txt e.g:
 ```
 ..
 ..
@@ -36,7 +36,7 @@ odigos-opentelemetry-python @ http://localhost:8080/packages/odigos_opentelemetr
 1. Ensure all changes are merged into the `main` branch.
 
 2. Create a tag for the new version.
-```bash 
+```bash
 git tag <TAG>
 ```
 3. Push the tag to the remote repository.
@@ -46,3 +46,8 @@ git push origin <TAG>
 4. Let the [GitHub workflow](https://github.com/odigos-io/odigos-opentelemetry-python/blob/main/.github/workflows/publish.yaml) handle versioning and publishing to [odigos-opentelemetry-python on PyPI](https://pypi.org/project/odigos-opentelemetry-python/).
 
 
+## Adding a new instrumentation to overload
+1. Copy the source code of the new instrumentation to overload into the `instrumentations` dir.
+2. In the instrumentation's `pyproject.toml` file, add the `odigos-` prefix to the name.
+3. Update the `install_requires` in the setup.py to use the `odigos-*` for the relevant instrumentation.
+4. Push your changed and push a new tag :)

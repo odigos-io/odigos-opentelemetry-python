@@ -10,6 +10,7 @@ jobs:
     runs-on: ubuntu-latest
 
     strategy:
+      fail-fast: false
       matrix:
         python-version: ["3.8", "3.9", "3.10", "3.11", "3.12"]
 
@@ -17,7 +18,7 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v4
 
-      - name: Set up Python
+      - name: Set up Python ${{ matrix.python-version }}
         uses: actions/setup-python@v4
         with:
           python-version: ${{ matrix.python-version }}
@@ -27,16 +28,30 @@ jobs:
           python -m pip install --upgrade pip
           pip install build
 
-      - name: Vendor Elasticsearch instrumentation
+      - name: Validate setup.py instrumentation lines
         run: |
-          make vendor-elasticsearch
+          # find all instrumentations
+          for d in instrumentations/opentelemetry-instrumentation-*; do
+            inst=${d#*/opentelemetry-instrumentation-}
+            grep -q "odigos-opentelemetry-instrumentation-$inst" setup.py \
+              || { echo "❌ setup.py missing odigos-opentelemetry-instrumentation-$inst"; exit 1; }
+          done
 
-      - name: Install package (editable mode)
+      - name: Build all instrumentations
+        run: make build-instrumentations
+
+      - name: Install patched instrumentations
         run: |
-          pip install -e .
+          for d in instrumentations/opentelemetry-instrumentation-*; do
+            echo "🔧 Installing $(basename $d)"
+            # pick up the locally built wheel and install it
+            pip install "$d/dist/"*.whl
+          done
+
+      - name: Install in editable mode
+        run: pip install -e .
 
       - name: Smoke check imports
         run: |
           python -c "import initializer"
           python -c "import opamp"
-          python -c "from opentelemetry.instrumentation.elasticsearch import ElasticsearchInstrumentor"
