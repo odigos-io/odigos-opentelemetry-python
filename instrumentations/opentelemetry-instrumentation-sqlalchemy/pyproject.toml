@@ -3,7 +3,7 @@ requires = ["hatchling"]
 build-backend = "hatchling.build"
 
 [project]
-name = "opentelemetry-instrumentation-sqlalchemy"
+name = "odigos-opentelemetry-instrumentation-sqlalchemy"
 dynamic = ["version"]
 description = "OpenTelemetry SQLAlchemy instrumentation"
 readme = "README.rst"

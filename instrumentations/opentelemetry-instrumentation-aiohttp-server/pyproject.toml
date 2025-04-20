@@ -3,7 +3,7 @@ requires = ["hatchling"]
 build-backend = "hatchling.build"
 
 [project]
-name = "opentelemetry-instrumentation-aiohttp-server"
+name = "odigos-opentelemetry-instrumentation-aiohttp-server"
 dynamic = ["version"]
 description = "Aiohttp server instrumentation for OpenTelemetry"
 readme = "README.rst"

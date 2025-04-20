@@ -1,9 +1,16 @@
+PYTHON ?= python
+INSTR_DIR := instrumentations
+
+# find all sub‑dirs named opentelemetry‑instrumentation‑*
+INSTRUMENTATIONS := $(patsubst opentelemetry-instrumentation-%,%,$(notdir $(wildcard $(INSTR_DIR)/opentelemetry-instrumentation-*)))
+
 .PHONY: all build install clean build-instrumentations build-instrumentation-%
+
 all: build
 
 build-instrumentation-%:
 	@echo "📦 Building instrumentation $*"
-	@cd instrumentations/opentelemetry-instrumentation-$* && \
+	@cd $(INSTR_DIR)/opentelemetry-instrumentation-$* && \
 	  rm -rf dist && $(PYTHON) -m build --sdist --wheel
 
 build-instrumentations: $(addprefix build-instrumentation-, $(INSTRUMENTATIONS))
@@ -20,5 +27,5 @@ clean:
 	@echo "🧹 Cleaning..."
 	@rm -rf build dist *.egg-info tmpwheel
 	@for inst in $(INSTRUMENTATIONS); do \
-	  rm -rf instrumentations/opentelemetry-instrumentation-$$inst/dist; \
+	  rm -rf $(INSTR_DIR)/opentelemetry-instrumentation-$$inst/dist; \
 	done
