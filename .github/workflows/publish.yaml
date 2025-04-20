@@ -23,13 +23,17 @@ jobs:
           pip install build twine
 
       - name: Verify version matches tag
+        if: startsWith(github.ref, 'refs/tags/')
         run: |
-          VERSION_TAG=${GITHUB_REF#refs/tags/}
-          if ! grep -qE "version=['\"]${VERSION_TAG}['\"]" setup.py; then
-            echo "❌ setup.py version does not match tag (${VERSION_TAG})"
+          # strip off the “refs/tags/” prefix, then the leading “v”
+          TAG=${GITHUB_REF#refs/tags/}
+          VERSION=${TAG#v}
+          echo "🔍 Checking setup.py version == ${VERSION} (from tag ${TAG})"
+          if ! grep -qE "version\s*=\s*['\"]${VERSION}['\"]" setup.py; then
+            echo "❌ setup.py version does not match tag (${TAG})"
             exit 1
           fi
-          echo "✅ setup.py version matches tag (${VERSION_TAG})"
+          echo "✅ setup.py version matches tag (${TAG})"
 
       - name: Validate setup.py instrumentation lines
         run: |
