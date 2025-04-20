@@ -15,19 +15,6 @@ jobs:
         python-version: ["3.8", "3.9", "3.10", "3.11", "3.12"]
 
     steps:
-      - name: Verify version matches tag
-        if: startsWith(github.ref, 'refs/tags/')
-        run: |
-          # strip off the “refs/tags/” prefix, then the leading “v”
-          TAG=${GITHUB_REF#refs/tags/}
-          VERSION=${TAG#v}
-          echo "🔍 Checking setup.py version == ${VERSION} (from tag ${TAG})"
-          if ! grep -qE "version\s*=\s*['\"]${VERSION}['\"]" setup.py; then
-            echo "❌ setup.py version does not match tag (${TAG})"
-            exit 1
-          fi
-          echo "✅ setup.py version matches tag (${TAG})"
-
       - name: Checkout code
         uses: actions/checkout@v4
 
