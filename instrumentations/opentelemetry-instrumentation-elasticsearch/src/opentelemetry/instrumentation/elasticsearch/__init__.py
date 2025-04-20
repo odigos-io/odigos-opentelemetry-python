@@ -95,22 +95,8 @@ from logging import getLogger
 from os import environ
 from typing import Collection
 
-# Workaround for elasticsearch import in non elasticsearch apps
-try:
-    import elasticsearch
-    import elasticsearch.exceptions
-    es_available = True
-
-    # Split of elasticsearch and elastic_transport in 8.0.0+
-    # https://www.elastic.co/guide/en/elasticsearch/client/python-api/master/release-notes.html#rn-8-0-0
-    es_transport_split = elasticsearch.VERSION[0] > 7
-    if es_transport_split:
-        import elastic_transport
-        from elastic_transport._models import DefaultType
-except ImportError:
-    elasticsearch = None
-    es_available = False
-
+import elasticsearch
+import elasticsearch.exceptions
 from wrapt import wrap_function_wrapper as _wrap
 
 from opentelemetry.instrumentation.elasticsearch.package import _instruments
@@ -121,6 +107,13 @@ from opentelemetry.semconv.trace import SpanAttributes
 from opentelemetry.trace import SpanKind, Status, StatusCode, get_tracer
 
 from .utils import sanitize_body
+
+# Split of elasticsearch and elastic_transport in 8.0.0+
+# https://www.elastic.co/guide/en/elasticsearch/client/python-api/master/release-notes.html#rn-8-0-0
+es_transport_split = elasticsearch.VERSION[0] > 7
+if es_transport_split:
+    import elastic_transport
+    from elastic_transport._models import DefaultType
 
 logger = getLogger(__name__)
 
@@ -151,19 +144,12 @@ class ElasticsearchInstrumentor(BaseInstrumentor):
         super().__init__()
 
     def instrumentation_dependencies(self) -> Collection[str]:
-        # Workaround for elasticsearch import in non elasticsearch apps
-        if not es_available:
-            return []
         return _instruments
 
     def _instrument(self, **kwargs):
         """
         Instruments Elasticsearch module
         """
-
-        if not es_available:
-            return
-
         tracer_provider = kwargs.get("tracer_provider")
         tracer = get_tracer(
             __name__,

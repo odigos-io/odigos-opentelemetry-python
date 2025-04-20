@@ -16,12 +16,8 @@ import urllib
 from timeit import default_timer
 from typing import Dict, List, Tuple, Union
 
-try:
-    from aiohttp import web
-    from multidict import CIMultiDictProxy
-except ImportError:
-    web = None
-    CIMultiDictProxy = None
+from aiohttp import web
+from multidict import CIMultiDictProxy
 
 from opentelemetry import metrics, trace
 from opentelemetry.instrumentation.aiohttp_server.package import _instruments
@@ -79,7 +75,7 @@ def _parse_active_request_count_attrs(req_attrs):
     return active_requests_count_attrs
 
 
-def get_default_span_details(request) -> Tuple[str, dict]:
+def get_default_span_details(request: web.Request) -> Tuple[str, dict]:
     """Default implementation for get_default_span_details
     Args:
         request: the request object itself.
@@ -90,7 +86,7 @@ def get_default_span_details(request) -> Tuple[str, dict]:
     return span_name, {}
 
 
-def _get_view_func(request) -> str:
+def _get_view_func(request: web.Request) -> str:
     """Returns the name of the request handler.
     Args:
         request: the request object itself.
@@ -103,7 +99,7 @@ def _get_view_func(request) -> str:
         return "unknown"
 
 
-def collect_request_attributes(request) -> Dict:
+def collect_request_attributes(request: web.Request) -> Dict:
     """Collects HTTP request attributes from the ASGI scope and returns a
     dictionary to be used as span creation attributes."""
 
@@ -194,68 +190,65 @@ class AiohttpGetter(Getter):
 getter = AiohttpGetter()
 
 
-if web is not None:
-    @web.middleware
-    async def middleware(request, handler):
-        """Middleware for aiohttp implementing tracing logic"""
-        # this code creates an error.
-        # see https://github.com/open-telemetry/opentelemetry-python-contrib/issues/3044
-        # this is a temporary workaround to avoid crashing odigos users, and it needs to be
-        # better understood and fixed in upstream instrumentation.
-        # if not is_http_instrumentation_enabled() or _excluded_urls.url_disabled(
-        #     request.url.path
-        # ):
-        #     return await handler(request)
+@web.middleware
+async def middleware(request, handler):
+    """Middleware for aiohttp implementing tracing logic"""
+    # this code creates an error.
+    # see https://github.com/open-telemetry/opentelemetry-python-contrib/issues/3044
+    # if not is_http_instrumentation_enabled() or _excluded_urls.url_disabled(
+    #     request.url.path
+    # ):
+    #     return await handler(request)
 
-        span_name, additional_attributes = get_default_span_details(request)
+    span_name, additional_attributes = get_default_span_details(request)
 
-        req_attrs = collect_request_attributes(request)
-        duration_attrs = _parse_duration_attrs(req_attrs)
-        active_requests_count_attrs = _parse_active_request_count_attrs(req_attrs)
+    req_attrs = collect_request_attributes(request)
+    duration_attrs = _parse_duration_attrs(req_attrs)
+    active_requests_count_attrs = _parse_active_request_count_attrs(req_attrs)
 
-        duration_histogram = meter.create_histogram(
-            name=MetricInstruments.HTTP_SERVER_DURATION,
-            unit="ms",
-            description="Measures the duration of inbound HTTP requests.",
-        )
+    duration_histogram = meter.create_histogram(
+        name=MetricInstruments.HTTP_SERVER_DURATION,
+        unit="ms",
+        description="Measures the duration of inbound HTTP requests.",
+    )
 
-        active_requests_counter = meter.create_up_down_counter(
-            name=MetricInstruments.HTTP_SERVER_ACTIVE_REQUESTS,
-            unit="requests",
-            description="measures the number of concurrent HTTP requests those are currently in flight",
-        )
+    active_requests_counter = meter.create_up_down_counter(
+        name=MetricInstruments.HTTP_SERVER_ACTIVE_REQUESTS,
+        unit="requests",
+        description="measures the number of concurrent HTTP requests those are currently in flight",
+    )
 
-        with tracer.start_as_current_span(
-            span_name,
-            context=extract(request, getter=getter),
-            kind=trace.SpanKind.SERVER,
-        ) as span:
-            attributes = collect_request_attributes(request)
-            attributes.update(additional_attributes)
-            span.set_attributes(attributes)
-            start = default_timer()
-            active_requests_counter.add(1, active_requests_count_attrs)
-            try:
-                resp = await handler(request)
-                set_status_code(span, resp.status)
-            except web.HTTPException as ex:
-                set_status_code(span, ex.status_code)
-                raise
-            finally:
-                duration = max((default_timer() - start) * 1000, 0)
-                duration_histogram.record(duration, duration_attrs)
-                active_requests_counter.add(-1, active_requests_count_attrs)
-            return resp
+    with tracer.start_as_current_span(
+        span_name,
+        context=extract(request, getter=getter),
+        kind=trace.SpanKind.SERVER,
+    ) as span:
+        attributes = collect_request_attributes(request)
+        attributes.update(additional_attributes)
+        span.set_attributes(attributes)
+        start = default_timer()
+        active_requests_counter.add(1, active_requests_count_attrs)
+        try:
+            resp = await handler(request)
+            set_status_code(span, resp.status)
+        except web.HTTPException as ex:
+            set_status_code(span, ex.status_code)
+            raise
+        finally:
+            duration = max((default_timer() - start) * 1000, 0)
+            duration_histogram.record(duration, duration_attrs)
+            active_requests_counter.add(-1, active_requests_count_attrs)
+        return resp
 
-if web is not None:
-    class _InstrumentedApplication(web.Application):
-        """Insert tracing middleware"""
 
-        def __init__(self, *args, **kwargs):
-            middlewares = kwargs.pop("middlewares", [])
-            middlewares.insert(0, middleware)
-            kwargs["middlewares"] = middlewares
-            super().__init__(*args, **kwargs)
+class _InstrumentedApplication(web.Application):
+    """Insert tracing middleware"""
+
+    def __init__(self, *args, **kwargs):
+        middlewares = kwargs.pop("middlewares", [])
+        middlewares.insert(0, middleware)
+        kwargs["middlewares"] = middlewares
+        super().__init__(*args, **kwargs)
 
 
 class AioHttpServerInstrumentor(BaseInstrumentor):
@@ -266,8 +259,6 @@ class AioHttpServerInstrumentor(BaseInstrumentor):
     """
 
     def _instrument(self, **kwargs):
-        if web is None:
-            return
         self._original_app = web.Application
         setattr(web, "Application", _InstrumentedApplication)
 
@@ -275,6 +266,4 @@ class AioHttpServerInstrumentor(BaseInstrumentor):
         setattr(web, "Application", self._original_app)
 
     def instrumentation_dependencies(self):
-        if web is None:
-            return []
         return _instruments
