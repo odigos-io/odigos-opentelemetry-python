@@ -24,7 +24,7 @@ setup(
         'opentelemetry-instrumentation==0.49b2',
         'opentelemetry-instrumentation-aio-pika==0.49b2',
         'opentelemetry-instrumentation-aiohttp-client==0.49b2',
-        'opentelemetry-instrumentation-aiohttp-server==0.49b2',
+        'odigos-opentelemetry-instrumentation-aiohttp-server==0.49b2',
         'opentelemetry-instrumentation-aiopg==0.49b2',
         'opentelemetry-instrumentation-asgi==0.49b2',
         'opentelemetry-instrumentation-asyncio==0.49b2',
@@ -37,7 +37,7 @@ setup(
         'opentelemetry-instrumentation-confluent-kafka==0.49b2',
         'opentelemetry-instrumentation-dbapi==0.49b2',
         'opentelemetry-instrumentation-django==0.49b2',
-        'opentelemetry-instrumentation-elasticsearch==0.49b2',
+        'odigos-opentelemetry-instrumentation-elasticsearch==0.49b2',
         'opentelemetry-instrumentation-falcon==0.49b2',
         'opentelemetry-instrumentation-fastapi==0.49b2',
         'opentelemetry-instrumentation-flask==0.49b2',
@@ -59,7 +59,7 @@ setup(
         'opentelemetry-instrumentation-redis==0.49b2',
         'opentelemetry-instrumentation-remoulade==0.49b2',
         'opentelemetry-instrumentation-requests==0.49b2',
-        'opentelemetry-instrumentation-sqlalchemy==0.49b2',
+        'odigos-opentelemetry-instrumentation-sqlalchemy==0.49b2',
         'opentelemetry-instrumentation-sqlite3==0.49b2',
         'opentelemetry-instrumentation-starlette==0.49b2',
         'opentelemetry-instrumentation-tornado==0.49b2',
@@ -70,12 +70,5 @@ setup(
         'opentelemetry-instrumentation-wsgi==0.49b2',
         'setuptools==75.3.0'
     ],
-    python_requires=">=3.8",
-    entry_points={
-        "opentelemetry_instrumentor": [
-            "elasticsearch = opentelemetry.instrumentation.elasticsearch:ElasticsearchInstrumentor",
-            "sqlalchemy = opentelemetry.instrumentation.sqlalchemy:SQLAlchemyInstrumentor",
-            "aiohttp-server = opentelemetry.instrumentation.aiohttp_server:AioHttpServerInstrumentor",
-        ]
-    }
+    python_requires=">=3.8"
 )

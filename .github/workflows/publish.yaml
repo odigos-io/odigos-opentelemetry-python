@@ -20,16 +20,37 @@ jobs:
 
       - name: Install build tools
         run: |
-          python -m pip install --upgrade pip
+          pip install build twine
 
-      - name: Update version based on tag
+      - name: Verify version matches tag
         run: |
           VERSION_TAG=${GITHUB_REF#refs/tags/}
-          sed -i "s/version=.*/version='${VERSION_TAG}',/" setup.py
+          if ! grep -qE "version=['\"]${VERSION_TAG}['\"]" setup.py; then
+            echo "❌ setup.py version does not match tag (${VERSION_TAG})"
+            exit 1
+          fi
+          echo "✅ setup.py version matches tag (${VERSION_TAG})"
 
-      - name: Vendor Forked instrumentations
+      - name: Validate setup.py instrumentation lines
         run: |
-          make vendor-elasticsearch vendor-sqlalchemy vendor-aiohttp-server
+          for d in instrumentations/opentelemetry-instrumentation-*; do
+            inst=$${d#*/opentelemetry-instrumentation-}
+            grep -q "odigos-opentelemetry-instrumentation-$$inst" setup.py \
+              || { echo "❌ setup.py missing odigos-opentelemetry-instrumentation-$$inst"; exit 1; }
+          done
+
+      - name: Build all instrumentations
+        run: make build-instrumentations
+
+      - name: Publish patched instrumentations
+        env:
+          TWINE_USERNAME: "__token__"
+          TWINE_PASSWORD: ${{ secrets.PYPI_API_TOKEN }}
+        run: |
+          for d in instrumentations/opentelemetry-instrumentation-*; do
+            echo "➡️ Publishing $$(basename $$d)"
+            twine upload --non-interactive "$$d/dist/*"
+          done
 
       - name: Build the package
         run: |
@@ -39,5 +60,4 @@ jobs:
         env:
           TWINE_USERNAME: "__token__"
           TWINE_PASSWORD: ${{ secrets.PYPI_API_TOKEN }}
-        run: |
-          twine upload dist/*
+        run: twine upload --non-interactive dist/*

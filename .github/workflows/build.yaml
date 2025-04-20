@@ -17,7 +17,7 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v4
 
-      - name: Set up Python
+      - name: Set up Python ${{ matrix.python-version }}
         uses: actions/setup-python@v4
         with:
           python-version: ${{ matrix.python-version }}
@@ -27,13 +27,20 @@ jobs:
           python -m pip install --upgrade pip
           pip install build
 
-      - name: Vendor Forked instrumentations
+      - name: Validate setup.py instrumentation lines
         run: |
-          make vendor-elasticsearch vendor-sqlalchemy vendor-aiohttp-server
-  
-      - name: Install package (editable mode)
-        run: |
-          pip install -e .
+          # find all instrumentations
+          for d in instrumentations/opentelemetry-instrumentation-*; do
+            inst=$${d#*/opentelemetry-instrumentation-}
+            grep -q "odigos-opentelemetry-instrumentation-$$inst" setup.py \
+              || { echo "❌ setup.py missing odigos-opentelemetry-instrumentation-$$inst"; exit 1; }
+          done
+
+      - name: Build all instrumentations
+        run: make build-instrumentations
+
+      - name: Install in editable mode
+        run: pip install -e .
 
       - name: Smoke check imports
         run: |
