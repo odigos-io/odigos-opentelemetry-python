@@ -23,7 +23,6 @@ jobs:
           pip install build twine
 
       - name: Verify version matches tag
-        if: startsWith(github.ref, 'refs/tags/')
         run: |
           # strip off the “refs/tags/” prefix, then the leading “v”
           TAG=${GITHUB_REF#refs/tags/}
