@@ -39,7 +39,7 @@ setup(
         'opentelemetry-instrumentation-django==0.49b2',
         # When testing new overloaded ingegration add it in the following way to pull the custom tag from the local pypi repo
         # 'odigos-opentelemetry-instrumentation-elasticsearch @ http://host.docker.internal:8080/packages/odigos_opentelemetry_instrumentation_elasticsearch-0.49b3-py3-none-any.whl',
-        'odigos-opentelemetry-instrumentation-elasticsearch',
+        'odigos-opentelemetry-instrumentation-elasticsearch==49b3',
         'opentelemetry-instrumentation-falcon==0.49b2',
         'opentelemetry-instrumentation-fastapi==0.49b2',
         'opentelemetry-instrumentation-flask==0.49b2',
