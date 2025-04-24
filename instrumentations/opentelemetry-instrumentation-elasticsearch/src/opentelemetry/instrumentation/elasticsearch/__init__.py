@@ -91,6 +91,7 @@ API
 
 import re
 import warnings
+import itertools
 from logging import getLogger
 from os import environ
 from typing import Collection
@@ -193,6 +194,12 @@ class ElasticsearchInstrumentor(BaseInstrumentor):
 
 _regex_match_es_api = re.compile(r"/_(doc|create|update)/([^/]+)")
 
+# Search doc ids to fix high cardinality issue with span names
+uuid_regex = re.compile(
+    r'\b[0-9a-fA-F]{8}[-]?[0-9a-fA-F]{4}[-]?[0-9a-fA-F]{4}[-]?[0-9a-fA-F]{4}[-]?[0-9a-fA-F]{12}\b',
+    re.IGNORECASE
+)
+
 # search api https://www.elastic.co/guide/en/elasticsearch/reference/current/search-search.html
 _regex_search_url = re.compile(r"/([^/]+)/_search[/]?")
 
@@ -248,6 +255,18 @@ def _wrap_perform_request(
                     + f"/_{endpoint_type}/:id"
                     + url[doc_span[1]:]
                 )
+            elif uuid_regex.search(url):
+                matches = uuid_regex.findall(url)
+                count = len(matches)
+
+                if count == 1:
+                    doc_id = matches[0] # Save doc id to be added to the span at elasticsearch.id
+                    url = uuid_regex.sub(':id', url)
+                else:
+                    counter = itertools.count(1)
+                    url = uuid_regex.sub(lambda m: f':id{next(counter)}', url)
+
+                op_name = span_name_prefix + url
 
             match = _regex_search_url.search(url)
             if match is not None:

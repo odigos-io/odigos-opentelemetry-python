@@ -2,7 +2,7 @@ from setuptools import setup, find_packages
 
 setup(
     name="odigos-opentelemetry-python",
-    version="1.0.39",
+    version="1.0.40",
     description="Odigos Initializer for Python OpenTelemetry Components",
     author="Tamir David",
     author_email="tamir@odigos.io",
@@ -37,7 +37,9 @@ setup(
         'opentelemetry-instrumentation-confluent-kafka==0.49b2',
         'opentelemetry-instrumentation-dbapi==0.49b2',
         'opentelemetry-instrumentation-django==0.49b2',
-        'odigos-opentelemetry-instrumentation-elasticsearch==0.49b2',
+        # When testing new overloaded ingegration add it in the following way to pull the custom tag from the local pypi repo
+        # 'odigos-opentelemetry-instrumentation-elasticsearch @ http://host.docker.internal:8080/packages/odigos_opentelemetry_instrumentation_elasticsearch-0.49b3-py3-none-any.whl',
+        'odigos-opentelemetry-instrumentation-elasticsearch==0.49b3',
         'opentelemetry-instrumentation-falcon==0.49b2',
         'opentelemetry-instrumentation-fastapi==0.49b2',
         'opentelemetry-instrumentation-flask==0.49b2',
