@@ -196,7 +196,7 @@ _regex_match_es_api = re.compile(r"/_(doc|create|update)/([^/]+)")
 
 # Search doc ids to fix high cardinality issue with span names
 uuid_regex = re.compile(
-    r'\b[0-9a-fA-F]{8}[-]?[0-9a-fA-F]{4}[-]?[0-9a-fA-F]{4}[-]?[0-9a-fA-F]{4}[-]?[0-9a-fA-F]{12}\b',
+    r'\b(?:[0-9A-Fa-f]{8}(?:-?[0-9A-Fa-f]{4}){3}-?[0-9A-Fa-f]{12}(?:-[0-9A-Fa-f]{8}(?:-?[0-9A-Fa-f]{4}){3}-?[0-9A-Fa-f]{12})?|[0-9A-Fa-f]{64})\b',
     re.IGNORECASE
 )
 
