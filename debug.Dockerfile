@@ -1,20 +1,15 @@
+# debug.Dockerfile
 FROM python:3.11
 
-ARG CACHEBUST=1
+# install build tools & pypiserver
 RUN python -m pip install --upgrade pip setuptools wheel build pypiserver
 
 WORKDIR /app
 
-COPY . .
-
-ENTRYPOINT ["/bin/bash", "-c", "set -e && \
-  echo '🔧 Building patched instrumentations...' && \
-  make build-instrumentations && \
-  echo '📦 Building odigos-opentelemetry-python...' && \
-  python -m build && \
-  echo '📦 Copying patched instrumentations wheels...' && \
-  for d in $(ls instrumentations/); do cp instrumentations/$d/dist/* dist/; done && \
-  echo '🚀 Starting local PyPI server on port 8080...' && \
-  exec pypi-server run -p 8080 -P . -a . dist/"]
+# only copy the built artifacts; code & instrumentations get built on the host
+COPY dist/ ./dist/
 
 EXPOSE 8080
+
+# just serve whatever is in ./dist
+ENTRYPOINT ["pypi-server", "run", "-p", "8080", "-P", ".", "-a", ".", "dist/"]
