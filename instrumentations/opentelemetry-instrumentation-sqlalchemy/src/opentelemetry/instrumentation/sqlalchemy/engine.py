@@ -54,13 +54,13 @@ def _wrap_create_async_engine(
         if hasattr(engine, '_engine'):
             EngineTracer(
                 tracer,
-                engine._engine,
+                engine._engine.sync_engine,
                 connections_usage,
                 enable_commenter,
                 commenter_options,
             )
             return engine
-
+ 
         EngineTracer(
             tracer,
             engine.sync_engine,
@@ -81,6 +81,17 @@ def _wrap_create_engine(
         object that will listen to SQLAlchemy events.
         """
         engine = func(*args, **kwargs)
+        if hasattr(engine, '_engine'):
+            EngineTracer(
+                tracer,
+                engine._engine,
+                connections_usage,
+                enable_commenter,
+                commenter_options,
+            )
+            return engine
+        
+
         EngineTracer(
             tracer,
             engine,
