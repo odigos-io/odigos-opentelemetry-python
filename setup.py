@@ -2,7 +2,7 @@ from setuptools import setup, find_packages
 
 setup(
     name="odigos-opentelemetry-python",
-    version="1.0.42",
+    version="1.0.43",
     description="Odigos Initializer for Python OpenTelemetry Components",
     author="Tamir David",
     author_email="tamir@odigos.io",
@@ -61,7 +61,7 @@ setup(
         'opentelemetry-instrumentation-redis==0.49b2',
         'opentelemetry-instrumentation-remoulade==0.49b2',
         'opentelemetry-instrumentation-requests==0.49b2',
-        'odigos-opentelemetry-instrumentation-sqlalchemy==0.49b2',
+        'odigos-opentelemetry-instrumentation-sqlalchemy==0.49b3',
         'opentelemetry-instrumentation-sqlite3==0.49b2',
         'opentelemetry-instrumentation-starlette==0.49b2',
         'opentelemetry-instrumentation-tornado==0.49b2',
