@@ -29,21 +29,32 @@ echo "ℹ️  Using host volume: $DIST_VOL"
 # 4) Build functions
 build_packages() {
   echo "🔧 Building patched instrumentations..."
-  make build-instrumentations 2>&1 > /dev/null
+  make build-instrumentations
 
   echo "📦 Building odigos-opentelemetry-python wheel..."
   $PYTHON -m build
+
+  echo "📦 Copying instrumentation wheels into dist/…"
+  # clear out any old instrumentation wheels
+  find dist -maxdepth 1 -type f -name "odigos_opentelemetry_instrumentation_*" -delete
+  # copy each instrumentation's dist/* into dist/
+  for inst_dir in instrumentations/*/dist; do
+    if [ -d "$inst_dir" ]; then
+      cp "$inst_dir"/* dist/ || true
+    fi
+  done
 }
 
 sync_to_volume() {
   echo "📂 Syncing dist/ → $DIST_VOL"
   rsync -a --delete dist/ "$DIST_VOL"/
-  echo "📂 Done syncing dist/ → $DIST_VOL"
+  echo "✅ Done syncing dist/ → $DIST_VOL"
 }
 
 # 5) Start the server (once)
 start_server() {
   echo "🚀 Starting PyPI server container (mount: $DIST_VOL → /app/dist)..."
+  docker build -t "$IMAGE_NAME" -f debug.Dockerfile .
   docker rm -f "$CONTAINER_NAME" >/dev/null 2>&1 || true
   docker run -d \
     --name "$CONTAINER_NAME" \
@@ -52,13 +63,13 @@ start_server() {
     "$IMAGE_NAME"
 }
 
-# 6) Watch for changes & only rebuild+sync, but ignore dist/ and temp volume
+# 6) Watch for changes & only rebuild+sync
 watch_and_sync() {
   echo "👀 Watching for file changes (ignoring all dist/ dirs)… (Ctrl-C to stop)"
   fswatch -r \
     --exclude '.*/\.git/.*' \
-    --exclude '.*/dist' \
     --exclude '.*odigos_.*' \
+    --exclude '.*/dist/.*' \
     . | while read -r path; do
       echo "🔄 Change detected at $(date '+%H:%M:%S'): $path"
       build_packages
@@ -67,7 +78,7 @@ watch_and_sync() {
 }
 
 # === Main ===
-# build_packages
+build_packages
 sync_to_volume
 start_server
 watch_and_sync
