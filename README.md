@@ -32,7 +32,7 @@ Inside `agents/python/setup.py` Uncomment `# index_url = ....` and make sure it 
 #### Enterprise
 Update the python agent requirements.txt with a reference to the local pypi server for example:
 
-Change `odigos-opentelemetry-python==1.0.41` to `odigos-opentelemetry-python @ http://host.docker.internal:8080/packages/odigos_opentelemetry_python-1.0.42-py3-none-any.whl`
+Change `odigos-opentelemetry-python==1.0.42` to `odigos-opentelemetry-python @ http://host.docker.internal:8080/packages/odigos_opentelemetry_python-1.0.42-py3-none-any.whl`
 
 #### Using custom instrumentation
 In order to use a custom instrumentation (By patching it here from source) replace the original line in the setup.py to use the local context
