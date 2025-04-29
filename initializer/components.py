@@ -6,7 +6,6 @@ import threading
 import atexit
 import sys
 import os
-
 import opentelemetry.sdk._configuration as sdk_config
 from .process_resource import OdigosProcessResourceDetector
 from opentelemetry.sdk.resources import Resource
@@ -193,5 +192,8 @@ def handle_instrumenation_of_sub_processes():
     # - Webhook integration is implemented
     # - A custom distro creation mechanism is developed
     auto_instrumentation_path = "/var/odigos/python/opentelemetry/instrumentation/auto_instrumentation"
-    if auto_instrumentation_path not in os.environ["PYTHONPATH"]:
-        os.environ["PYTHONPATH"] = f"{os.environ['PYTHONPATH']}:{auto_instrumentation_path}"
+    python_path = os.getenv("PYTHONPATH", "")
+    
+    if auto_instrumentation_path not in python_path:
+        new_python_path = f"{python_path}:{auto_instrumentation_path}" if python_path else auto_instrumentation_path
+        os.environ["PYTHONPATH"] = new_python_path
