@@ -81,7 +81,9 @@ setup(
         'opentelemetry-instrumentation-urllib==0.52b1',
         'opentelemetry-instrumentation-urllib3==0.52b1',
         'opentelemetry-instrumentation-wsgi==0.52b1',
-        'setuptools==75.3.0'
+        'setuptools==75.3.0',
+        'ripdb',
+        'ipdb'
     ],
     python_requires=">=3.8"
 )
