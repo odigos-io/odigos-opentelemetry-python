@@ -28,6 +28,9 @@ echo "ℹ️  Using host volume: $DIST_VOL"
 
 # 4) Build functions
 build_packages() {
+  
+  rm -rf ./dist/* || true
+
   echo "🔧 Building patched instrumentations..."
   make build-instrumentations
 
@@ -74,4 +77,4 @@ watch_and_sync() {
 # === Main ===
 build_packages
 start_server
-watch_and_sync
+# watch_and_sync
