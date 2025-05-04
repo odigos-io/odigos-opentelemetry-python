@@ -21,6 +21,7 @@ setup(
         "charset-normalizer==3.4.1",
         'googleapis-common-protos==1.66.0',
         'opentelemetry-distro==0.52b1',
+        'packaging==24.2',
         'protobuf==5.29.2',
         'importlib-metadata==6.0',
         'typing-extensions==4.12.2',
