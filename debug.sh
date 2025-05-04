@@ -57,7 +57,7 @@ start_server() {
     --rm \
     --name "$CONTAINER_NAME" \
     -p "$PORT:8080" \
-    -v "$DIST_VOL":/dist \
+    -v "$DIST_VOL":/app/dist \
     "$IMAGE_NAME"
 }
 
