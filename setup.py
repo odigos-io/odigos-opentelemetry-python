@@ -2,7 +2,7 @@ from setuptools import setup, find_packages
 
 setup(
     name="odigos-opentelemetry-python",
-    version="1.0.44",
+    version="1.0.45",
     description="Odigos Initializer for Python OpenTelemetry Components",
     author="Tamir David",
     author_email="tamir@odigos.io",
@@ -36,6 +36,7 @@ setup(
         'opentelemetry-instrumentation-botocore==0.52b1',
         'opentelemetry-instrumentation-cassandra==0.52b1',
         'opentelemetry-instrumentation-celery==0.52b1',
+        'opentelemetry-instrumentation-click==0.52b1',
         'opentelemetry-instrumentation-confluent-kafka==0.52b1',
         'opentelemetry-instrumentation-dbapi==0.52b1',
         'opentelemetry-instrumentation-django==0.52b1',
@@ -58,6 +59,7 @@ setup(
         'opentelemetry-instrumentation-psycopg2==0.52b1',
         'opentelemetry-instrumentation-pymemcache==0.52b1',
         'opentelemetry-instrumentation-pymongo==0.52b1',
+        'opentelemetry-instrumentation-pymssql==0.52b1',
         'opentelemetry-instrumentation-pymysql==0.52b1',
         'opentelemetry-instrumentation-pyramid==0.52b1',
         'opentelemetry-instrumentation-redis==0.52b1',
