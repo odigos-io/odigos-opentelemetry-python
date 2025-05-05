@@ -6,6 +6,7 @@ T = TypeVar("T")
 
 
 ###             Configuration structs           ###
+
 @dataclass
 class CodeAttributes:
     column:      bool = False
@@ -29,7 +30,7 @@ def camel_to_snake(name: str) -> str:
 def from_dict(cls: Type[T], data: Dict[str, Any]) -> T:
     """
     Instantiate the dataclass `cls` from `data`:
-      - Converts JSON camelCase keys → snake_case field names
+      - Converts JSON camelCase keys to snake_case field names
       - Ignores unknown keys
       - Uses defaults for any missing fields
       - Recurses if a field’s type is itself a dataclass

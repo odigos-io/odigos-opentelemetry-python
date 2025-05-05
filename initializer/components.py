@@ -23,6 +23,8 @@ from .envs import set_static_otel_env
 from .odigos_sampler import OdigosSampler
 from opentelemetry.sdk.trace.sampling import ParentBased
 
+from opamp.config import Config
+
 # Reorder the python sys.path to ensure that the user application's dependencies take precedence over the agent's dependencies.
 # This is necessary because the user application's dependencies may be incompatible with those used by the agent.
 reorder_python_path()
@@ -124,7 +126,8 @@ def initialize_traces_if_enabled(trace_exporters, resource, span_processor = Non
             provider = TracerProvider(resource=resource, sampler=sampler)
             set_tracer_provider(provider)
             if span_processor is not None:
-                provider.add_span_processor(span_processor)
+                # Pass default config to EBPFSpanProcessor on initialization, any changes should come after from the heartbeat
+                provider.add_span_processor(span_processor, conf=Config())
 
         return odigos_sampler
 
@@ -183,17 +186,7 @@ def update_agent_config(conf):
     print(f"Received new config: {conf}")
 
     _logger.info(f"update_agent_config: Got new config: {conf}")
-    processor_config = conf.get("", None)
-    if not processor_config:
-        return
 
-    code_attr_conf = processor_config.get("codeAttributes", None)
-    if not code_attr_conf:
-        return
-
-    code_attr_conf = keys_to_snake(code_attr_conf)
-
-    _logger.info(f"Updated params: {code_attr_conf}")
     provider = get_tracer_provider()
     if provider is None:
         return
@@ -217,7 +210,7 @@ def update_agent_config(conf):
     for proc in processors:
         if hasattr(proc, "update_code_attribute"):
             _logger.info(f"{proc} has update_code_attributes")
-            proc.update_code_attribute(code_attr_conf)
+            proc.update_code_attribute(conf)
         else:
             _logger.info(f"{proc} is missing update_code_attribute")
 

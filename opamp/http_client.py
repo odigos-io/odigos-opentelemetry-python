@@ -174,34 +174,16 @@ class OpAMPHTTPClient:
 
                     proto_dict = MessageToDict(server_to_agent)
 
-                    print(time.strftime("%Y-%m-%d %H:%M:%S", time.localtime()), flush=True)
-
-                    if server_to_agent.HasField("remote_config"):
-                        remote_config = self.get_remote_config(server_to_agent)
-                        print("server_to_agent has remote_config", flush=True)
-                        print(f"Type of remote_config: {type(remote_config)}, values: {remote_config}", flush=True)
-                    else:
-                        print("server_to_agent has no remote_config", flush=True)
-
                     if self.update_remote_config_status(server_to_agent):
-                        # Had config change and has remote_config
-                        # TODO:
-                        # Parse the remote_config struct
-                        # Get relevant configurations
-                        # Pass them to callback
-                        # Use the following snippet as an example to json parsing
-
-                        ###
-
-                        ###
                         if server_to_agent.HasField("remote_config"):
-                            remote_config = self.get_remote_config(server_to_agent)
-                            print(f"Type of remote_config: {type(remote_config)}, values: {remote_config}")
-                        else:
-                            print("server_to_agent has no remote_config", flush=True)
+                            try:
+                                remote_config = self.get_remote_config(server_to_agent)
+                            except Exception:
+                                # If any error was raised parsing the config, use the default config
+                                remote_config = Config()
 
                         if self.update_conf_cb:
-                            # self.update_conf_cb(remote_config)
+                            self.update_conf_cb(remote_config)
                             pass
                     else:
                         print("self.update_remote_config_status(server_to_agent) == False", flush=True)
