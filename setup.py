@@ -2,7 +2,7 @@ from setuptools import setup, find_packages
 
 setup(
     name="odigos-opentelemetry-python",
-    version="1.0.45",
+    version="1.0.46",
     description="Odigos Initializer for Python OpenTelemetry Components",
     author="Tamir David",
     author_email="tamir@odigos.io",
@@ -81,9 +81,7 @@ setup(
         'opentelemetry-instrumentation-urllib==0.52b1',
         'opentelemetry-instrumentation-urllib3==0.52b1',
         'opentelemetry-instrumentation-wsgi==0.52b1',
-        'setuptools==75.3.0',
-        'ripdb',
-        'ipdb'
+        'setuptools==75.3.0'
     ],
     python_requires=">=3.8"
 )

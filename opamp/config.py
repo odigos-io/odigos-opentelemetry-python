@@ -4,11 +4,12 @@ from typing import Any, Dict, Type, TypeVar, get_type_hints
 
 T = TypeVar("T")
 
-
 ###             Configuration structs           ###
 class DefaultNoneMixin:
+    #__getattr__ is only invoked when the normal attribute lookup (__dict__, class attributes, etc.) fails.
+    # Prevent raising a ValueError when accessing a non existing key
+    # It'll save us multiple try catch blocks in the future
     def __getattr__(self, name: str):
-        # only called if `name` isn't found normally
         return None
 
 @dataclass

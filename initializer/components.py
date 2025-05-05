@@ -54,7 +54,6 @@ def initialize_components(trace_exporters = False, span_processor = None):
         received_value = client.resource_attributes
 
         if received_value:
-
             handle_django_instrumentation()
 
             auto_resource = {
@@ -73,8 +72,6 @@ def initialize_components(trace_exporters = False, span_processor = None):
                 client.sampler = odigos_sampler
 
             # Register configuration update callback for ebpf consumer
-            print("*"*50)
-            print(f"trace_exporters = {trace_exporters}")
             if not trace_exporters:
                 client.register_config_update_cb(update_agent_config)
 
@@ -126,7 +123,6 @@ def initialize_traces_if_enabled(trace_exporters, resource, span_processor = Non
             if span_processor is not None:
                 # Pass default config to EBPFSpanProcessor on initialization, any changes should come after from the heartbeat
                 if hasattr(span_processor, "update_config"):
-                    print(f"span_processor ({span_processor}) has update_config", flush=True)
                     # Set default configuration for the processor
                     span_processor.update_config(Config())
 
@@ -185,26 +181,7 @@ def start_opamp_client(event):
 
     return client
 
-import ripdb
-import inspect
-def safe_set_trace(host='0.0.0.0', port=4444):
-    global _debugger_instance
-
-    # Always use caller's frame
-    frame = inspect.currentframe().f_back
-
-    if _debugger_instance is None:
-        print(f"[ripdb] First-time bind on {host}:{port}", flush=True)
-        _debugger_instance = ripdb.Rpdb(addr=host, port=port)
-        _debugger_instance.set_trace(frame)
-    else:
-        print(f"[ripdb] Reusing existing debugger on {host}:{port}", flush=True)
-        _debugger_instance.set_trace(frame)
-
-
 def update_agent_config(conf: Config):
-    print(f"Received new config: {conf}")
-
     provider = get_tracer_provider()
     if provider is None:
         return
@@ -224,15 +201,9 @@ def update_agent_config(conf: Config):
         else [active_proc]
     )
 
-    print("#"*20)
-    print(f"Got processor: {processors}", flush=True)
     for proc in processors:
         if hasattr(proc, "update_config"):
-            print(f"{proc} has update_configs", flush=True)
             proc.update_config(conf)
-        else:
-            print(f"{proc} is missing update_config", flush=True)
-            print(f"{dir(proc)}", flush=True)
 
 def is_supported_python_version():
     return sys.version_info >= MINIMUM_PYTHON_SUPPORTED_VERSION

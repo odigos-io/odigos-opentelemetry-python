@@ -20,7 +20,7 @@ from opamp import opamp_pb2, anyvalue_pb2, utils
 from opamp.health_status import AgentHealthStatus
 from initializer.process_resource import PROCESS_VPID
 
-from google.protobuf.json_format import MessageToDict, ParseDict
+from google.protobuf.json_format import MessageToDict
 
 from opamp.config import from_dict, Config
 
@@ -155,29 +155,17 @@ class OpAMPHTTPClient:
             with self.condition:
                 try:
                     server_to_agent = self.send_heartbeat()
-
-                    proto_dict = MessageToDict(server_to_agent)
-
                     if self.update_remote_config_status(server_to_agent):
-                        print("self.update_remote_config_status(server_to_agent) == True", flush=True)
                         if server_to_agent.HasField("remote_config"):
                             try:
                                 remote_config = self.get_remote_config(server_to_agent)
-                                print(f"Received remote_config: {remote_config}", flush=True)
                             except Exception as e:
                                 # If any error was raised parsing the config, use the default config
-                                print(f"Received exception: {e}")
-                                print("Leave remote config as default", flush=True)
                                 remote_config = Config()
-                        else:
-                            print(f"Missing remove_config", flush=True)
 
-                        print(f"self.update_conf_cb is {self.update_conf_cb}", flush=True)
                         if self.update_conf_cb:
                             self.update_conf_cb(remote_config)
                             pass
-                    else:
-                        print("self.update_remote_config_status(server_to_agent) == False", flush=True)
 
                     if server_to_agent.flags & opamp_pb2.ServerToAgentFlags_ReportFullState:
                         # opamp_logger.info("Received request to report full state")
@@ -235,7 +223,6 @@ class OpAMPHTTPClient:
                 # If not JSON, just keep it as raw bytes
                 decoded_map[key] = body_bytes
 
-        print(f"End of get_remove_config, decoded_map: {decoded_map}")
         inner = decoded_map.get("", None)
         if inner is None:
             return Config() # Return default values for config
