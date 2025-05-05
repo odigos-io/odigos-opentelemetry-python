@@ -73,7 +73,9 @@ def initialize_components(trace_exporters = False, span_processor = None):
                 client.sampler = odigos_sampler
 
             # Register configuration update callback for ebpf consumer
-            if trace_exporters:
+            print("*"*50)
+            print(f"trace_exporters = {trace_exporters}")
+            if not trace_exporters:
                 client.register_config_update_cb(update_agent_config)
 
             initialize_metrics_if_enabled(resource, supported_signals)
@@ -123,10 +125,10 @@ def initialize_traces_if_enabled(trace_exporters, resource, span_processor = Non
             set_tracer_provider(provider)
             if span_processor is not None:
                 # Pass default config to EBPFSpanProcessor on initialization, any changes should come after from the heartbeat
-                if hasattr(span_processor, "update_code_attribute"):
-                    print(f"span_processor ({span_processor}) has update_code_attribute", flush=True)
+                if hasattr(span_processor, "update_config"):
+                    print(f"span_processor ({span_processor}) has update_config", flush=True)
                     # Set default configuration for the processor
-                    span_processor.update_code_attribute(Config())
+                    span_processor.update_config(Config())
 
                 provider.add_span_processor(span_processor)
 
@@ -183,6 +185,23 @@ def start_opamp_client(event):
 
     return client
 
+import ripdb
+import inspect
+def safe_set_trace(host='0.0.0.0', port=4444):
+    global _debugger_instance
+
+    # Always use caller's frame
+    frame = inspect.currentframe().f_back
+
+    if _debugger_instance is None:
+        print(f"[ripdb] First-time bind on {host}:{port}", flush=True)
+        _debugger_instance = ripdb.Rpdb(addr=host, port=port)
+        _debugger_instance.set_trace(frame)
+    else:
+        print(f"[ripdb] Reusing existing debugger on {host}:{port}", flush=True)
+        _debugger_instance.set_trace(frame)
+
+
 def update_agent_config(conf: Config):
     print(f"Received new config: {conf}")
 
@@ -198,20 +217,22 @@ def update_agent_config(conf: Config):
 
     # If you attached only one BatchSpanProcessor, _active_span_processor
     # *is* that object.  If you attached several, it is a MultiSpanProcessor
-    # that wraps them in .span_processors.
+    # that wraps them in ._span_processors.
     processors = (
-        active_proc.span_processors
-        if hasattr(active_proc, "span_processors")
+        active_proc._span_processors
+        if hasattr(active_proc, "_span_processors")
         else [active_proc]
     )
 
+    print("#"*20)
     print(f"Got processor: {processors}", flush=True)
     for proc in processors:
-        if hasattr(proc, "update_code_attribute"):
-            print(f"{proc} has update_code_attributes", flush=True)
-            proc.update_code_attribute(conf)
+        if hasattr(proc, "update_config"):
+            print(f"{proc} has update_configs", flush=True)
+            proc.update_config(conf)
         else:
-            print(f"{proc} is missing update_code_attribute", flush=True)
+            print(f"{proc} is missing update_config", flush=True)
+            print(f"{dir(proc)}", flush=True)
 
 def is_supported_python_version():
     return sys.version_info >= MINIMUM_PYTHON_SUPPORTED_VERSION

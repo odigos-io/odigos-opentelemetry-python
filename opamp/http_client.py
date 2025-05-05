@@ -1,13 +1,11 @@
 import os
 import sys
+import json
 import time
 import base64
 import threading
 import requests_odigos
 import logging
-
-import ripdb
-import inspect
 
 from uuid_extensions import uuid7
 from opentelemetry.semconv.resource import ResourceAttributes
@@ -30,20 +28,6 @@ from opamp.config import from_dict, Config
 opamp_logger = logging.getLogger('odigos')
 
 _debugger_instance = None
-
-def safe_set_trace(host='0.0.0.0', port=4444):
-    global _debugger_instance
-
-    # Always use caller's frame
-    frame = inspect.currentframe().f_back
-
-    if _debugger_instance is None:
-        print(f"[ripdb] First-time bind on {host}:{port}")
-        _debugger_instance = ripdb.Rpdb(addr=host, port=port)
-        _debugger_instance.set_trace(frame)
-    else:
-        print(f"[ripdb] Reusing existing debugger on {host}:{port}")
-        _debugger_instance.set_trace(frame)
 
 env_var_mappings = {
     "ODIGOS_WORKLOAD_NAMESPACE": ResourceAttributes.K8S_NAMESPACE_NAME,
@@ -175,13 +159,20 @@ class OpAMPHTTPClient:
                     proto_dict = MessageToDict(server_to_agent)
 
                     if self.update_remote_config_status(server_to_agent):
+                        print("self.update_remote_config_status(server_to_agent) == True", flush=True)
                         if server_to_agent.HasField("remote_config"):
                             try:
                                 remote_config = self.get_remote_config(server_to_agent)
-                            except Exception:
+                                print(f"Received remote_config: {remote_config}", flush=True)
+                            except Exception as e:
                                 # If any error was raised parsing the config, use the default config
+                                print(f"Received exception: {e}")
+                                print("Leave remote config as default", flush=True)
                                 remote_config = Config()
+                        else:
+                            print(f"Missing remove_config", flush=True)
 
+                        print(f"self.update_conf_cb is {self.update_conf_cb}", flush=True)
                         if self.update_conf_cb:
                             self.update_conf_cb(remote_config)
                             pass
@@ -244,10 +235,11 @@ class OpAMPHTTPClient:
                 # If not JSON, just keep it as raw bytes
                 decoded_map[key] = body_bytes
 
-        if hasattr(decoded_map, ""):
-            inner = decoded_map[""]
-            return from_dict(Config, inner)
-        return Config() # Return default values for config
+        print(f"End of get_remove_config, decoded_map: {decoded_map}")
+        inner = decoded_map.get("", None)
+        if inner is None:
+            return Config() # Return default values for config
+        return from_dict(Config, inner)
 
     def send_heartbeat(self) -> opamp_pb2.ServerToAgent: # type: ignore
         # opamp_logger.debug("Sending heartbeat to OpAMP server...")
