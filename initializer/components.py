@@ -2,7 +2,6 @@ from .lib_handling import reorder_python_path, reload_distro_modules, handle_dja
 
 handle_eventlet_instrumentation()
 
-import logging
 import threading
 import atexit
 import sys
@@ -31,12 +30,8 @@ reorder_python_path()
 
 from opamp.http_client import OpAMPHTTPClient, MockOpAMPClient
 
-_logger = logging.getLogger('odigos')
-
 MINIMUM_PYTHON_SUPPORTED_VERSION = (3, 8)
 
-def handle_config_change():
-    pass
 
 def initialize_components(trace_exporters = False, span_processor = None):
     # In case of forking, the OpAMP client should be started in the child process.
@@ -77,7 +72,8 @@ def initialize_components(trace_exporters = False, span_processor = None):
             if odigos_sampler is not None :
                 client.sampler = odigos_sampler
 
-            if trace_exporters: # EBPF
+            # Register configuration update callback for ebpf consumer
+            if trace_exporters:
                 client.register_config_update_cb(update_agent_config)
 
             initialize_metrics_if_enabled(resource, supported_signals)
@@ -127,7 +123,12 @@ def initialize_traces_if_enabled(trace_exporters, resource, span_processor = Non
             set_tracer_provider(provider)
             if span_processor is not None:
                 # Pass default config to EBPFSpanProcessor on initialization, any changes should come after from the heartbeat
-                provider.add_span_processor(span_processor, conf=Config())
+                if hasattr(span_processor, "update_code_attribute"):
+                    print(f"span_processor ({span_processor}) has update_code_attribute", flush=True)
+                    # Set default configuration for the processor
+                    span_processor.update_code_attribute(Config())
+
+                provider.add_span_processor(span_processor)
 
         return odigos_sampler
 
@@ -182,10 +183,8 @@ def start_opamp_client(event):
 
     return client
 
-def update_agent_config(conf):
+def update_agent_config(conf: Config):
     print(f"Received new config: {conf}")
-
-    _logger.info(f"update_agent_config: Got new config: {conf}")
 
     provider = get_tracer_provider()
     if provider is None:
@@ -206,13 +205,13 @@ def update_agent_config(conf):
         else [active_proc]
     )
 
-    _logger.info(f"Got processor: {processors}")
+    print(f"Got processor: {processors}", flush=True)
     for proc in processors:
         if hasattr(proc, "update_code_attribute"):
-            _logger.info(f"{proc} has update_code_attributes")
+            print(f"{proc} has update_code_attributes", flush=True)
             proc.update_code_attribute(conf)
         else:
-            _logger.info(f"{proc} is missing update_code_attribute")
+            print(f"{proc} is missing update_code_attribute", flush=True)
 
 def is_supported_python_version():
     return sys.version_info >= MINIMUM_PYTHON_SUPPORTED_VERSION

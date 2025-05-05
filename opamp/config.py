@@ -6,9 +6,13 @@ T = TypeVar("T")
 
 
 ###             Configuration structs           ###
+class DefaultNoneMixin:
+    def __getattr__(self, name: str):
+        # only called if `name` isn't found normally
+        return None
 
 @dataclass
-class CodeAttributes:
+class CodeAttributes(DefaultNoneMixin):
     column:      bool = False
     file_path:   bool = False
     function:    bool = False
@@ -17,7 +21,7 @@ class CodeAttributes:
     stack_trace: bool = False
 
 @dataclass
-class Config:
+class Config(DefaultNoneMixin):
     code_attributes: CodeAttributes = field(default_factory=CodeAttributes)
 
 ###             Helpers             ###
