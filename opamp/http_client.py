@@ -156,16 +156,14 @@ class OpAMPHTTPClient:
                 try:
                     server_to_agent = self.send_heartbeat()
                     if self.update_remote_config_status(server_to_agent):
-                        if server_to_agent.HasField("remote_config"):
+                        if server_to_agent.HasField("remote_config") and self.update_conf_cb:
                             try:
                                 remote_config = self.get_remote_config(server_to_agent)
-                            except Exception as e:
-                                # If any error was raised parsing the config, use the default config
-                                remote_config = Config()
-
-                        if self.update_conf_cb:
-                            self.update_conf_cb(remote_config)
-                            pass
+                                self.update_conf_cb(remote_config)
+                            except Exception:
+                                # Catch exception and don't update the config
+                                # The default config is preloaded when the EBPFSpanProcessor is initialized
+                                pass
 
                     if server_to_agent.flags & opamp_pb2.ServerToAgentFlags_ReportFullState:
                         # opamp_logger.info("Received request to report full state")
@@ -181,7 +179,7 @@ class OpAMPHTTPClient:
                 except requests_odigos.RequestException as e:
                     # opamp_logger.error(f"Error fetching data: {e}")
                     pass
-                self.condition.wait(10)
+                self.condition.wait(30)
 
     def get_remote_config(self, message) -> dict:
         """
