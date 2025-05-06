@@ -117,11 +117,6 @@ def initialize_traces_if_enabled(trace_exporters, resource, span_processor = Non
             provider = TracerProvider(resource=resource, sampler=sampler)
             set_tracer_provider(provider)
             if span_processor is not None:
-                # Pass default config to EBPFSpanProcessor on initialization, any changes should come after from the heartbeat
-                if hasattr(span_processor, "update_config"):
-                    # Set default configuration for the processor
-                    span_processor.update_config(Config())
-
                 provider.add_span_processor(span_processor)
 
         return odigos_sampler
