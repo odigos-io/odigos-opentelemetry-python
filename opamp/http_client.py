@@ -125,7 +125,15 @@ class OpAMPHTTPClient:
                 # Check if the response of the first message is empty
                 # It may happen if OpAMPServer is not available
                 if first_message_server_to_agent.ListFields():
-                    self.update_remote_config_status(first_message_server_to_agent)
+                    if self.update_remote_config_status(server_to_agent):
+                        if server_to_agent.HasField("remote_config") and self.update_conf_cb:
+                            try:
+                                remote_config = self.get_remote_config(server_to_agent)
+                                self.update_conf_cb(remote_config)
+                            except Exception:
+                                # Catch exception and don't update the config
+                                # The default config is preloaded when the EBPFSpanProcessor is initialized
+                                pass
 
                     sdk_config = utils.get_sdk_config(first_message_server_to_agent.remote_config.config.config_map)
                     self.resource_attributes = utils.parse_first_message_to_resource_attributes(sdk_config, opamp_logger)
@@ -174,7 +182,15 @@ class OpAMPHTTPClient:
 
                         server_to_agent = self.send_agent_to_server_message(agent_to_server)
 
-                        self.update_remote_config_status(server_to_agent)
+                        if self.update_remote_config_status(server_to_agent):
+                            if server_to_agent.HasField("remote_config") and self.update_conf_cb:
+                                try:
+                                    remote_config = self.get_remote_config(server_to_agent)
+                                    self.update_conf_cb(remote_config)
+                                except Exception:
+                                    # Catch exception and don't update the config
+                                    # The default config is preloaded when the EBPFSpanProcessor is initialized
+                                    pass
 
                 except requests_odigos.RequestException as e:
                     # opamp_logger.error(f"Error fetching data: {e}")
