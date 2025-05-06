@@ -71,10 +71,6 @@ def initialize_components(trace_exporters = False, span_processor = None):
             if odigos_sampler is not None :
                 client.sampler = odigos_sampler
 
-            # Register configuration update callback for ebpf consumer
-            if not trace_exporters:
-                client.register_config_update_cb(update_agent_config)
-
             initialize_metrics_if_enabled(resource, supported_signals)
             initialize_logging_if_enabled(resource, supported_signals)
 
@@ -161,6 +157,9 @@ def start_opamp_client(event):
     condition = threading.Condition(threading.Lock())
     client = OpAMPHTTPClient(event, condition)
 
+    # Register the configuration update callback for the processor
+    client.register_config_update_cb(update_agent_config)
+
     python_version_supported = is_supported_python_version()
 
     client.start(python_version_supported)
@@ -182,6 +181,16 @@ def start_opamp_client(event):
     return client
 
 def update_agent_config(conf: Config):
+    """
+    The function `update_agent_config` checks for a tracer provider and updates its configuration using
+    processors if available.
+
+    :param conf: The `conf` parameter in the `update_agent_config` function is of type `Config`. It is
+    used to update the configuration settings of the agent
+    :type conf: Config
+    :return: If the `provider` is `None` or if `active_proc` is `None`, then the function will return
+    without performing any further actions.
+    """
     provider = get_tracer_provider()
     if provider is None:
         return
