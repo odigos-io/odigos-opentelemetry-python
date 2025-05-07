@@ -67,7 +67,7 @@ watch_and_sync() {
   fswatch -r \
     --exclude '.*/\.git/.*' \
     --exclude '.*odigos_.*' \
-    --exclude '.*/dist/.*' \
+    --exclude '.*/dist.*' \
     . | while read -r path; do
       echo "🔄 Change detected at $(date '+%H:%M:%S'): $path"
       build_packages
