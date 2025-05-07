@@ -179,6 +179,7 @@ def update_agent_config(conf: Config):
     """
     The function `update_agent_config` checks for a tracer provider and updates its configuration using
     processors if available.
+    It searches specifically for the EBPFSpanProcessor processes (Looking for the update_config attribute).
 
     :param conf: The `conf` parameter in the `update_agent_config` function is of type `Config`. It is
     used to update the configuration settings of the agent
