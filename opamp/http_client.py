@@ -125,10 +125,10 @@ class OpAMPHTTPClient:
                 # Check if the response of the first message is empty
                 # It may happen if OpAMPServer is not available
                 if first_message_server_to_agent.ListFields():
-                    if self.update_remote_config_status(server_to_agent):
-                        if server_to_agent.HasField("remote_config") and self.update_conf_cb:
+                    if self.update_remote_config_status(first_message_server_to_agent):
+                        if first_message_server_to_agent.HasField("remote_config") and self.update_conf_cb:
                             try:
-                                remote_config = self.get_remote_config(server_to_agent)
+                                remote_config = self.get_remote_config(first_message_server_to_agent)
                                 self.update_conf_cb(remote_config)
                             except Exception:
                                 # Catch exception and don't update the config
