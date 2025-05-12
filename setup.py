@@ -23,7 +23,7 @@ setup(
         'opentelemetry-distro==0.52b1',
         'packaging==24.2',
         'protobuf==5.29.2',
-        'importlib-metadata==6.0',
+        'importlib-metadata==8.7.0',
         'typing-extensions==4.12.2',
         'opentelemetry-exporter-otlp-proto-http==1.31.1',
         'opentelemetry-instrumentation==0.52b1',
