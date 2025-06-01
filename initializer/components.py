@@ -7,9 +7,6 @@ import atexit
 import sys
 import os
 
-from opentelemetry.exporter.otlp.proto.common._internal.trace_encoder import (
-            _encode_resource_spans,
-        )
 import opentelemetry.sdk._configuration as sdk_config
 from .process_resource import OdigosProcessResourceDetector
 from opentelemetry.sdk.resources import Resource
