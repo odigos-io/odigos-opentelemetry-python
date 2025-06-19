@@ -142,7 +142,7 @@ class OpAMPHTTPClient:
                                 pass
 
                     sdk_config = utils.get_sdk_config(first_message_server_to_agent.remote_config.config.config_map)
-                    self.signals = utils.parse_first_message_signals(sdk_config, opamp_logger)
+                    self.signals = utils.parse_first_message_signals(sdk_config)
 
                     # Send healthy message to OpAMP server
                     # opamp_logger.info("Reporting healthy to OpAMP server...")
