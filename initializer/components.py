@@ -42,40 +42,38 @@ def initialize_components(trace_exporters = False, span_processor = None):
 
     handle_instrumenation_of_sub_processes()
 
-    resource_attributes_event = threading.Event()
+    opamp_connection_event = OpampConnectionEvent()
     client = None
 
     try:
 
-        client = start_opamp_client(resource_attributes_event)
-        resource_attributes_event.wait(timeout=30)  # Wait for the resource attributes to be received for 30 seconds
+        client = start_opamp_client(opamp_connection_event)
+        opamp_connection_event.event.wait(timeout=30)  # Wait for the opamp first message to be received for 30 seconds
 
-        supported_signals = client.signals
-        received_value = client.resource_attributes
-
-        if received_value:
-            handle_django_instrumentation()
-
-            auto_resource = {
-                "telemetry.distro.name": "odigos",
-                "telemetry.distro.version": VERSION,
-            }
-
-            auto_resource.update(received_value)
-
-            resource = OdigosProcessResourceDetector(client.pid).detect() \
-                .merge(OTELResourceDetector().detect()) \
-                .merge(Resource.create(auto_resource))
-
-            odigos_sampler = initialize_traces_if_enabled(trace_exporters, resource, span_processor, supported_signals)
-            if odigos_sampler is not None :
-                client.sampler = odigos_sampler
-
-            initialize_metrics_if_enabled(resource, supported_signals)
-            initialize_logging_if_enabled(resource, supported_signals)
-
+        ## In case of error, e.g during the first connection to the OpAMP server, we will use the default value which is enable traces only.
+        if opamp_connection_event.error:
+            supported_signals = {"traceSignal": True}
         else:
-            raise Exception("Did not receive resource attributes from the OpAMP server.")
+            supported_signals = client.signals
+
+
+        handle_django_instrumentation()
+
+        auto_resource = {
+            "telemetry.distro.name": "odigos",
+            "telemetry.distro.version": VERSION,
+        }
+
+        resource = OdigosProcessResourceDetector(client.pid).detect() \
+            .merge(OTELResourceDetector().detect()) \
+            .merge(Resource.create(auto_resource))
+
+        odigos_sampler = initialize_traces_if_enabled(trace_exporters, resource, span_processor, supported_signals)
+        if odigos_sampler is not None:
+            client.sampler = odigos_sampler
+
+        initialize_metrics_if_enabled(resource, supported_signals)
+        initialize_logging_if_enabled(resource, supported_signals)
 
     except Exception as e:
         if client is not None:
@@ -237,3 +235,9 @@ def handle_instrumenation_of_sub_processes():
     if auto_instrumentation_path not in python_path:
         new_python_path = f"{python_path}:{auto_instrumentation_path}" if python_path else auto_instrumentation_path
         os.environ["PYTHONPATH"] = new_python_path
+
+
+class OpampConnectionEvent:
+    def __init__(self):
+        self.event = threading.Event()
+        self.error = False
