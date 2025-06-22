@@ -39,7 +39,6 @@ class OpAMPHTTPClient:
     def __init__(self, opamp_connection_event, condition: threading.Condition):
         self.server_host = os.getenv('ODIGOS_OPAMP_SERVER_HOST')
         self.server_url = f"http://{self.server_host}/v1/opamp"
-        self.resource_attributes = {}
         self.signals = {}
         self.running = True
         self.condition = condition
@@ -401,7 +400,6 @@ class OpAMPHTTPClient:
 # To activate it, set the environment variable DISABLE_OPAMP_CLIENT to true.
 class MockOpAMPClient:
     def __init__(self, opamp_connection_event, *args, **kwargs):
-        self.resource_attributes = {'odigos.opamp': 'disabled'}
         self.signals = {'traceSignal': True}
         opamp_connection_event.event.set()
 
