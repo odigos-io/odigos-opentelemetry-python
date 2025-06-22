@@ -36,14 +36,13 @@ env_var_mappings = {
 }
 
 class OpAMPHTTPClient:
-    def __init__(self, event, condition: threading.Condition):
+    def __init__(self, opamp_connection_event, condition: threading.Condition):
         self.server_host = os.getenv('ODIGOS_OPAMP_SERVER_HOST')
         self.server_url = f"http://{self.server_host}/v1/opamp"
-        self.resource_attributes = {}
         self.signals = {}
         self.running = True
         self.condition = condition
-        self.event = event
+        self.opamp_connection_event = opamp_connection_event
         self.next_sequence_num = 0
         self.instance_uid = uuid7().__str__()
         self.remote_config_status = None
@@ -60,7 +59,7 @@ class OpAMPHTTPClient:
 
             # opamp_logger.warning(f"{error_message}, sending disconnect message to OpAMP server...")
             self.send_unsupported_version_disconnect_message(error_message=error_message)
-            self.event.set()
+            self.opamp_connection_event.event.set()
             return
 
         self.client_thread = threading.Thread(target=self.run, name="OpAMPClientThread", daemon=True)
@@ -69,11 +68,16 @@ class OpAMPHTTPClient:
     def run(self):
         try:
             if not self.mandatory_env_vars_set():
-                self.event.set()
+                self.opamp_connection_event.error = True
+                self.opamp_connection_event.event.set()
                 return
 
             self.send_first_message_with_retry()
-            self.event.set()
+            self.opamp_connection_event.event.set()
+
+            if self.opamp_connection_event.error:
+                # if the first message failed, we will not start the worker thread
+                return
 
             self.worker()
 
@@ -83,7 +87,8 @@ class OpAMPHTTPClient:
             self.send_agent_to_server_message(failure_message)
 
             # Exiting the opamp thread and set the event to notify the main thread
-            self.event.set()
+            self.opamp_connection_event.error = True
+            self.opamp_connection_event.event.set()
             sys.exit()
 
     def get_agent_failure_disconnect_message(self, error_message: str, component_health: bool = False) -> None:
@@ -136,8 +141,7 @@ class OpAMPHTTPClient:
                                 pass
 
                     sdk_config = utils.get_sdk_config(first_message_server_to_agent.remote_config.config.config_map)
-                    self.resource_attributes = utils.parse_first_message_to_resource_attributes(sdk_config, opamp_logger)
-                    self.signals = utils.parse_first_message_signals(sdk_config, opamp_logger)
+                    self.signals = utils.parse_first_message_signals(sdk_config)
 
                     # Send healthy message to OpAMP server
                     # opamp_logger.info("Reporting healthy to OpAMP server...")
@@ -154,8 +158,9 @@ class OpAMPHTTPClient:
             if attempt < max_retries:
                 time.sleep(delay)
 
-        # If all attempts failed, raise exception before starting the worker
-        raise Exception(f"Error sending first message to OpAMP server after {max_retries} attempts")
+        # If all attempts failed, set the error flag and return
+        self.opamp_connection_event.error = True
+
 
 
     def worker(self):
@@ -394,10 +399,9 @@ class OpAMPHTTPClient:
 # This class simulates the OpAMP client when the OpAMP server is not available.
 # To activate it, set the environment variable DISABLE_OPAMP_CLIENT to true.
 class MockOpAMPClient:
-    def __init__(self, event, *args, **kwargs):
-        self.resource_attributes = {'odigos.opamp': 'disabled'}
+    def __init__(self, opamp_connection_event, *args, **kwargs):
         self.signals = {'traceSignal': True}
-        event.set()
+        opamp_connection_event.event.set()
 
     def shutdown(self, custom_failure_message=None):
         pass
