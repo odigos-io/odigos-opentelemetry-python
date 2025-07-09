@@ -22,7 +22,7 @@ setup(
         'googleapis-common-protos==1.66.0',
         'opentelemetry-distro==0.52b1',
         'packaging==24.2',
-        'protobuf==5.29.2',
+        'protobuf==6.31.1',
         'importlib-metadata==6.0',
         'typing-extensions==4.12.2',
         'opentelemetry-exporter-otlp-proto-http==1.31.1',
