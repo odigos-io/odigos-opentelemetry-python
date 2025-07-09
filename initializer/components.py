@@ -37,7 +37,7 @@ def initialize_components(trace_exporters = False, span_processor = None):
     # In case of forking, the OpAMP client should be started in the child process.
     # e.g when using gunicorn/celery with multiple workers.
     os.register_at_fork(
-    after_in_child=lambda: start_opamp_client(threading.Event()),
+    after_in_child=lambda: start_opamp_client(OpampConnectionEvent()),
     )  # pylint: disable=protected-access
 
     handle_instrumenation_of_sub_processes()
