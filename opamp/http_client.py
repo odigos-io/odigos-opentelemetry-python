@@ -220,12 +220,7 @@ class OpAMPHTTPClient:
             component_health_map=component_health_map
         )
 
-        print(health_msg, flush=True)
-
-        server_to_agent = self.send_agent_to_server_message(
-            opamp_pb2.AgentToServer(health=health_msg)
-        )
-        print(server_to_agent, flush=True)
+        self.send_agent_to_server_message(opamp_pb2.AgentToServer(health=health_msg))
 
     def get_remote_config(self, message) -> dict:
         """
