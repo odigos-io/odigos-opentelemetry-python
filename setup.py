@@ -2,10 +2,18 @@ from setuptools import setup, find_packages
 
 setup(
     name="odigos-opentelemetry-python",
-    version="1.0.50",
+    version="1.0.51",
     description="Odigos Initializer for Python OpenTelemetry Components",
     author="Tamir David",
     author_email="tamir@odigos.io",
+    entry_points={
+    "opentelemetry_post_instrument": [
+        "odigos_post = initializer.post_instrument:run_post_hook"
+    ],
+    "opentelemetry_distro": [
+        "odigos = initializer.distro.distro:OdigosDistro"
+    ],
+    },
     packages=find_packages(include=[
         "initializer", "initializer.*",
         "opamp", "opamp.*",
