@@ -51,6 +51,9 @@ class OpAMPHTTPClient:
         self.update_conf_cb = None # Callback for configuration updates in the processor
 
 
+    def __repr__(self):
+        return f"<OpAMPHTTPClient instance_uid={self.instance_uid} pid={self.pid}>"
+
     def start(self, python_version_supported: bool = None):
         if not python_version_supported:
 
@@ -201,6 +204,23 @@ class OpAMPHTTPClient:
                     # opamp_logger.error(f"Error fetching data: {e}")
                     pass
                 self.condition.wait(30)
+
+    def report_instrumented_libraries(self, instrumented_libraries):
+        component_health_map = {}
+
+        for lib_name, lib_details in instrumented_libraries.items():
+            component_health_map[lib_name] = opamp_pb2.ComponentHealth(
+                healthy=True,
+                status=json.dumps(lib_details)
+            )
+
+        health_msg = opamp_pb2.ComponentHealth(
+            healthy=True,
+            status="instrumentation libraries report",
+            component_health_map=component_health_map
+        )
+
+        self.send_agent_to_server_message(opamp_pb2.AgentToServer(health=health_msg))
 
     def get_remote_config(self, message) -> dict:
         """

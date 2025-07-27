@@ -23,6 +23,8 @@ from .odigos_sampler import OdigosSampler
 from opentelemetry.sdk.trace.sampling import ParentBased
 
 from opamp.config import Config
+from opamp import opamp_registry
+from .distro import instrumentation_registry
 
 # Reorder the python sys.path to ensure that the user application's dependencies take precedence over the agent's dependencies.
 # This is necessary because the user application's dependencies may be incompatible with those used by the agent.
@@ -48,7 +50,6 @@ def initialize_components(trace_exporters = False, span_processor = None):
     try:
 
         client = start_opamp_client(opamp_connection_event)
-        opamp_connection_event.event.wait(timeout=30)  # Wait for the opamp first message to be received for 30 seconds
 
         ## In case of error, e.g during the first connection to the OpAMP server, we will use the default value which is enable traces only.
         if opamp_connection_event.error:
@@ -150,12 +151,23 @@ def start_opamp_client(event):
     condition = threading.Condition(threading.Lock())
     client = OpAMPHTTPClient(event, condition)
 
+    opamp_registry.set_client(client)
+
     # Register the configuration update callback for the processor
     client.register_config_update_cb(update_agent_config)
 
     python_version_supported = is_supported_python_version()
 
+
     client.start(python_version_supported)
+
+    # Wait for the opamp first message to be received for 30 seconds
+    event.event.wait(timeout=30)
+
+    # Report the instrumentation libraries
+    libraries = instrumentation_registry.get_instrumented_libraries()
+    if libraries:
+        client.report_instrumented_libraries(libraries)
 
     hooks = ExitHooks()
     hooks.hook()
