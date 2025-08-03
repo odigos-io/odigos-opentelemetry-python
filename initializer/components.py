@@ -93,10 +93,11 @@ def initialize_traces_if_enabled(trace_exporters, resource, span_processor = Non
 
         odigos_sampler = OdigosSampler()
         sampler = ParentBased(odigos_sampler)
+        ## Later this sampler will be send to the tracer provider for dynamic configuration.
 
         # Exporting using exporters
         if trace_exporters:
-            provider = TracerProvider(resource=resource, sampler=sampler)
+            provider = TracerProvider(resource=resource)
             id_generator_name = sdk_config._get_id_generator()
             id_generator = sdk_config._import_id_generator(id_generator_name)
             provider.id_generator = id_generator
@@ -113,7 +114,7 @@ def initialize_traces_if_enabled(trace_exporters, resource, span_processor = Non
 
         # Exporting using EBPF
         else:
-            provider = TracerProvider(resource=resource, sampler=sampler)
+            provider = TracerProvider(resource=resource)
             set_tracer_provider(provider)
             if span_processor is not None:
                 provider.add_span_processor(span_processor)
