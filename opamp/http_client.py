@@ -420,6 +420,7 @@ class OpAMPHTTPClient:
 # To activate it, set the environment variable DISABLE_OPAMP_CLIENT to true.
 class MockOpAMPClient:
     def __init__(self, opamp_connection_event, *args, **kwargs):
+        self.pid = os.getpid()
         self.signals = {'traceSignal': True}
         opamp_connection_event.event.set()
 
