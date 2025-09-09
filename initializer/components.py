@@ -174,7 +174,10 @@ def start_opamp_client(event):
 
     def shutdown():
         if hooks.exit_code is not None and hooks.exit_code != 0:
-            client.shutdown("Program exit with code: " + str(hooks.exit_code))
+            if hooks.exception is not None:
+                client.shutdown("Program exit with code: " + str(hooks.exit_code) + " and exception: " + str(hooks.exception))
+            else:
+                client.shutdown("Program exit with code: " + str(hooks.exit_code))
         elif hooks.exception is not None:
             client.shutdown("Program exit with exception: " + str(hooks.exception))
         else:
