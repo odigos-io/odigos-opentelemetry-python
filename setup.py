@@ -2,7 +2,7 @@ from setuptools import setup, find_packages
 
 setup(
     name="odigos-opentelemetry-python",
-    version="1.0.56",
+    version="1.0.57",
     description="Odigos Initializer for Python OpenTelemetry Components",
     author="Tamir David",
     author_email="tamir@odigos.io",
@@ -31,7 +31,7 @@ setup(
         'packaging==24.2',
         'protobuf==5.29.2',
         'importlib-metadata==6.0',
-        'wrapt==1.17.2',
+        'wrapt==1.17.3',
         'typing-extensions==4.12.2',
         'opentelemetry-exporter-otlp-proto-http==1.31.1',
         'opentelemetry-instrumentation==0.52b1',
