@@ -29,7 +29,7 @@ setup(
         "charset-normalizer==3.4.1",
         'googleapis-common-protos==1.66.0',
         'packaging==24.2',
-        'protobuf==5.29.2',
+        'protobuf==6.32.0',
         'importlib-metadata==6.0',
         'wrapt==1.17.3',
         'typing-extensions==4.12.2',
