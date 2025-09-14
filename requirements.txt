@@ -328,7 +328,7 @@ packaging==24.2
     #   opentelemetry-instrumentation-falcon
     #   opentelemetry-instrumentation-flask
     #   opentelemetry-instrumentation-pika
-protobuf==5.29.2
+protobuf==6.32.1
     # via
     #   googleapis-common-protos
     #   odigos-opentelemetry-python (setup.py)
