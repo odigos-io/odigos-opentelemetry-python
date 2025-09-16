@@ -36,10 +36,10 @@ MINIMUM_PYTHON_SUPPORTED_VERSION = (3, 8)
 
 
 def initialize_components(trace_exporters = False, span_processor = None):
-    # In case of forking, the OpAMP client should be started in the child process.
-    # e.g when using gunicorn/celery with multiple workers.
+    # Ensure each child process after fork gets a fresh OpAMP client
+    # and correct process.* resource attributes.
     os.register_at_fork(
-    after_in_child=lambda: start_opamp_client(OpampConnectionEvent()),
+    after_in_child=_after_in_child,
     )  # pylint: disable=protected-access
 
     handle_instrumenation_of_sub_processes()
@@ -65,9 +65,14 @@ def initialize_components(trace_exporters = False, span_processor = None):
             "telemetry.distro.version": VERSION,
         }
 
-        resource = OdigosProcessResourceDetector(client.pid).detect() \
-            .merge(OTELResourceDetector().detect()) \
+        base_resource = (
+            OdigosProcessResourceDetector(client.pid).detect()
+            .merge(OTELResourceDetector().detect())
             .merge(Resource.create(auto_resource))
+        )
+
+        # Wrap in proxy so child processes can refresh automatically
+        resource = ProxyResource(base_resource, OdigosProcessResourceDetector)
 
         odigos_sampler = initialize_traces_if_enabled(trace_exporters, resource, span_processor, supported_signals)
         if odigos_sampler is not None:
@@ -256,3 +261,59 @@ class OpampConnectionEvent:
     def __init__(self):
         self.event = threading.Event()
         self.error = False
+
+
+class ProxyResource(Resource):
+    """
+    Resource wrapper to fix forked processes.
+
+    Problem:
+    - After fork, the child inherits the parent's Resource.
+    - Attributes like process.pid are now wrong in the child.
+    - We cannot rebuild the whole TracerProvider in the fork hook (unsafe).
+
+    Solution:
+    - ProxyResource delays ("lazy") the recomputation of process attributes
+      until the child actually uses them (first access after fork).
+    - This avoids doing heavy work directly in the fork hook.
+    """
+
+    def __init__(self, base: Resource, detector_cls):
+        super().__init__(attributes=base.attributes)
+        self._base = base
+        self._detector_cls = detector_cls
+        self._lock = threading.Lock()
+        self._child_refreshed = False
+        self._cached = None
+
+    def _refresh_if_needed(self):
+        # Ensure process attributes are recomputed only once per child.
+        # The lock avoids race conditions if multiple threads access the
+        # resource at the same time after fork.
+        if not self._child_refreshed:
+            with self._lock:
+                if not self._child_refreshed:
+                    proc_res = self._detector_cls(os.getpid()).detect()
+                    self._cached = self._base.merge(proc_res)
+                    self._child_refreshed = True
+
+    @property
+    def attributes(self):
+        self._refresh_if_needed()
+        return self._cached.attributes
+
+    def merge(self, other: Resource):
+        self._refresh_if_needed()
+        return self._cached.merge(other)
+
+
+def _after_in_child():
+    # This hook runs in every child process after fork().
+    # It does two things:
+    # 1. Marks ProxyResource as "dirty", so the next time spans are created,
+    #    the process.* attributes are recomputed with the child’s PID.
+    # 2. Restarts the OpAMP client (threads/sockets do not survive fork).
+    provider = get_tracer_provider()
+    if isinstance(getattr(provider, "resource", None), ProxyResource):
+        provider.resource._child_refreshed = False
+    start_opamp_client(OpampConnectionEvent())
