@@ -51,7 +51,8 @@ def initialize_components(trace_exporters = False, span_processor = None):
 
         client = start_opamp_client(opamp_connection_event)
 
-        ## In case of error, e.g during the first connection to the OpAMP server, we will use the default value which is enable traces only.
+        ## In case of error, e.g during the first connection to the OpAMP server,
+        # we will use the default value which is enable traces only.
         if opamp_connection_event.error:
             supported_signals = {"traceSignal": True}
         else:
@@ -166,8 +167,10 @@ def start_opamp_client(event):
 
     client.start(python_version_supported)
 
-    # Wait for the opamp first message to be received for 30 seconds
-    event.event.wait(timeout=30)
+    # Wait for the opamp first message to be received
+    # Timeout based on maximum time for first message retry sequence to fail completely:
+    # 2 attempts × (5s HTTP timeout + 2s delay) - 2s (no delay after last attempt) + last message timeout + 1s buffer = 17s
+    event.event.wait(timeout=18)
 
     # Report the instrumentation libraries
     libraries = instrumentation_registry.get_instrumented_libraries()
