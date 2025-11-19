@@ -169,7 +169,7 @@ def start_opamp_client(event):
 
     # Wait for the opamp first message to be received
     # Timeout based on maximum time for first message retry sequence to fail completely:
-    # 2 attempts × (5s HTTP timeout + 2s delay) - 2s (no delay after last attempt) + last message timeout + 1s buffer = 17s
+    # 2 attempts × (5s HTTP timeout + 2s delay) - 2s (no delay after last attempt) + last message timeout + 1s buffer = 18s
     event.event.wait(timeout=18)
 
     # Report the instrumentation libraries
