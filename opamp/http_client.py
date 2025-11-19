@@ -121,38 +121,43 @@ class OpAMPHTTPClient:
         self.send_agent_to_server_message(first_disconnect_message)
 
     def send_first_message_with_retry(self) -> None:
-        max_retries = 5
+        max_retries = 2
         delay = 2
         for attempt in range(1, max_retries + 1):
             try:
                 # Send first message to OpAMP server, Health is false as the component is not initialized
-                agent_health = self.get_agent_health(component_health=False, last_error="Python OpenTelemetry agent is starting", status=AgentHealthStatus.STARTING.value)
+                agent_health = self.get_agent_health(component_health=False, last_error="Connecting to Odigos configuration server", status=AgentHealthStatus.STARTING.value)
                 agent_description = self.get_agent_description()
-                first_message_server_to_agent = self.send_agent_to_server_message(opamp_pb2.AgentToServer(agent_description=agent_description, health=agent_health))
+                first_message_server_to_agent = self.send_agent_to_server_message(opamp_pb2.AgentToServer(agent_description=agent_description, health=agent_health, remote_config_status=opamp_pb2.RemoteConfigStatus()))
 
                 # Check if the response of the first message is empty
                 # It may happen if OpAMPServer is not available
                 if first_message_server_to_agent.ListFields():
-                    if self.update_remote_config_status(first_message_server_to_agent):
-                        if first_message_server_to_agent.HasField("remote_config") and self.update_conf_cb:
-                            try:
-                                remote_config = self.get_remote_config(first_message_server_to_agent)
-                                self.update_conf_cb(remote_config)
-                            except Exception:
-                                # Catch exception and don't update the config
-                                # The default config is preloaded when the EBPFSpanProcessor is initialized
-                                pass
+                    # Only process if we have actual remote_config, otherwise continue retrying
+                    has_remote_config = first_message_server_to_agent.HasField("remote_config")
+                    if has_remote_config:
+                        if self.update_remote_config_status(first_message_server_to_agent):
+                            if self.update_conf_cb:
+                                try:
+                                    remote_config = self.get_remote_config(first_message_server_to_agent)
+                                    self.update_conf_cb(remote_config)
+                                except Exception:
+                                    # Catch exception and don't update the config
+                                    # The default config is preloaded when the EBPFSpanProcessor is initialized
+                                    pass
 
-                    sdk_config = utils.get_sdk_config(first_message_server_to_agent.remote_config.config.config_map)
-                    self.signals = utils.parse_first_message_signals(sdk_config)
+                        sdk_config = utils.get_sdk_config(first_message_server_to_agent.remote_config.config.config_map)
+                        self.signals = utils.parse_first_message_signals(sdk_config)
 
-                    # Send healthy message to OpAMP server
-                    # opamp_logger.info("Reporting healthy to OpAMP server...")
-                    agent_health = self.get_agent_health(component_health=True, status=AgentHealthStatus.HEALTHY.value)
-                    self.send_agent_to_server_message(opamp_pb2.AgentToServer(health=agent_health))
+                        # Send healthy message to OpAMP server
+                        agent_health = self.get_agent_health(component_health=True, status=AgentHealthStatus.HEALTHY.value)
+                        self.send_agent_to_server_message(opamp_pb2.AgentToServer(health=agent_health))
 
-                    # Return if the first message was successfully sent
-                    return
+                        # Return if the first message was successfully sent + set error to False
+                        # This in case it was marked as True in some iteration of the retry loop.
+                        if self.opamp_connection_event.error:
+                            self.opamp_connection_event.error = False
+                        return
 
             except Exception as e:
                 # opamp_logger.error(f"Attempt {attempt}/{max_retries} failed. Error sending full state to OpAMP server: {e}")
@@ -160,11 +165,19 @@ class OpAMPHTTPClient:
 
             if attempt < max_retries:
                 time.sleep(delay)
+                # If retrying, we should mark the error temporarily,
+                # this is to make sure if the thread event timeout will use the fallback config [traceSignal: True].
+                self.opamp_connection_event.error = True
 
         # If all attempts failed, set the error flag and return
         self.opamp_connection_event.error = True
 
-
+        # If OpAMP server is throttling, it might not respond in the OpAMP client timeout period (5s).
+        # In this case, we're trying to send a message to the OpAMP server to indicate that OpAMP is not available.
+        agent_health = self.get_agent_health(component_health=False, last_error="Failed to connect to Odigos configuration server - dynamic configuration unavailable",
+                                             status=AgentHealthStatus.NO_CONNECTION_TO_OPAMP_SERVER.value)
+        agent_description = self.get_agent_description()
+        self.send_agent_to_server_message(opamp_pb2.AgentToServer(agent_description=agent_description, health=agent_health, remote_config_status=opamp_pb2.RemoteConfigStatus()))
 
     def worker(self):
         while self.running:
@@ -206,6 +219,10 @@ class OpAMPHTTPClient:
                 self.condition.wait(30)
 
     def report_instrumented_libraries(self, instrumented_libraries):
+        # If the connection event is in error, we don't need to report the instrumentation libraries
+        if self.opamp_connection_event.error:
+            return
+
         component_health_map = {}
 
         for lib_name, lib_details in instrumented_libraries.items():
