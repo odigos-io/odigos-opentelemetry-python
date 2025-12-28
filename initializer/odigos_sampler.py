@@ -43,7 +43,7 @@ class OdigosSampler(Sampler):
             rules = self._config.get('attributesAndSamplerRules', [])
             global_fraction = self._config.get('fallbackFraction', 1) # default to 1 if not set which means always sample
 
-            for rule in rules: # The first attribute rule that evaluates to true is used to determine the sampling decision based on its fraction.
+            for i, rule in enumerate(rules): # The first attribute rule that evaluates to true is used to determine the sampling decision based on its fraction.
                 and_attributes_sampler_rules = rule.get('attributeConditions', [])
 
                 # sampler_logger.debug(f'"AND" rule operands are: {and_attributes_sampler_rules}')
@@ -51,7 +51,7 @@ class OdigosSampler(Sampler):
                 and_rule_fraction = rule.get('fraction', 1) # default to 1 if not set which means always sample
                 and_rule_met = True
 
-                for and_rule in and_attributes_sampler_rules:
+                for j, and_rule in enumerate(and_attributes_sampler_rules):
                     # If the "AND" rule is not met once, break the loop to avoid unnecessary checks
                     if not and_rule_met:
                         break
@@ -61,11 +61,10 @@ class OdigosSampler(Sampler):
                     operator = and_rule.get('operator') # equals / notEquals / endWith / startWith
 
                     if key in attributes:
-
+                        attr_value = attributes[key]
                         # Perform the corresponding operation
-                        if operator in self._operations and self._operations[operator](attributes[key], value):
-                            # sampler_logger.debug(f'Operator {operator} is true for the attribute {key} with value {value}')
-                            pass
+                        if operator in self._operations and self._operations[operator](attr_value, value):
+                            pass  # Condition matched
                         else:
                             # sampler_logger.debug(f'Operator {operator} is false, setting the "AND" rule flag to false')
                             and_rule_met = False

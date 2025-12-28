@@ -49,7 +49,7 @@ class OpAMPHTTPClient:
         self.sampler = None # OdigosSampler instance
         self.pid = os.getpid()
         self.update_conf_cb = None # Callback for configuration updates in the processor
-
+        self._initial_sampler_config = None # Store initial sampler config for direct access
 
     def __repr__(self):
         return f"<OpAMPHTTPClient instance_uid={self.instance_uid} pid={self.pid}>"
@@ -148,6 +148,10 @@ class OpAMPHTTPClient:
 
                         sdk_config = utils.get_sdk_config(first_message_server_to_agent.remote_config.config.config_map)
                         self.signals = utils.parse_first_message_signals(sdk_config)
+
+                        # Store initial sampler config for direct access
+                        remote_config = self.get_remote_config(first_message_server_to_agent)
+                        self._initial_sampler_config = self._extract_sampler_config(remote_config)
 
                         # Send healthy message to OpAMP server
                         agent_health = self.get_agent_health(component_health=True, status=AgentHealthStatus.HEALTHY.value)
@@ -281,8 +285,16 @@ class OpAMPHTTPClient:
 
         inner = decoded_map.get("", None)
         if inner is None:
-            return Config() # Return default values for config
-        return from_dict(Config, inner)
+            config = Config() # Return default values for config
+        else:
+            config = from_dict(Config, inner)
+
+        # Extract container_config if present
+        sample_config = decoded_map.get("container_config", None)
+        if sample_config is not None:
+            config.sample_config = sample_config
+
+        return config
 
     def send_heartbeat(self) -> opamp_pb2.ServerToAgent: # type: ignore
         # opamp_logger.debug("Sending heartbeat to OpAMP server...")
@@ -431,6 +443,30 @@ class OpAMPHTTPClient:
     def register_config_update_cb(self, cb) -> None:
         self.update_conf_cb = cb
 
+    def _extract_sampler_config(self, remote_config):
+        """Extract sampler config from remote config, same logic as update_agent_config"""
+        if not hasattr(remote_config, 'sample_config') or not remote_config.sample_config:
+            return None
+
+        # Extract headSampling configuration from traces.headSampling
+        if 'traces' not in remote_config.sample_config or 'headSampling' not in remote_config.sample_config['traces']:
+            return None
+
+        head_sampling_config = remote_config.sample_config['traces']['headSampling']
+
+        # Check if we have valid sampling config (same validation as update_agent_config)
+        if head_sampling_config and (
+            head_sampling_config.get('attributesAndSamplerRules') or
+            head_sampling_config.get('fallbackFraction') is not None
+        ):
+            return head_sampling_config
+        else:
+            return None
+
+    def get_initial_sampler_config(self):
+        """Get the sampler config from the initial OpAMP message"""
+        return self._initial_sampler_config
+
 
 # Mock client class for non-OpAMP installations
 # This class simulates the OpAMP client when the OpAMP server is not available.
@@ -439,7 +475,12 @@ class MockOpAMPClient:
     def __init__(self, opamp_connection_event, *args, **kwargs):
         self.pid = os.getpid()
         self.signals = {'traceSignal': True}
+        self.sampler = None  # For compatibility
         opamp_connection_event.event.set()
+
+    def get_initial_sampler_config(self):
+        """Mock client has no sampler config"""
+        return None
 
     def shutdown(self, custom_failure_message=None):
         pass
