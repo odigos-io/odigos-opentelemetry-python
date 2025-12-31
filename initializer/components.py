@@ -85,7 +85,7 @@ def initialize_components(trace_exporters = False, span_processor = None):
     except Exception as e:
         if client is not None:
             client.shutdown(custom_failure_message=str(e))
-        raise
+        # Note: there was a re-raise exception here, but it was removed to avoid potential issues with bubbling up the exception to the python application.
 
     finally:
         # Make sure the distro modules are reloaded even if an exception is raised.
