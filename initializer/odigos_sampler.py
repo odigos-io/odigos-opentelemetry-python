@@ -43,7 +43,7 @@ class OdigosSampler(Sampler):
             rules = self._config.get('attributesAndSamplerRules', [])
             global_fraction = self._config.get('fallbackFraction', 1) # default to 1 if not set which means always sample
 
-            for i, rule in enumerate(rules): # The first attribute rule that evaluates to true is used to determine the sampling decision based on its fraction.
+            for rule in rules: # The first attribute rule that evaluates to true is used to determine the sampling decision based on its fraction.
                 and_attributes_sampler_rules = rule.get('attributeConditions', [])
 
                 # sampler_logger.debug(f'"AND" rule operands are: {and_attributes_sampler_rules}')
@@ -51,7 +51,7 @@ class OdigosSampler(Sampler):
                 and_rule_fraction = rule.get('fraction', 1) # default to 1 if not set which means always sample
                 and_rule_met = True
 
-                for j, and_rule in enumerate(and_attributes_sampler_rules):
+                for and_rule in and_attributes_sampler_rules:
                     # If the "AND" rule is not met once, break the loop to avoid unnecessary checks
                     if not and_rule_met:
                         break
