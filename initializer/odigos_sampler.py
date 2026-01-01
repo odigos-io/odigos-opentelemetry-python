@@ -61,11 +61,10 @@ class OdigosSampler(Sampler):
                     operator = and_rule.get('operator') # equals / notEquals / endWith / startWith
 
                     if key in attributes:
-
+                        attr_value = attributes[key]
                         # Perform the corresponding operation
-                        if operator in self._operations and self._operations[operator](attributes[key], value):
-                            # sampler_logger.debug(f'Operator {operator} is true for the attribute {key} with value {value}')
-                            pass
+                        if operator in self._operations and self._operations[operator](attr_value, value):
+                            pass  # Condition matched
                         else:
                             # sampler_logger.debug(f'Operator {operator} is false, setting the "AND" rule flag to false')
                             and_rule_met = False

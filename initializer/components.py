@@ -55,8 +55,16 @@ def initialize_components(trace_exporters = False, span_processor = None):
         # we will use the default value which is enable traces only.
         if opamp_connection_event.error:
             supported_signals = {"traceSignal": True}
+            initial_sampler_config = None  # No config available due to connection error
         else:
             supported_signals = client.signals
+
+            # Get initial sampler config directly from client (only when connection is successful)
+            try:
+                initial_sampler_config = client.get_initial_sampler_config()
+            except AttributeError:
+                # Fallback to None to avoid errors
+                initial_sampler_config = None
 
 
         handle_django_instrumentation()
@@ -75,7 +83,7 @@ def initialize_components(trace_exporters = False, span_processor = None):
         # Wrap in proxy so child processes can refresh automatically
         resource = ProxyResource(base_resource, OdigosProcessResourceDetector)
 
-        odigos_sampler = initialize_traces_if_enabled(trace_exporters, resource, span_processor, supported_signals)
+        odigos_sampler = initialize_traces_if_enabled(trace_exporters, resource, span_processor, supported_signals, initial_sampler_config)
         if odigos_sampler is not None:
             client.sampler = odigos_sampler
 
@@ -91,7 +99,7 @@ def initialize_components(trace_exporters = False, span_processor = None):
         # Make sure the distro modules are reloaded even if an exception is raised.
         reload_distro_modules()
 
-def initialize_traces_if_enabled(trace_exporters, resource, span_processor = None, signals = None):
+def initialize_traces_if_enabled(trace_exporters, resource, span_processor = None, signals = None, initial_sampler_config = None):
     # In case collectors signals support receiving traces, initialize the tracer provider with the exporters
     traces_enabled = signals.get("traceSignal", False)
 
@@ -99,6 +107,10 @@ def initialize_traces_if_enabled(trace_exporters, resource, span_processor = Non
 
         odigos_sampler = OdigosSampler()
         sampler = ParentBased(odigos_sampler)
+
+        # Apply initial sampler config if provided (from OpAMP first message)
+        if initial_sampler_config is not None:
+            odigos_sampler.update_config(initial_sampler_config)
 
         # Exporting using exporters
         if trace_exporters:
@@ -201,6 +213,7 @@ def update_agent_config(conf: Config):
     The function `update_agent_config` checks for a tracer provider and updates its configuration using
     processors if available.
     It searches specifically for the EBPFSpanProcessor processes (Looking for the update_config attribute).
+    It also updates the sampler configuration if relevant config is present.
 
     :param conf: The `conf` parameter in the `update_agent_config` function is of type `Config`. It is
     used to update the configuration settings of the agent
@@ -212,7 +225,34 @@ def update_agent_config(conf: Config):
     if provider is None:
         return
 
-    # The provider’s public API does not expose processors directly,
+    # Update sampler configuration if sample_config is present
+    if hasattr(conf, 'sample_config') and conf.sample_config:
+        # Extract headSampling configuration from traces.headSampling
+        head_sampling_config = None
+        if 'traces' in conf.sample_config and 'headSampling' in conf.sample_config['traces']:
+            head_sampling_config = conf.sample_config['traces']['headSampling']
+
+        # Determine if we have valid sampling config (rules or fallback fraction)
+        if head_sampling_config and (
+            head_sampling_config.get('attributesAndSamplerRules') or
+            head_sampling_config.get('fallbackFraction') is not None
+        ):
+            valid_config = head_sampling_config
+        else:
+            valid_config = None
+
+        # Apply config to sampler - sampler will always exist when this callback is called
+        # because update_agent_config is only called from OpAMP worker thread after sampler creation
+        from opamp import opamp_registry
+        client = opamp_registry.get_client()
+
+        if client and hasattr(client, 'sampler') and client.sampler:
+            client.sampler.update_config(valid_config)
+        else:
+            # This should not happen in normal operation
+            pass
+
+    # The provider's public API does not expose processors directly,
     # but the private _active_span_processor attribute always exists.
     active_proc = getattr(provider, "_active_span_processor", None)
     if active_proc is None:
