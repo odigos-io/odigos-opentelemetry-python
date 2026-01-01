@@ -21,6 +21,7 @@ from opamp.health_status import AgentHealthStatus
 from initializer.process_resource import PROCESS_VPID
 
 from google.protobuf.json_format import MessageToDict
+from google.protobuf.message import DecodeError
 
 from opamp.config import from_dict, Config
 
@@ -388,11 +389,7 @@ class OpAMPHTTPClient:
             agent_message = attach(set_value(_SUPPRESS_HTTP_INSTRUMENTATION_KEY, True))
             response = requests_odigos.post(self.server_url, data=message_bytes, headers=headers, timeout=5)
             response.raise_for_status()
-        except requests_odigos.Timeout:
-            # opamp_logger.error("Timeout sending message to OpAMP server")
-            return opamp_pb2.ServerToAgent()
-        except requests_odigos.ConnectionError as e:
-            # opamp_logger.error(f"Error sending message to OpAMP server: {e}")
+        except Exception:
             return opamp_pb2.ServerToAgent()
         finally:
             detach(agent_message)
@@ -400,8 +397,7 @@ class OpAMPHTTPClient:
         server_to_agent = opamp_pb2.ServerToAgent()
         try:
             server_to_agent.ParseFromString(response.content)
-        except NotImplementedError as e:
-            # opamp_logger.error(f"Error parsing response from OpAMP server: {e}")
+        except (DecodeError, NotImplementedError):
             return opamp_pb2.ServerToAgent()
         return server_to_agent
 
