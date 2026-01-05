@@ -101,7 +101,7 @@ def _wrap_create_engine(
                 enable_attribute_commenter,
             )
             return engine
-        
+
 
         EngineTracer(
             tracer,
@@ -235,7 +235,7 @@ class EngineTracer:
                 remove(weak_ref_target(), identifier, func)
         cls._remove_event_listener_params.clear()
 
-    def _operation_name(self, db_name, statement):
+    def _operation_name(self, db_name, statement, attrs=None):
         parts = []
         if isinstance(statement, str):
             # otel spec recommends against parsing SQL queries. We are not trying to parse SQL
@@ -244,9 +244,13 @@ class EngineTracer:
             # For some very special cases it might not record the correct statement if the SQL
             # dialect is too weird but in any case it shouldn't break anything.
             # Strip leading comments so we get the operation name.
-            parts.append(
-                self._leading_comment_remover.sub("", statement).split()[0]
-            )
+            operation = self._leading_comment_remover.sub("", statement).split()[0]
+            parts.append(operation)
+
+            # Set db.operation since we know this came from a valid statement
+            if attrs is not None:
+                attrs[SpanAttributes.DB_OPERATION] = operation
+
         if db_name:
             parts.append(db_name)
         if not parts:
@@ -287,8 +291,10 @@ class EngineTracer:
             attrs = _get_attributes_from_cursor(self.vendor, cursor, attrs)
 
         db_name = attrs.get(SpanAttributes.DB_NAME, "")
+        operation_name = self._operation_name(db_name, statement, attrs)
+
         span = self.tracer.start_span(
-            self._operation_name(db_name, statement),
+            operation_name,
             kind=trace.SpanKind.CLIENT,
         )
         with trace.use_span(span, end_on_exit=False):
