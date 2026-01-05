@@ -80,7 +80,7 @@ setup(
         'opentelemetry-instrumentation-requests==0.52b1',
         # When testing new overloaded integration add it in the following way to pull the custom tag from the local pypi repo
         # 'odigos-opentelemetry-instrumentation-sqlalchemy @ http://host.docker.internal:8080/packages/odigos_opentelemetry_instrumentation_sqlalchemy-0.52b1-py3-none-any.whl',
-        'odigos-opentelemetry-instrumentation-sqlalchemy==0.52b1',
+        'odigos-opentelemetry-instrumentation-sqlalchemy==0.52b2',
         'opentelemetry-instrumentation-sqlite3==0.52b1',
         'opentelemetry-instrumentation-starlette==0.52b1',
         'opentelemetry-instrumentation-tornado==0.52b1',
