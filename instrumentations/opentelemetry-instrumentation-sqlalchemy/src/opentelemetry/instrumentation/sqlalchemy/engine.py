@@ -249,7 +249,7 @@ class EngineTracer:
 
             # Set db.operation since we know this came from a valid statement
             if attrs is not None:
-                attrs[SpanAttributes.DB_OPERATION] = operation.upper()
+                attrs[SpanAttributes.DB_OPERATION] = operation
 
         if db_name:
             parts.append(db_name)
