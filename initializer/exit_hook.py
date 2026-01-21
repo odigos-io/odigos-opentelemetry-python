@@ -9,6 +9,9 @@ class ExitHooks(object):
         self.exception = None
 
     def hook(self):
+        # Skip REPL and terminals
+        if sys.flags.interactive or hasattr(sys, "ps1"):
+            return
         self._orig_exit = sys.exit
         sys.exit = self.exit
         sys.excepthook = self.exc_handler
