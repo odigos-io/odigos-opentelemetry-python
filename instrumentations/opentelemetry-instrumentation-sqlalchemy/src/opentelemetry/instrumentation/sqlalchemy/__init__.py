@@ -110,7 +110,7 @@ Usage
     from opentelemetry.instrumentation.sqlalchemy import SQLAlchemyInstrumentor
     import sqlalchemy
 
-    engine = create_async_engine("sqlite:///:memory:")
+    engine = create_async_engine("sqlite+aiosqlite:///:memory:")
     SQLAlchemyInstrumentor().instrument(
         engine=engine.sync_engine
     )
