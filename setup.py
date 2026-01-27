@@ -24,7 +24,7 @@ setup(
         "urllib3-odigos == 2.2.2",
         "urllib3 === 2.2.3",
         "odigos-requests == 2.32.3.dev0",
-        "zipp==3.21.0",
+        "zipp==3.20.2",
         "idna==3.10",
         "asgiref==3.8.1",
         "deprecated==1.2.18",
