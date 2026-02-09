@@ -55,3 +55,13 @@ jobs:
         run: |
           python -c "import initializer"
           python -c "import opamp"
+
+      # Freeze the dependencies to scan for vulnerabilities
+      - name: Freeze dependencies
+        run: pip freeze > requirements.txt
+
+      - name: Scan with critical-only failure
+        uses: odigos-io/ci-core/vulnerabilities-scanner@main
+        with:
+          path: .
+          severity-cutoff: "CRITICAL"
