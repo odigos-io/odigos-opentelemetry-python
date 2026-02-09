@@ -2,10 +2,10 @@ from setuptools import setup, find_packages
 
 setup(
     name="odigos-opentelemetry-python",
-    version="1.0.63",
+    version="1.0.64",
     description="Odigos Initializer for Python OpenTelemetry Components",
-    author="Tamir David",
-    author_email="tamir@odigos.io",
+    author="odigos-io",
+    author_email="support@odigos.io",
     entry_points={
     "opentelemetry_post_instrument": [
         "odigos_post = initializer.post_instrument:run_post_hook"
@@ -22,7 +22,7 @@ setup(
     install_requires=[
         "uuid7 == 0.1.0",
         "urllib3-odigos == 2.2.2",
-        "urllib3 === 2.2.3",
+        "urllib3 === 2.6.3",
         "odigos-requests == 2.32.3.dev0",
         "zipp==3.20.2",
         "idna==3.10",
@@ -93,7 +93,7 @@ setup(
         'opentelemetry-instrumentation-urllib==0.54b1',
         'opentelemetry-instrumentation-urllib3==0.54b1',
         'opentelemetry-instrumentation-wsgi==0.54b1',
-        'setuptools==75.3.0',
+        'setuptools==81.0.0',
     ],
     extras_require={
         "test": [
