@@ -93,7 +93,6 @@ setup(
         'opentelemetry-instrumentation-urllib==0.54b1',
         'opentelemetry-instrumentation-urllib3==0.54b1',
         'opentelemetry-instrumentation-wsgi==0.54b1',
-        'setuptools==81.0.0',
     ],
     extras_require={
         "test": [
