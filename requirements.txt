@@ -333,7 +333,7 @@ packaging==24.2
     #   opentelemetry-instrumentation-falcon
     #   opentelemetry-instrumentation-flask
     #   opentelemetry-instrumentation-pika
-protobuf==5.29.2
+protobuf==5.29.5
     # via
     #   googleapis-common-protos
     #   odigos-opentelemetry-python (setup.py)
@@ -387,6 +387,3 @@ zipp==3.20.2
     # via
     #   importlib-metadata
     #   odigos-opentelemetry-python (setup.py)
-
-# The following packages are considered to be unsafe in a requirements file:
-# setuptools
