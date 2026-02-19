@@ -40,6 +40,33 @@ services:
   #   2. Add a service entry below (copy the flask-app block)
   #   3. Add the service to APPS in run.sh
 
+
+  pythongunicorn:
+    build:
+      context: ../../
+      dockerfile: tests/integration/apps/pythongunicorn/Dockerfile
+      args:
+        PYTHON_VERSION: ${PYTHON_VERSION:-3.11}
+    depends_on:
+      agent:
+        condition: service_completed_successfully
+      collector:
+        condition: service_started
+    volumes:
+      - instrumentation:/var/odigos/python:ro
+    environment:
+      - PYTHONPATH=/var/odigos/python:/var/odigos/python/opentelemetry/instrumentation/auto_instrumentation
+      - OTEL_SERVICE_NAME=pythongunicorn
+      - OTEL_TRACES_EXPORTER=otlp
+      - OTEL_EXPORTER_OTLP_ENDPOINT=http://collector:4318
+      - OTEL_EXPORTER_OTLP_PROTOCOL=http/protobuf
+      - OTEL_METRICS_EXPORTER=none
+      - OTEL_LOGS_EXPORTER=none
+      - OTEL_PYTHON_CONFIGURATOR=odigos-python-configurator
+      - ODIGOS_DISTRO_NAME=python-community
+      - DISABLE_OPAMP_CLIENT=true
+    ports:
+      - "8000:8000"
   flask-app:
     build:
       context: ../../

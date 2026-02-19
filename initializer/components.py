@@ -34,11 +34,8 @@ from opamp.http_client import OpAMPHTTPClient, MockOpAMPClient
 
 MINIMUM_PYTHON_SUPPORTED_VERSION = (3, 8)
 
-print("initialize_components",flush=True)
 
 def initialize_components(trace_exporters = False, span_processor = None):
-
-    print("initialize_components 2",flush=True)
     # Ensure each child process after fork gets a fresh OpAMP client
     # and correct process.* resource attributes.
     os.register_at_fork(

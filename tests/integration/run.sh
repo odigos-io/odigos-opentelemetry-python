@@ -19,6 +19,7 @@ OUTPUT_DIR="$SCRIPT_DIR/output"
 # docker-compose.yaml. No /health endpoint required.
 APPS=(
   "flask-app:8081:/rolldice"
+  "pythongunicorn:8000:/sub/home"
 )
 
 STARTUP_WAIT=30             # seconds to wait for containers to start
@@ -101,7 +102,6 @@ sleep "$FLUSH_WAIT"
 #   - At least one span was received
 #   - Every expected service sent spans
 #   - No spans carry an ERROR status
-#   - HTTP SERVER spans are present (warning only)
 echo ""
 echo "── Verifying traces ─────────────────────────────────────────────"
 EXPECTED_SERVICES=()
