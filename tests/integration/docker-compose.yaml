@@ -1,0 +1,68 @@
+volumes:
+  instrumentation:
+
+services:
+  # ── Agent (init-container pattern) ─────────────────────────────────
+  # Builds the instrumentation workspace from the PR's wheels and copies
+  # it to a shared volume, replicating how odiglet populates
+  # /var/odigos/python in production.
+  agent:
+    build:
+      context: ../../
+      dockerfile: tests/integration/Dockerfile.agent
+      args:
+        PYTHON_VERSION: ${PYTHON_VERSION:-3.11}
+    volumes:
+      - instrumentation:/var/odigos/python
+    entrypoint:
+      - sh
+      - -c
+      - "cp -r /python-instrumentation/workspace/* /var/odigos/python/ && echo 'Instrumentation workspace ready'"
+
+  # ── OTel Collector ─────────────────────────────────────────────────
+  # Receives OTLP spans from all sample apps and writes them to a JSON
+  # file for offline verification by verify.py.
+  collector:
+    image: otel/opentelemetry-collector-contrib:0.141.0
+    command: ["--config=/etc/otelcol-contrib/config.yaml"]
+    volumes:
+      - ./collector-config.yaml:/etc/otelcol-contrib/config.yaml:ro
+      - ./output:/data
+    ports:
+      - "4317:4317"
+      - "4318:4318"
+
+  # ── Sample applications ────────────────────────────────────────────
+  # mounted at /var/odigos/python — exactly like production.
+  #
+  # To add a new app:
+  #   1. Create tests/integration/apps/<name>/Dockerfile and app.py
+  #   2. Add a service entry below (copy the flask-app block)
+  #   3. Add the service to APPS in run.sh
+
+  flask-app:
+    build:
+      context: ../../
+      dockerfile: tests/integration/apps/flask-app/Dockerfile
+      args:
+        PYTHON_VERSION: ${PYTHON_VERSION:-3.11}
+    depends_on:
+      agent:
+        condition: service_completed_successfully
+      collector:
+        condition: service_started
+    volumes:
+      - instrumentation:/var/odigos/python:ro
+    environment:
+      - PYTHONPATH=/var/odigos/python:/var/odigos/python/opentelemetry/instrumentation/auto_instrumentation
+      - OTEL_SERVICE_NAME=flask-app
+      - OTEL_TRACES_EXPORTER=otlp
+      - OTEL_EXPORTER_OTLP_ENDPOINT=http://collector:4318
+      - OTEL_EXPORTER_OTLP_PROTOCOL=http/protobuf
+      - OTEL_METRICS_EXPORTER=none
+      - OTEL_LOGS_EXPORTER=none
+      - OTEL_PYTHON_CONFIGURATOR=odigos-python-configurator
+      - ODIGOS_DISTRO_NAME=python-community
+      - DISABLE_OPAMP_CLIENT=true
+    ports:
+      - "8081:8080"

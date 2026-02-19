@@ -1,0 +1,54 @@
+name: integration-test
+
+on:
+  pull_request:
+    branches:
+      - main
+  workflow_dispatch:
+
+jobs:
+  integration-test:
+    runs-on: ubuntu-latest
+
+    strategy:
+      fail-fast: false
+      matrix:
+        python-version: ["3.8", "3.9", "3.10", "3.11", "3.12"]
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Python ${{ matrix.python-version }}
+        uses: actions/setup-python@v4
+        with:
+          python-version: ${{ matrix.python-version }}
+
+      - name: Install build tools
+        run: python -m pip install --upgrade pip build
+
+      - name: Run integration tests
+        run: ./tests/integration/run.sh
+
+      - name: Upload traces artifact on failure
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: integration-traces-py${{ matrix.python-version }}
+          path: tests/integration/output/
+
+      - name: Upload container logs on failure
+        if: failure()
+        run: |
+          docker compose -f tests/integration/docker-compose.yaml logs > /tmp/integration-logs.txt 2>&1 || true
+          echo "::group::Container logs"
+          cat /tmp/integration-logs.txt
+          echo "::endgroup::"
+
+      - name: Upload logs artifact on failure
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: integration-container-logs-py${{ matrix.python-version }}
+          path: /tmp/integration-logs.txt
+          if-no-files-found: ignore
