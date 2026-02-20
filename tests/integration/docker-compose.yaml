@@ -93,3 +93,31 @@ services:
       - DISABLE_OPAMP_CLIENT=true
     ports:
       - "8081:8080"
+
+  django-app:
+    build:
+      context: ../../
+      dockerfile: tests/integration/apps/django-app/Dockerfile
+      args:
+        PYTHON_VERSION: ${PYTHON_VERSION:-3.11}
+    depends_on:
+      agent:
+        condition: service_completed_successfully
+      collector:
+        condition: service_started
+    volumes:
+      - instrumentation:/var/odigos/python:ro
+    environment:
+      - PYTHONPATH=/var/odigos/python:/var/odigos/python/opentelemetry/instrumentation/auto_instrumentation
+      - DJANGO_SETTINGS_MODULE=settings
+      - OTEL_SERVICE_NAME=django-app
+      - OTEL_TRACES_EXPORTER=otlp
+      - OTEL_EXPORTER_OTLP_ENDPOINT=http://collector:4318
+      - OTEL_EXPORTER_OTLP_PROTOCOL=http/protobuf
+      - OTEL_METRICS_EXPORTER=none
+      - OTEL_LOGS_EXPORTER=none
+      - OTEL_PYTHON_CONFIGURATOR=odigos-python-configurator
+      - ODIGOS_DISTRO_NAME=python-community
+      - DISABLE_OPAMP_CLIENT=true
+    ports:
+      - "8082:8080"

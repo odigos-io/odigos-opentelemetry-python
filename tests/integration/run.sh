@@ -20,6 +20,7 @@ OUTPUT_DIR="$SCRIPT_DIR/output"
 APPS=(
   "flask-app:8081:/rolldice"
   "pythongunicorn:8000:/sub/home"
+  "django-app:8082:/rolldice"
 )
 
 STARTUP_WAIT=30             # seconds to wait for containers to start
