@@ -63,3 +63,6 @@ ipython_config.py
 
 # Virtual environment
 *venv/
+
+# Integration test output
+tests/integration/output/
