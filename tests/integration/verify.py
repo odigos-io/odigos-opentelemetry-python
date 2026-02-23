@@ -7,6 +7,8 @@ asserts that:
   1. At least one span was received.
   2. Every expected service sent spans.
   3. No spans carry an ERROR status.
+  4. Every service emitted spans from its expected instrumentation scopes.
+  5. All HTTP server spans returned HTTP 200.
 """
 
 import argparse
@@ -14,6 +16,32 @@ import json
 import sys
 import os
 
+
+# Per-service instrumentation scopes that must appear in the traces.
+# Each entry maps a service name to the list of OTel scope names we expect
+# to see at least one span from.
+EXPECTED_SCOPES = {
+    "flask-app": [
+        "opentelemetry.instrumentation.flask",
+    ],
+    "django-app": [
+        "opentelemetry.instrumentation.django",
+    ],
+    "pythongunicorn": [
+        "opentelemetry.instrumentation.starlette",
+    ],
+    "sqlalchemy-app": [
+        "opentelemetry.instrumentation.starlette",
+        "opentelemetry.instrumentation.sqlalchemy",
+        "opentelemetry.instrumentation.sqlite3",
+    ],
+}
+
+# OTLP span kind: 2 = SERVER
+KIND_SERVER = 2
+
+
+# ── Helpers ──────────────────────────────────────────────────────────────────
 
 def load_resource_spans(traces_file):
     """Parse OTLP JSON lines into a flat list of resourceSpans objects."""
@@ -49,31 +77,40 @@ def _get(obj, *keys):
     return None
 
 
+def _attr_value(attr):
+    v = attr.get("value", {})
+    return v.get("stringValue") or v.get("string_value") or v.get("intValue") or v.get("int_value")
+
+
+def _span_attr(span, key):
+    for attr in span.get("attributes", []):
+        if attr.get("key") == key:
+            return _attr_value(attr)
+    return None
+
+
 def extract_service_name(resource_span):
     resource = _get(resource_span, "resource") or {}
-    attributes = _get(resource, "attributes") or []
-    for attr in attributes:
+    for attr in (_get(resource, "attributes") or []):
         if attr.get("key") == "service.name":
-            value = attr.get("value", {})
-            return (
-                value.get("stringValue")
-                or value.get("string_value")
-                or "unknown"
-            )
+            return _attr_value(attr) or "unknown"
     return "unknown"
 
 
 def flatten_spans(resource_spans):
-    """Return (service_name, span) tuples for every span in the dataset."""
+    """Return (service_name, scope_name, span) tuples for every span."""
     results = []
     for rs in resource_spans:
         svc = extract_service_name(rs)
         scope_spans_list = _get(rs, "scopeSpans", "scope_spans") or []
         for scope_spans in scope_spans_list:
+            scope_name = (scope_spans.get("scope") or {}).get("name", "")
             for span in scope_spans.get("spans", []):
-                results.append((svc, span))
+                results.append((svc, scope_name, span))
     return results
 
+
+# ── Checks ───────────────────────────────────────────────────────────────────
 
 def verify_spans_received(all_spans):
     if not all_spans:
@@ -84,7 +121,7 @@ def verify_spans_received(all_spans):
 
 
 def verify_expected_services(all_spans, expected):
-    seen = {svc for svc, _ in all_spans}
+    seen = {svc for svc, _, _ in all_spans}
     missing = set(expected) - seen
     if missing:
         print(f"FAIL: Missing services: {missing}")
@@ -98,11 +135,10 @@ def verify_expected_services(all_spans, expected):
 
 def verify_no_error_spans(all_spans):
     errors = []
-    for svc, span in all_spans:
+    for svc, _, span in all_spans:
         status = span.get("status", {})
-        code = status.get("code", 0)
         # OTLP StatusCode 2 = ERROR
-        if code == 2:
+        if status.get("code", 0) == 2:
             errors.append(
                 f"  - {svc} / {span.get('name', '?')}: "
                 f"{status.get('message', '(no message)')}"
@@ -113,23 +149,61 @@ def verify_no_error_spans(all_spans):
         for line in errors[:20]:
             print(line)
         return False
-    print(f"  OK: No error spans")
+    print("  OK: No error spans")
     return True
 
 
+def verify_scopes(resource_spans, expected_scopes):
+    """Check that each service emitted spans from its expected instrumentation scopes."""
+    # Collect which scopes were actually seen per service
+    seen: dict[str, set] = {}
+    for rs in resource_spans:
+        svc = extract_service_name(rs)
+        scope_spans_list = _get(rs, "scopeSpans", "scope_spans") or []
+        for ss in scope_spans_list:
+            scope_name = (ss.get("scope") or {}).get("name", "")
+            if scope_name:
+                seen.setdefault(svc, set()).add(scope_name)
+
+    ok = True
+    for svc, scopes in expected_scopes.items():
+        seen_for_svc = seen.get(svc, set())
+        missing = [s for s in scopes if s not in seen_for_svc]
+        if missing:
+            print(f"  FAIL: {svc} — missing scopes: {missing}")
+            ok = False
+        else:
+            print(f"  OK: {svc} — scopes present: {scopes}")
+    return ok
+
+
+def verify_http_success(all_spans):
+    """Check that all HTTP server spans have http.status_code = 200."""
+    failures = []
+    for svc, _, span in all_spans:
+        if span.get("kind") != KIND_SERVER:
+            continue
+        status_code = _span_attr(span, "http.status_code")
+        if status_code is None:
+            continue  # not an HTTP span
+        if str(status_code) != "200":
+            failures.append(f"  - {svc} / {span.get('name', '?')} — http.status_code={status_code}")
+
+    if failures:
+        print(f"  FAIL: HTTP server spans with non-200 status:")
+        for line in failures:
+            print(line)
+        return False
+    print("  OK: All HTTP server spans returned 200")
+    return True
+
+
+# ── Entry point ──────────────────────────────────────────────────────────────
+
 def main():
     parser = argparse.ArgumentParser(description="Verify integration test traces")
-    parser.add_argument(
-        "--traces-file",
-        required=True,
-        help="Path to the collector's file-exporter output (JSON lines)",
-    )
-    parser.add_argument(
-        "--expected-services",
-        nargs="+",
-        required=True,
-        help="Service names that must appear in traces",
-    )
+    parser.add_argument("--traces-file", required=True)
+    parser.add_argument("--expected-services", nargs="+", required=True)
     args = parser.parse_args()
 
     print(f"=== Trace verification: {args.traces_file} ===\n")
@@ -141,6 +215,8 @@ def main():
         verify_spans_received(all_spans),
         verify_expected_services(all_spans, args.expected_services),
         verify_no_error_spans(all_spans),
+        verify_scopes(resource_spans, EXPECTED_SCOPES),
+        verify_http_success(all_spans),
     ]
 
     print()
