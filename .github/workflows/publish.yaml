@@ -37,12 +37,11 @@ jobs:
           fi
           echo "✅ setup.py version matches tag (${TAG})"
 
-      - name: Set initializer version from tag
+      - name: Set initializer version from tag (replace VERSION=development for PyPI)
         run: |
           TAG=${GITHUB_REF#refs/tags/}
           VERSION=${TAG#v}
-          echo "VERSION = \"${VERSION}\"" > initializer/version.py
-          echo "✅ Set initializer/version.py to ${VERSION}"
+          sed -i "s/VERSION = \"development\"/VERSION = \"${VERSION}\"/" initializer/version.py
 
       - name: Validate setup.py instrumentation lines
         run: |
@@ -88,6 +87,21 @@ jobs:
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
+
+      - name: Validate agent/setup.py version and odigos-opentelemetry-python
+        run: |
+          TAG=${GITHUB_REF#refs/tags/}
+          VERSION=${TAG#v}
+          echo "🔍 Checking agent/setup.py version == ${VERSION} (from tag ${TAG})"
+          if ! grep -qE "version\s*=\s*['\"]${VERSION}['\"]" agent/setup.py; then
+            echo "❌ agent/setup.py setup() version does not match tag (${TAG})"
+            exit 1
+          fi
+          if ! grep -q "odigos-opentelemetry-python==${VERSION}" agent/setup.py; then
+            echo "❌ agent/setup.py odigos-opentelemetry-python dependency version does not match tag (${TAG})"
+            exit 1
+          fi
+          echo "✅ agent/setup.py version and odigos-opentelemetry-python==${VERSION} are correct"
 
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
