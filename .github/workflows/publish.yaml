@@ -79,6 +79,7 @@ jobs:
 
   docker-release:
     runs-on: ubuntu-latest
+    # This runs after the release for the pypi has succeeded, we can simply pip install and run with the image build.
     needs: build
     permissions:
       contents: read

@@ -5,4 +5,3 @@ FROM python:3.11.9 AS python-builder
 WORKDIR /python-instrumentation
 COPY agent/ ./agent
 RUN pip install ./agent/ --target workspace
-ENTRYPOINT ["/bin/bash"]
