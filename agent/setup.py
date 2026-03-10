@@ -3,12 +3,12 @@ from setuptools import setup, find_packages
 index_url = None
 
 install_requires = [
-    f"odigos-opentelemetry-python @ {index_url}" if index_url else "odigos-opentelemetry-python==1.0.65"
+    f"odigos-opentelemetry-python @ {index_url}" if index_url else "odigos-opentelemetry-python==1.0.66"
 ]
 
 setup(
     name="odigos-python-configurator",
-    version="1.0.65",
+    version="1.0.66",
     description="Odigos Configurator for Python OpenTelemetry Auto-Instrumentation",
     author="Tamir David",
     author_email="tamir@odigos.io",
