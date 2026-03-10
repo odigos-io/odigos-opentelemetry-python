@@ -28,14 +28,16 @@ jobs:
       - name: Verify version matches tag
         run: |
           # strip off the “refs/tags/” prefix, then the leading “v”
+          # Tag has "v" (e.g. v0.1.66); setup.py version must be without "v" (e.g. 0.1.66)
           TAG=${GITHUB_REF#refs/tags/}
           VERSION=${TAG#v}
-          echo "🔍 Checking setup.py version == ${VERSION} (from tag ${TAG})"
-          if ! grep -qE "version\s*=\s*['\"]${VERSION}['\"]" setup.py; then
-            echo "❌ setup.py version does not match tag (${TAG})"
+          VERSION_ERE="${VERSION//./\\.}"
+          echo "🔍 Checking setup.py version == ${VERSION} (tag ${TAG})"
+          if ! grep -qE "version\s*=\s*['\"]${VERSION_ERE}['\"]" setup.py; then
+            echo "❌ setup.py version does not match tag (expected ${VERSION} from ${TAG})"
             exit 1
           fi
-          echo "✅ setup.py version matches tag (${TAG})"
+          echo "✅ setup.py version ${VERSION} matches tag ${TAG}"
 
       - name: Set initializer version from tag (replace VERSION=development for PyPI)
         run: |
