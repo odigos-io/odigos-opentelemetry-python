@@ -36,7 +36,7 @@ setup(
         'protobuf==5.29.6',
         'importlib-metadata==6.0',
         'wrapt==1.17.3',
-        'typing-extensions==4.14.0',
+        'typing-extensions==4.12.2',
         'opentelemetry-exporter-otlp-proto-http==1.33.1',
         'opentelemetry-instrumentation==0.54b1',
         'opentelemetry-instrumentation-aio-pika==0.54b1',
