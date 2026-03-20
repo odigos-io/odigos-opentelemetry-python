@@ -25,8 +25,8 @@ jobs:
 
       - name: Regenerate requirements.txt and check for drift
         run: |
-          pip-compile setup.py --output-file=requirements-check.txt --quiet
-          if ! diff -u requirements.txt requirements-check.txt; then
+          pip-compile setup.py --quiet
+          if ! git diff --exit-code requirements.txt; then
             echo ""
             echo "❌ requirements.txt is out of date."
             echo ""
