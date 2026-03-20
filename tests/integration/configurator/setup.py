@@ -10,7 +10,7 @@ setup(
     install_requires=[
         "odigos-opentelemetry-python",
     ],
-    python_requires=">=3.8",
+    python_requires=">=3.9",
     entry_points={
         "opentelemetry_configurator": [
             "odigos-python-configurator = configurator:OdigosPythonConfigurator"
