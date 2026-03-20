@@ -4,6 +4,7 @@ on:
   pull_request:
     branches:
       - main
+      - python3.8
   workflow_dispatch:
 
 jobs:

@@ -28,11 +28,11 @@ build-instrumentation-%:
 build-instrumentations: $(addprefix build-instrumentation-, $(INSTRUMENTATIONS))
 
 build: build-instrumentations
-	@echo "📦 Building odigos-opentelemetry-python..."
+	@echo "📦 Building odigos-opentelemetry-python3.8..."
 	@$(PYTHON) -m build
 
 install: build-instrumentations
-	@echo "📥 Installing odigos-opentelemetry-python..."
+	@echo "📥 Installing odigos-opentelemetry-python3.8..."
 	@$(PYTHON) -m pip install .
 
 clean:
