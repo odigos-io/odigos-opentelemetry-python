@@ -1,0 +1,39 @@
+name: Check requirements.txt
+
+on:
+  pull_request:
+    branches:
+      - main
+      - python3.8
+  workflow_dispatch:
+
+jobs:
+  check-requirements:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.10'
+
+      - name: Install pip-tools
+        run: pip install pip-tools
+
+      - name: Regenerate requirements.txt and check for drift
+        run: |
+          pip-compile setup.py --output-file=requirements-check.txt --quiet
+          if ! diff -u requirements.txt requirements-check.txt; then
+            echo ""
+            echo "❌ requirements.txt is out of date."
+            echo ""
+            echo "Run the following locally and commit the result:"
+            echo ""
+            echo "  pip-compile setup.py"
+            echo ""
+            exit 1
+          fi
+          echo "✅ requirements.txt is up to date"
