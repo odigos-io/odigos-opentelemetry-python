@@ -8,7 +8,7 @@ setup(
     author_email="tamir@odigos.io",
     packages=find_packages(include=["configurator", "configurator.*"]),
     install_requires=[
-        "odigos-opentelemetry-python",
+        "odigos-opentelemetry-python3.8",
     ],
     python_requires=">=3.8",
     entry_points={

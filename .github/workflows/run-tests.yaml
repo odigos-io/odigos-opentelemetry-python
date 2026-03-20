@@ -4,6 +4,7 @@ on:
   pull_request:
     branches:
       - main
+      - python3.8
     types: [opened, synchronize, reopened, ready_for_review]
   workflow_dispatch:
 
