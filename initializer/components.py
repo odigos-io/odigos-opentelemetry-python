@@ -291,7 +291,7 @@ def handle_instrumenation_of_sub_processes():
     # - The environment override writer is removed
     # - Webhook integration is implemented
     # - A custom distro creation mechanism is developed
-    auto_instrumentation_path = "/var/odigos/python/opentelemetry/instrumentation/auto_instrumentation"
+    auto_instrumentation_path = "/var/odigos/python3.8/opentelemetry/instrumentation/auto_instrumentation"
     python_path = os.getenv("PYTHONPATH", "")
 
     if auto_instrumentation_path not in python_path:
