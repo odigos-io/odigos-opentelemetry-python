@@ -38,6 +38,9 @@ APPS=(
   "mongo-app:8093:/test"
   "memcached-app:8094:/test"
   "elasticsearch-app:8095:/test"
+  # Tier 5: Message broker clients
+  "rabbitmq-app:8096:/test"
+  "kafka-app:8097:/test"
 )
 
 STARTUP_WAIT=60             # seconds to wait for containers to start (increased for DB containers)

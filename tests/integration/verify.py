@@ -83,6 +83,16 @@ EXPECTED_SCOPES = {
     "elasticsearch-app": [
         "elasticsearch-api",
     ],
+    # Tier 5: Message broker clients
+    "rabbitmq-app": [
+        "opentelemetry.instrumentation.pika.pika_instrumentor",
+        "opentelemetry.instrumentation.aio_pika",
+    ],
+    "kafka-app": [
+        "opentelemetry.instrumentation.kafka",
+        # confluent-kafka requires manual wrapping (instrument_producer/instrument_consumer),
+        # it does not auto-instrument, so we only verify kafka-python here.
+    ],
 }
 
 # OTLP span kind: 2 = SERVER
