@@ -1,4 +1,4 @@
-from flask import Flask
+from flask import Flask, render_template
 import random
 
 app = Flask(__name__)
@@ -6,7 +6,7 @@ app = Flask(__name__)
 
 @app.route("/rolldice")
 def rolldice():
-    return str(random.randint(1, 6))
+    return render_template("dice.html", result=random.randint(1, 6))
 
 
 if __name__ == "__main__":

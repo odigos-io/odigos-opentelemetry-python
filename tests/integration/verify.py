@@ -21,8 +21,10 @@ import os
 # Each entry maps a service name to the list of OTel scope names we expect
 # to see at least one span from.
 EXPECTED_SCOPES = {
+    # Original apps
     "flask-app": [
         "opentelemetry.instrumentation.flask",
+        "opentelemetry.instrumentation.jinja2",
     ],
     "django-app": [
         "opentelemetry.instrumentation.django",
@@ -34,6 +36,52 @@ EXPECTED_SCOPES = {
         "opentelemetry.instrumentation.starlette",
         "opentelemetry.instrumentation.sqlalchemy",
         "opentelemetry.instrumentation.sqlite3",
+    ],
+    # Tier 1: Web frameworks
+    "fastapi-app": [
+        "opentelemetry.instrumentation.fastapi",
+    ],
+    "tornado-app": [
+        "opentelemetry.instrumentation.tornado",
+    ],
+    "falcon-app": [
+        "opentelemetry.instrumentation.falcon",
+    ],
+    "pyramid-app": [
+        "opentelemetry.instrumentation.pyramid.callbacks",
+    ],
+    "aiohttp-server-app": [
+        "opentelemetry.instrumentation.aiohttp_server",
+    ],
+    # Tier 2: HTTP clients
+    "http-clients-app": [
+        "opentelemetry.instrumentation.requests",
+        "opentelemetry.instrumentation.urllib",
+        "opentelemetry.instrumentation.urllib3",
+        "opentelemetry.instrumentation.httpx",
+        "opentelemetry.instrumentation.aiohttp_client",
+    ],
+    # Tier 4: Database clients
+    "redis-app": [
+        "opentelemetry.instrumentation.redis",
+    ],
+    "postgres-app": [
+        "opentelemetry.instrumentation.psycopg2",
+        "opentelemetry.instrumentation.asyncpg",
+        "opentelemetry.instrumentation.psycopg",
+        "opentelemetry.instrumentation.aiopg",
+    ],
+    "mysql-app": [
+        "opentelemetry.instrumentation.pymysql",
+    ],
+    "mongo-app": [
+        "opentelemetry.instrumentation.pymongo",
+    ],
+    "memcached-app": [
+        "opentelemetry.instrumentation.pymemcache",
+    ],
+    "elasticsearch-app": [
+        "elasticsearch-api",
     ],
 }
 

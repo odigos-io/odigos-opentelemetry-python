@@ -1,0 +1,3 @@
+starlette
+uvicorn
+elasticsearch>=8.0,<9.0

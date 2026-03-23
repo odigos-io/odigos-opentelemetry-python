@@ -5,9 +5,11 @@ RUN pip install --no-cache-dir uv
 
 WORKDIR /app
 
-COPY tests/integration/apps/sqlalchemy/requirements.txt .
+COPY tests/integration/apps/falcon-app/requirements.txt .
 RUN uv pip install --system --no-cache -r requirements.txt
 
-COPY tests/integration/apps/sqlalchemy/app.py .
+COPY tests/integration/apps/falcon-app/app.py .
+
+EXPOSE 8080
 
 CMD ["python", "app.py"]

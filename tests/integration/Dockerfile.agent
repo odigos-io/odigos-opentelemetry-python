@@ -1,14 +1,16 @@
 ARG PYTHON_VERSION=3.11
 FROM python:${PYTHON_VERSION}-slim
 
+RUN pip install --no-cache-dir uv
+
 WORKDIR /python-instrumentation
 COPY dist/ /tmp/dist/
 COPY tests/integration/configurator/ /tmp/configurator/
 
-# Install all local wheels by path (forces pip to use them instead of PyPI),
+# Install all local wheels by path (forces uv to use them instead of PyPI),
 # plus the local configurator. Remaining transitive deps come from PyPI.
 # --find-links ensures custom instrumentation wheels in dist/ are also found.
-RUN pip install --find-links=/tmp/dist/ --target workspace \
+RUN uv pip install --system --find-links=/tmp/dist/ --target workspace \
     /tmp/dist/*.whl \
     /tmp/configurator/ \
     && rm -rf /tmp/dist/ /tmp/configurator/

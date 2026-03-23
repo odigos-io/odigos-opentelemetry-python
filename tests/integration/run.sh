@@ -18,14 +18,30 @@ OUTPUT_DIR="$SCRIPT_DIR/output"
 # To add a new app, append a line here and add its service to
 # docker-compose.yaml. No /health endpoint required.
 APPS=(
+  # Original apps
   "flask-app:8081:/rolldice"
   "pythongunicorn:8000:/sub/home"
   "django-app:8082:/rolldice"
   "sqlalchemy-app:8083:/rolldice"
+  # Tier 1: Web frameworks
+  "fastapi-app:8084:/rolldice"
+  "tornado-app:8085:/rolldice"
+  "falcon-app:8086:/rolldice"
+  "pyramid-app:8087:/rolldice"
+  "aiohttp-server-app:8088:/rolldice"
+  # Tier 2: HTTP clients
+  "http-clients-app:8089:/test-all"
+  # Tier 4: Database clients
+  "redis-app:8090:/test"
+  "postgres-app:8091:/test"
+  "mysql-app:8092:/test"
+  "mongo-app:8093:/test"
+  "memcached-app:8094:/test"
+  "elasticsearch-app:8095:/test"
 )
 
-STARTUP_WAIT=30             # seconds to wait for containers to start
-FLUSH_WAIT=10               # seconds to wait for spans to flush
+STARTUP_WAIT=60             # seconds to wait for containers to start (increased for DB containers)
+FLUSH_WAIT=15               # seconds to wait for spans to flush
 TRAFFIC_REQUESTS=1          # number of requests per app endpoint
 
 # ── Cleanup on exit ──────────────────────────────────────────────────

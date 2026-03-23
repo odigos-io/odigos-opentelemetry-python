@@ -1,19 +1,16 @@
-# Use an official Python runtime as a base image
 ARG PYTHON_VERSION=3.11
 FROM python:${PYTHON_VERSION}-slim
 
-# Set the working directory in the container
+RUN pip install --no-cache-dir uv
+
 WORKDIR /app
 
-# Copy application code and dependencies
 COPY tests/integration/apps/pythongunicorn/main.py main.py
 COPY tests/integration/apps/pythongunicorn/script.py script.py
 COPY tests/integration/apps/pythongunicorn/requirements.txt .
 
-# Install dependencies
-RUN python -m venv /app/venv \
-    && . /app/venv/bin/activate \
-    && pip install --no-cache-dir -r requirements.txt
+RUN uv venv /app/venv \
+    && VIRTUAL_ENV=/app/venv uv pip install --no-cache -r requirements.txt
 
 RUN apt-get update && apt-get install -y strace
 COPY tests/integration/apps/pythongunicorn/script.sh script.sh
