@@ -7,9 +7,6 @@ import atexit
 import sys
 import os
 
-# Reorder the python sys.path to ensure that the user application's dependencies take precedence over the agent's dependencies.
-# This is necessary because the user application's dependencies may be incompatible with those used by the agent.
-reorder_python_path()
 
 import opentelemetry.sdk._configuration as sdk_config
 from .process_resource import OdigosProcessResourceDetector
@@ -18,13 +15,21 @@ from opentelemetry.sdk.resources import OTELResourceDetector
 from opentelemetry.sdk.trace import TracerProvider
 from opentelemetry.sdk.trace.export import BatchSpanProcessor
 from opentelemetry.trace import set_tracer_provider, get_tracer_provider
+from opentelemetry.sdk.trace.sampling import ParentBased
+
+# Move Odigos agent paths to the end of sys.path so the application's packages are
+# imported first. User and agent stacks often pin different versions of the same libs
+# (e.g. protobuf); without this, the wrong copy can win and break either side.
+#
+# Do this after the OpenTelemetry SDK imports above (load our SDK from the agent path
+# before reshuffling) and before opamp below (it imports protobuf—the app should own that).
+reorder_python_path()
 
 from .version import VERSION
 from .exit_hook import ExitHooks
 from .envs import set_static_otel_env
 
 from .odigos_sampler import OdigosSampler
-from opentelemetry.sdk.trace.sampling import ParentBased
 
 from opamp.config import Config
 from opamp import opamp_registry
