@@ -7,6 +7,10 @@ import atexit
 import sys
 import os
 
+# Reorder the python sys.path to ensure that the user application's dependencies take precedence over the agent's dependencies.
+# This is necessary because the user application's dependencies may be incompatible with those used by the agent.
+reorder_python_path()
+
 import opentelemetry.sdk._configuration as sdk_config
 from .process_resource import OdigosProcessResourceDetector
 from opentelemetry.sdk.resources import Resource
@@ -26,13 +30,10 @@ from opamp.config import Config
 from opamp import opamp_registry
 from .distro import instrumentation_registry
 
-# Reorder the python sys.path to ensure that the user application's dependencies take precedence over the agent's dependencies.
-# This is necessary because the user application's dependencies may be incompatible with those used by the agent.
-reorder_python_path()
 
 from opamp.http_client import OpAMPHTTPClient, MockOpAMPClient
 
-MINIMUM_PYTHON_SUPPORTED_VERSION = (3, 8)
+MINIMUM_PYTHON_SUPPORTED_VERSION = (3, 9)
 
 
 def initialize_components(trace_exporters = False, span_processor = None):
