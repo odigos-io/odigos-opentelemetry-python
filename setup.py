@@ -41,9 +41,7 @@ setup(
         'opentelemetry-instrumentation==0.54b1',
         'opentelemetry-instrumentation-aio-pika==0.54b1',
         'opentelemetry-instrumentation-aiohttp-client==0.54b1',
-        # When testing new overloaded integration add it in the following way to pull the custom tag from the local pypi repo
-        # 'odigos-opentelemetry-instrumentation-aiohttp-server @ http://host.docker.internal:8080/packages/odigos_opentelemetry_instrumentation_aiohttp_server-0.54b1-py3-none-any.whl',
-        'odigos-opentelemetry-instrumentation-aiohttp-server==0.54b1',
+        'opentelemetry-instrumentation-aiohttp-server==0.61b0',
         'opentelemetry-instrumentation-aiopg==0.54b1',
         'opentelemetry-instrumentation-asgi==0.54b1',
         'opentelemetry-instrumentation-asyncio==0.54b1',
@@ -57,9 +55,7 @@ setup(
         'opentelemetry-instrumentation-confluent-kafka==0.54b1',
         'opentelemetry-instrumentation-dbapi==0.54b1',
         'opentelemetry-instrumentation-django==0.54b1',
-        # When testing new overloaded integration add it in the following way to pull the custom tag from the local pypi repo
-        # 'odigos-opentelemetry-instrumentation-elasticsearch @ http://host.docker.internal:8080/packages/odigos_opentelemetry_instrumentation_elasticsearch-0.54b1-py3-none-any.whl',
-        'odigos-opentelemetry-instrumentation-elasticsearch==0.54b1',
+        'opentelemetry-instrumentation-elasticsearch==0.61b0',
         'opentelemetry-instrumentation-falcon==0.54b1',
         'opentelemetry-instrumentation-fastapi==0.54b1',
         'opentelemetry-instrumentation-flask==0.54b1',
@@ -82,9 +78,7 @@ setup(
         'opentelemetry-instrumentation-redis==0.54b1',
         'opentelemetry-instrumentation-remoulade==0.54b1',
         'opentelemetry-instrumentation-requests==0.54b1',
-        # When testing new overloaded integration add it in the following way to pull the custom tag from the local pypi repo
-        # 'odigos-opentelemetry-instrumentation-sqlalchemy @ http://host.docker.internal:8080/packages/odigos_opentelemetry_instrumentation_sqlalchemy-0.54b1-py3-none-any.whl',
-        'odigos-opentelemetry-instrumentation-sqlalchemy==0.54b2',
+        'opentelemetry-instrumentation-sqlalchemy==0.61b0',
         'opentelemetry-instrumentation-sqlite3==0.54b1',
         'opentelemetry-instrumentation-starlette==0.54b1',
         'opentelemetry-instrumentation-tornado==0.54b1',

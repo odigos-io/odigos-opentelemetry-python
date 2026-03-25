@@ -28,26 +28,6 @@ jobs:
           python -m pip install --upgrade pip
           pip install build
 
-      - name: Validate setup.py instrumentation lines
-        run: |
-          # find all instrumentations
-          for d in instrumentations/opentelemetry-instrumentation-*; do
-            inst=${d#*/opentelemetry-instrumentation-}
-            grep -q "odigos-opentelemetry-instrumentation-$inst" setup.py \
-              || { echo "❌ setup.py missing odigos-opentelemetry-instrumentation-$inst"; exit 1; }
-          done
-
-      - name: Build all instrumentations
-        run: make build-instrumentations
-
-      - name: Install patched instrumentations
-        run: |
-          for d in instrumentations/opentelemetry-instrumentation-*; do
-            echo "🔧 Installing $(basename $d)"
-            # pick up the locally built wheel and install it
-            pip install "$d/dist/"*.whl
-          done
-
       - name: Install in editable mode
         run: pip install -e .
 

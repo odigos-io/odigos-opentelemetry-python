@@ -31,21 +31,8 @@ build_packages() {
   
   rm -rf ./dist/* || true
 
-  echo "🔧 Building patched instrumentations..."
-  make build-instrumentations
-
   echo "📦 Building odigos-opentelemetry-python wheel..."
   $PYTHON -m build
-
-  echo "📦 Copying instrumentation wheels into dist/…"
-  # clear out any old instrumentation wheels
-  find dist -maxdepth 1 -type f -name "odigos_opentelemetry_instrumentation_*" -delete
-  # copy each instrumentation's dist/* into dist/
-  for inst_dir in instrumentations/*/dist; do
-    if [ -d "$inst_dir" ]; then
-      cp "$inst_dir"/* dist/ || true
-    fi
-  done
 }
 
 # 5) Start the server (once)

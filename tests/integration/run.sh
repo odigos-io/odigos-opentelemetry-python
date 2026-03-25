@@ -41,12 +41,7 @@ echo "── Building wheels ─────────────────
 cd "$REPO_ROOT"
 python3 -m pip install --quiet build 2>/dev/null || true
 rm -rf dist/
-make build
-
-# Copy instrumentation wheels into dist/ so Dockerfile.agent can find them
-for inst_dir in instrumentations/*/dist; do
-  [ -d "$inst_dir" ] && cp "$inst_dir"/* dist/
-done
+python3 -m build
 
 echo "  Wheels in dist/:"
 ls -1 dist/*.whl

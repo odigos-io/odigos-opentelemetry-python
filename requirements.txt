@@ -37,19 +37,16 @@ importlib-metadata==6.0.0
     # via
     #   odigos-opentelemetry-python (setup.py)
     #   opentelemetry-api
-odigos-opentelemetry-instrumentation-aiohttp-server==0.54b1
+opentelemetry-instrumentation-aiohttp-server==0.61b0
     # via odigos-opentelemetry-python (setup.py)
-odigos-opentelemetry-instrumentation-elasticsearch==0.54b1
+opentelemetry-instrumentation-elasticsearch==0.61b0
     # via odigos-opentelemetry-python (setup.py)
-odigos-opentelemetry-instrumentation-sqlalchemy==0.54b2
+opentelemetry-instrumentation-sqlalchemy==0.61b0
     # via odigos-opentelemetry-python (setup.py)
 odigos-requests==2.32.3.dev0
     # via odigos-opentelemetry-python (setup.py)
 opentelemetry-api==1.33.1
     # via
-    #   odigos-opentelemetry-instrumentation-aiohttp-server
-    #   odigos-opentelemetry-instrumentation-elasticsearch
-    #   odigos-opentelemetry-instrumentation-sqlalchemy
     #   opentelemetry-exporter-otlp-proto-http
     #   opentelemetry-instrumentation
     #   opentelemetry-instrumentation-aio-pika
@@ -106,9 +103,6 @@ opentelemetry-exporter-otlp-proto-http==1.33.1
     # via odigos-opentelemetry-python (setup.py)
 opentelemetry-instrumentation==0.54b1
     # via
-    #   odigos-opentelemetry-instrumentation-aiohttp-server
-    #   odigos-opentelemetry-instrumentation-elasticsearch
-    #   odigos-opentelemetry-instrumentation-sqlalchemy
     #   odigos-opentelemetry-python (setup.py)
     #   opentelemetry-instrumentation-aio-pika
     #   opentelemetry-instrumentation-aiohttp-client
@@ -272,9 +266,6 @@ opentelemetry-sdk==1.33.1
     # via opentelemetry-exporter-otlp-proto-http
 opentelemetry-semantic-conventions==0.54b1
     # via
-    #   odigos-opentelemetry-instrumentation-aiohttp-server
-    #   odigos-opentelemetry-instrumentation-elasticsearch
-    #   odigos-opentelemetry-instrumentation-sqlalchemy
     #   opentelemetry-instrumentation
     #   opentelemetry-instrumentation-aiohttp-client
     #   opentelemetry-instrumentation-asgi
@@ -310,8 +301,8 @@ opentelemetry-semantic-conventions==0.54b1
     #   opentelemetry-sdk
 opentelemetry-util-http==0.54b1
     # via
-    #   odigos-opentelemetry-instrumentation-aiohttp-server
     #   opentelemetry-instrumentation-aiohttp-client
+    #   opentelemetry-instrumentation-aiohttp-server
     #   opentelemetry-instrumentation-asgi
     #   opentelemetry-instrumentation-django
     #   opentelemetry-instrumentation-falcon
@@ -327,8 +318,8 @@ opentelemetry-util-http==0.54b1
     #   opentelemetry-instrumentation-wsgi
 packaging==24.2
     # via
-    #   odigos-opentelemetry-instrumentation-sqlalchemy
     #   odigos-opentelemetry-python (setup.py)
+    #   opentelemetry-instrumentation-sqlalchemy
     #   opentelemetry-instrumentation
     #   opentelemetry-instrumentation-falcon
     #   opentelemetry-instrumentation-flask
@@ -360,11 +351,11 @@ uuid7==0.1.0
 wrapt==1.17.3
     # via
     #   deprecated
-    #   odigos-opentelemetry-instrumentation-aiohttp-server
-    #   odigos-opentelemetry-instrumentation-elasticsearch
-    #   odigos-opentelemetry-instrumentation-sqlalchemy
     #   odigos-opentelemetry-python (setup.py)
     #   opentelemetry-instrumentation
+    #   opentelemetry-instrumentation-aiohttp-server
+    #   opentelemetry-instrumentation-elasticsearch
+    #   opentelemetry-instrumentation-sqlalchemy
     #   opentelemetry-instrumentation-aio-pika
     #   opentelemetry-instrumentation-aiohttp-client
     #   opentelemetry-instrumentation-aiopg

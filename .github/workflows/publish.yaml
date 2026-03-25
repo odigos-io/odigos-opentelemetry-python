@@ -45,29 +45,6 @@ jobs:
           VERSION=${TAG#v}
           sed -i "s/VERSION = \"development\"/VERSION = \"${VERSION}\"/" initializer/version.py
 
-      - name: Validate setup.py instrumentation lines
-        run: |
-          for d in instrumentations/opentelemetry-instrumentation-*; do
-            inst=${d#*/opentelemetry-instrumentation-}
-            grep -q "odigos-opentelemetry-instrumentation-$inst" setup.py \
-              || { echo "❌ setup.py missing odigos-opentelemetry-instrumentation-$inst"; exit 1; }
-          done
-
-      - name: Build all instrumentations
-        run: make build-instrumentations
-
-      - name: Publish patched instrumentations
-        env:
-          TWINE_USERNAME: "__token__"
-          TWINE_PASSWORD: ${{ secrets.PYPI_API_TOKEN }}
-        run: |
-          for d in instrumentations/opentelemetry-instrumentation-*; do
-            echo "➡️ Publishing $(basename $d)"
-            # Using --skip-existing in order to skip already uploaded instrumentation,
-            # In order to overwrite, a package needs to be removed manually from the PyPi
-            twine upload --skip-existing --non-interactive "$d/dist/*"
-          done
-
       - name: Build the package
         run: |
           python -m build

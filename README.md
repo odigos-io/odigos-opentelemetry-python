@@ -34,17 +34,6 @@ Update the python agent requirements.txt with a reference to the local pypi serv
 
 Change `odigos-opentelemetry-python==1.0.42` to `odigos-opentelemetry-python @ http://host.docker.internal:8080/packages/odigos_opentelemetry_python-1.0.42-py3-none-any.whl`
 
-#### Using custom instrumentation
-In order to use a custom instrumentation (By patching it here from source) replace the original line in the setup.py to use the local context
-
-For example:
-
-```odigos-opentelemetry-instrumentation-elasticsearch==0.49b4```
-
-should be changed to
-
-```odigos-opentelemetry-instrumentation-elasticsearch @ http://host.docker.internal:8080/packages/odigos_opentelemetry_instrumentation_elasticsearch-0.49b4-py3-none-any.whl```
-
 ## Publishing a New Version to PyPI
 1. Ensure all changes are merged into the `main` branch.
 
@@ -57,10 +46,3 @@ git tag <TAG>
 git push origin <TAG>
 ```
 4. Let the [GitHub workflow](https://github.com/odigos-io/odigos-opentelemetry-python/blob/main/.github/workflows/publish.yaml) handle versioning and publishing to [odigos-opentelemetry-python on PyPI](https://pypi.org/project/odigos-opentelemetry-python/).
-
-
-## Adding a new instrumentation to overload
-1. Copy the source code of the new instrumentation to overload into the `instrumentations` dir.
-2. In the instrumentation's `pyproject.toml` file, add the `odigos-` prefix to the name.
-3. Update the `install_requires` in the setup.py to use the `odigos-*` for the relevant instrumentation.
-4. Push your changed and push a new tag :)
