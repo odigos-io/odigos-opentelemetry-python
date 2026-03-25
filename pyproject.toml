@@ -97,6 +97,20 @@ odigos_post = "initializer.post_instrument:run_post_hook"
 [project.entry-points.opentelemetry_distro]
 odigos = "initializer.distro.distro:OdigosDistro"
 
+[tool.uv.sources]
+odigos-opentelemetry-instrumentation-aiohttp-server = { workspace = true }
+odigos-opentelemetry-instrumentation-elasticsearch = { workspace = true }
+odigos-opentelemetry-instrumentation-sqlalchemy = { workspace = true }
+
+[tool.uv.workspace]
+members = [
+    "agent",
+    "instrumentations/*",
+]
+exclude = [
+    "tests/integration/configurator",
+]
+
 [tool.setuptools.packages.find]
 include = [
     "initializer",

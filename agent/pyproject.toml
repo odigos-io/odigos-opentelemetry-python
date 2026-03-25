@@ -16,6 +16,9 @@ dependencies = [
     "odigos-opentelemetry-python == 1.0.70",
 ]
 
+[tool.uv.sources]
+odigos-opentelemetry-python = { workspace = true }
+
 [project.entry-points.opentelemetry_configurator]
 odigos-python-configurator = "configurator:OdigosPythonConfigurator"
 

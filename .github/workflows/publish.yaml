@@ -16,18 +16,15 @@ jobs:
       - name: Check out the code
         uses: actions/checkout@v4
 
-      - name: Set up Python
-        uses: actions/setup-python@v4
-        with:
-          python-version: '3.9'
+      - name: Install uv
+        uses: astral-sh/setup-uv@v4
 
-      - name: Install build tools
-        run: |
-          pip install build twine
+      - name: Set up Python
+        run: uv python install 3.9
 
       - name: Verify version matches tag
         run: |
-          # strip off the “refs/tags/” prefix, then the leading “v”
+          # strip off the "refs/tags/" prefix, then the leading "v"
           # Tag has "v" (e.g. v0.1.66); pyproject.toml version must be without "v" (e.g. 0.1.66)
           TAG=${GITHUB_REF#refs/tags/}
           VERSION=${TAG#v}
@@ -65,18 +62,17 @@ jobs:
             echo "➡️ Publishing $(basename $d)"
             # Using --skip-existing in order to skip already uploaded instrumentation,
             # In order to overwrite, a package needs to be removed manually from the PyPi
-            twine upload --skip-existing --non-interactive "$d/dist/*"
+            uvx twine upload --skip-existing --non-interactive "$d/dist/*"
           done
 
       - name: Build the package
-        run: |
-          python -m build
+        run: uv build
 
       - name: Publish to PyPI
         env:
           TWINE_USERNAME: "__token__"
           TWINE_PASSWORD: ${{ secrets.PYPI_API_TOKEN }}
-        run: twine upload --non-interactive dist/*
+        run: uvx twine upload --non-interactive dist/*
 
   docker-release:
     runs-on: ubuntu-latest
