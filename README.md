@@ -24,8 +24,8 @@ Simply run `./debug.sh`
 ### Building odiglet with custom python agent
 In order to build an odiglet image with this custom code the following change should be made (Different for OSS and enterprise)
 #### OSS
-Update the python agent setup.py to access the local pypi server
-Inside `agents/python/setup.py` Uncomment `# index_url = ....` and make sure it is pointing to the correct version in the pypi
+Update the python agent to access the local pypi server
+Install the agent with `--find-links` pointing to the local pypi server URL
 
 ```index_url = 'http://host.docker.internal:8080/packages/odigos_opentelemetry_python-1.0.42-py3-none-any.whl'```
 
@@ -35,7 +35,7 @@ Update the python agent requirements.txt with a reference to the local pypi serv
 Change `odigos-opentelemetry-python==1.0.42` to `odigos-opentelemetry-python @ http://host.docker.internal:8080/packages/odigos_opentelemetry_python-1.0.42-py3-none-any.whl`
 
 #### Using custom instrumentation
-In order to use a custom instrumentation (By patching it here from source) replace the original line in the setup.py to use the local context
+In order to use a custom instrumentation (By patching it here from source) replace the original line in `pyproject.toml` to use the local context
 
 For example:
 
@@ -62,5 +62,5 @@ git push origin <TAG>
 ## Adding a new instrumentation to overload
 1. Copy the source code of the new instrumentation to overload into the `instrumentations` dir.
 2. In the instrumentation's `pyproject.toml` file, add the `odigos-` prefix to the name.
-3. Update the `install_requires` in the setup.py to use the `odigos-*` for the relevant instrumentation.
+3. Update the `dependencies` in `pyproject.toml` to use the `odigos-*` for the relevant instrumentation.
 4. Push your changed and push a new tag :)

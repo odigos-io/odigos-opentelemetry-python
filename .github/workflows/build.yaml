@@ -28,13 +28,12 @@ jobs:
           python -m pip install --upgrade pip
           pip install build
 
-      - name: Validate setup.py instrumentation lines
+      - name: Validate pyproject.toml instrumentation lines
         run: |
-          # find all instrumentations
           for d in instrumentations/opentelemetry-instrumentation-*; do
             inst=${d#*/opentelemetry-instrumentation-}
-            grep -q "odigos-opentelemetry-instrumentation-$inst" setup.py \
-              || { echo "❌ setup.py missing odigos-opentelemetry-instrumentation-$inst"; exit 1; }
+            grep -q "odigos-opentelemetry-instrumentation-$inst" pyproject.toml \
+              || { echo "❌ pyproject.toml missing odigos-opentelemetry-instrumentation-$inst"; exit 1; }
           done
 
       - name: Build all instrumentations

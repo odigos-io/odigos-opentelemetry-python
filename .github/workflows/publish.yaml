@@ -28,16 +28,16 @@ jobs:
       - name: Verify version matches tag
         run: |
           # strip off the “refs/tags/” prefix, then the leading “v”
-          # Tag has "v" (e.g. v0.1.66); setup.py version must be without "v" (e.g. 0.1.66)
+          # Tag has "v" (e.g. v0.1.66); pyproject.toml version must be without "v" (e.g. 0.1.66)
           TAG=${GITHUB_REF#refs/tags/}
           VERSION=${TAG#v}
           VERSION_ERE="${VERSION//./\\.}"
-          echo "🔍 Checking setup.py version == ${VERSION} (tag ${TAG})"
-          if ! grep -qE "version\s*=\s*['\"]${VERSION_ERE}['\"]" setup.py; then
-            echo "❌ setup.py version does not match tag (expected ${VERSION} from ${TAG})"
+          echo "🔍 Checking pyproject.toml version == ${VERSION} (tag ${TAG})"
+          if ! grep -qE "version\s*=\s*\"${VERSION_ERE}\"" pyproject.toml; then
+            echo "❌ pyproject.toml version does not match tag (expected ${VERSION} from ${TAG})"
             exit 1
           fi
-          echo "✅ setup.py version ${VERSION} matches tag ${TAG}"
+          echo "✅ pyproject.toml version ${VERSION} matches tag ${TAG}"
 
       - name: Set initializer version from tag (replace VERSION=development for PyPI)
         run: |
@@ -45,12 +45,12 @@ jobs:
           VERSION=${TAG#v}
           sed -i "s/VERSION = \"development\"/VERSION = \"${VERSION}\"/" initializer/version.py
 
-      - name: Validate setup.py instrumentation lines
+      - name: Validate pyproject.toml instrumentation lines
         run: |
           for d in instrumentations/opentelemetry-instrumentation-*; do
             inst=${d#*/opentelemetry-instrumentation-}
-            grep -q "odigos-opentelemetry-instrumentation-$inst" setup.py \
-              || { echo "❌ setup.py missing odigos-opentelemetry-instrumentation-$inst"; exit 1; }
+            grep -q "odigos-opentelemetry-instrumentation-$inst" pyproject.toml \
+              || { echo "❌ pyproject.toml missing odigos-opentelemetry-instrumentation-$inst"; exit 1; }
           done
 
       - name: Build all instrumentations
@@ -90,20 +90,20 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v4
 
-      - name: Validate agent/setup.py version and odigos-opentelemetry-python
+      - name: Validate agent/pyproject.toml version and odigos-opentelemetry-python
         run: |
           TAG=${GITHUB_REF#refs/tags/}
           VERSION=${TAG#v}
-          echo "🔍 Checking agent/setup.py version == ${VERSION} (from tag ${TAG})"
-          if ! grep -qE "version\s*=\s*['\"]${VERSION}['\"]" agent/setup.py; then
-            echo "❌ agent/setup.py setup() version does not match tag (${TAG})"
+          echo "🔍 Checking agent/pyproject.toml version == ${VERSION} (from tag ${TAG})"
+          if ! grep -qE "version\s*=\s*\"${VERSION}\"" agent/pyproject.toml; then
+            echo "❌ agent/pyproject.toml version does not match tag (${TAG})"
             exit 1
           fi
-          if ! grep -q "odigos-opentelemetry-python==${VERSION}" agent/setup.py; then
-            echo "❌ agent/setup.py odigos-opentelemetry-python dependency version does not match tag (${TAG})"
+          if ! grep -q "odigos-opentelemetry-python == ${VERSION}" agent/pyproject.toml; then
+            echo "❌ agent/pyproject.toml odigos-opentelemetry-python dependency version does not match tag (${TAG})"
             exit 1
           fi
-          echo "✅ agent/setup.py version and odigos-opentelemetry-python==${VERSION} are correct"
+          echo "✅ agent/pyproject.toml version and odigos-opentelemetry-python==${VERSION} are correct"
 
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
