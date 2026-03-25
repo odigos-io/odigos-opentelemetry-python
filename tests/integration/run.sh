@@ -41,9 +41,17 @@ APPS=(
   # Tier 5: Message broker clients
   "rabbitmq-app:8096:/test"
   "kafka-app:8097:/test"
+  # Tier 6: Additional instrumentations
+  "tortoiseorm-app:8098:/test"
+  "grpc-app:8099:/test"
+  "celery-app:8100:/test"
+  "boto-app:8101:/test"
+  "cassandra-app:8102:/test"
+  "pymssql-app:8103:/test"
 )
 
-STARTUP_WAIT=60             # seconds to wait for containers to start (increased for DB containers)
+READY_TIMEOUT=300           # max seconds to wait for all apps to become reachable
+POLL_INTERVAL=5             # seconds between readiness polls
 FLUSH_WAIT=15               # seconds to wait for spans to flush
 TRAFFIC_REQUESTS=1          # number of requests per app endpoint
 
@@ -82,23 +90,54 @@ echo "── Starting containers ───────────────�
 docker compose -f "$COMPOSE_FILE" build --no-cache
 docker compose -f "$COMPOSE_FILE" up -d
 
-# ── 4. Wait for containers to be up ─────────────────────────────────
+# ── 4. Poll until every app endpoint is reachable ────────────────────
 echo ""
-echo "── Waiting ${STARTUP_WAIT}s for services to start ───────────────"
-sleep "$STARTUP_WAIT"
+echo "── Waiting for all services to become ready (timeout ${READY_TIMEOUT}s) ──"
+START_TS=$(date +%s)
 
-# Verify containers are still running (didn't crash on startup)
-for entry in "${APPS[@]}"; do
-  IFS=':' read -r svc _ _ <<< "$entry"
-  if ! docker compose -f "$COMPOSE_FILE" ps --status running "$svc" | grep -q "$svc"; then
-    echo "FAIL: $svc is not running"
+PENDING=("${APPS[@]}")
+TOTAL=${#APPS[@]}
+NUM_READY=0
+
+while [ ${#PENDING[@]} -gt 0 ]; do
+  ELAPSED=$(( $(date +%s) - START_TS ))
+  if [ "$ELAPSED" -ge "$READY_TIMEOUT" ]; then
     echo ""
-    echo "── Container logs ($svc) ──"
-    docker compose -f "$COMPOSE_FILE" logs "$svc"
+    echo "FAIL: Timed out after ${READY_TIMEOUT}s. Still waiting on:"
+    for entry in "${PENDING[@]}"; do
+      IFS=':' read -r svc port endpoint <<< "$entry"
+      echo "  - $svc (http://localhost:$port$endpoint)"
+      echo "    ── container status ──"
+      docker compose -f "$COMPOSE_FILE" ps "$svc" 2>&1 | tail -3
+      echo "    ── last 15 log lines ──"
+      docker compose -f "$COMPOSE_FILE" logs --tail=15 "$svc" 2>&1
+    done
     exit 1
   fi
-  echo "  $svc is running"
+
+  STILL_PENDING=()
+  for entry in "${PENDING[@]}"; do
+    IFS=':' read -r svc port endpoint <<< "$entry"
+    if curl -sf --max-time 15 "http://localhost:$port$endpoint" > /dev/null 2>&1; then
+      NUM_READY=$((NUM_READY + 1))
+      echo "  ready: $svc  (${ELAPSED}s, $NUM_READY/$TOTAL)"
+    else
+      STILL_PENDING+=("$entry")
+    fi
+  done
+  if [ ${#STILL_PENDING[@]} -eq 0 ]; then
+    PENDING=()
+  else
+    PENDING=("${STILL_PENDING[@]}")
+  fi
+
+  if [ ${#PENDING[@]} -gt 0 ]; then
+    sleep "$POLL_INTERVAL"
+  fi
 done
+
+ELAPSED=$(( $(date +%s) - START_TS ))
+echo "  All $TOTAL services ready in ${ELAPSED}s"
 
 # ── 5. Send traffic ─────────────────────────────────────────────────
 echo ""
@@ -131,9 +170,10 @@ for entry in "${APPS[@]}"; do
   EXPECTED_SERVICES+=("$svc")
 done
 
+VERIFY_FAIL=false
 python3 "$SCRIPT_DIR/verify.py" \
   --traces-file "$OUTPUT_DIR/traces.json" \
-  --expected-services "${EXPECTED_SERVICES[@]}"
+  --expected-services "${EXPECTED_SERVICES[@]}" || VERIFY_FAIL=true
 
 # ── 8. Check container logs for Python errors ────────────────────────
 echo ""
@@ -151,7 +191,7 @@ for entry in "${APPS[@]}"; do
   fi
 done
 
-if [ "$LOG_FAIL" = true ]; then
+if [ "$VERIFY_FAIL" = true ] || [ "$LOG_FAIL" = true ]; then
   exit 1
 fi
 

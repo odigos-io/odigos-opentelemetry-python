@@ -71,9 +71,7 @@ EXPECTED_SCOPES = {
         "opentelemetry.instrumentation.psycopg",
         "opentelemetry.instrumentation.aiopg",
     ],
-    "mysql-app": [
-        "opentelemetry.instrumentation.pymysql",
-    ],
+    # mysql-app scopes moved to Tier 6 section (expanded with additional drivers)
     "mongo-app": [
         "opentelemetry.instrumentation.pymongo",
     ],
@@ -92,6 +90,30 @@ EXPECTED_SCOPES = {
         "opentelemetry.instrumentation.kafka",
         # confluent-kafka requires manual wrapping (instrument_producer/instrument_consumer),
         # it does not auto-instrument, so we only verify kafka-python here.
+    ],
+    # Tier 6: Additional instrumentations
+    "mysql-app": [
+        "opentelemetry.instrumentation.pymysql",
+        "opentelemetry.instrumentation.mysql",
+        "opentelemetry.instrumentation.mysqlclient",
+    ],
+    "tortoiseorm-app": [
+        "opentelemetry.instrumentation.tortoiseorm",
+    ],
+    "grpc-app": [
+        "opentelemetry.instrumentation.grpc",
+    ],
+    "celery-app": [
+        "opentelemetry.instrumentation.celery",
+    ],
+    "boto-app": [
+        "opentelemetry.instrumentation.boto3sqs",
+    ],
+    "cassandra-app": [
+        "opentelemetry.instrumentation.cassandra",
+    ],
+    "pymssql-app": [
+        "opentelemetry.instrumentation.pymssql",
     ],
 }
 

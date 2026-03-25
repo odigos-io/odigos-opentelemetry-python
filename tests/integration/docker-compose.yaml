@@ -639,3 +639,215 @@ services:
       - DISABLE_OPAMP_CLIENT=true
     ports:
       - "8097:8080"
+
+  # ── Tier 6: Additional Infrastructure ──────────────────────────────
+
+  localstack:
+    image: localstack/localstack:3
+    environment:
+      SERVICES: sqs
+    healthcheck:
+      test: ["CMD-SHELL", "curl -sf http://localhost:4566/_localstack/health || exit 1"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+
+  cassandra:
+    image: cassandra:4
+    environment:
+      CASSANDRA_CLUSTER_NAME: test-cluster
+      MAX_HEAP_SIZE: 256M
+      HEAP_NEWSIZE: 64M
+    healthcheck:
+      test: ["CMD-SHELL", "cqlsh -e 'describe cluster' || exit 1"]
+      interval: 15s
+      timeout: 10s
+      retries: 20
+      start_period: 60s
+
+  mssql:
+    image: mcr.microsoft.com/mssql/server:2022-latest
+    platform: linux/amd64
+    environment:
+      ACCEPT_EULA: "Y"
+      MSSQL_SA_PASSWORD: "TestPass123!"
+    healthcheck:
+      test: ["CMD-SHELL", "/opt/mssql-tools18/bin/sqlcmd -S localhost -U sa -P 'TestPass123!' -C -Q 'SELECT 1' -b || exit 1"]
+      interval: 15s
+      timeout: 10s
+      retries: 15
+      start_period: 30s
+
+  # ── Tier 6: Additional App Services ────────────────────────────────
+
+  tortoiseorm-app:
+    build:
+      context: ../../
+      dockerfile: tests/integration/apps/tortoiseorm-app/Dockerfile
+      args:
+        PYTHON_VERSION: ${PYTHON_VERSION:-3.11}
+    depends_on:
+      agent:
+        condition: service_completed_successfully
+      collector:
+        condition: service_started
+      postgres:
+        condition: service_healthy
+    volumes:
+      - instrumentation:/var/odigos/python:ro
+    environment:
+      - PYTHONPATH=/var/odigos/python:/var/odigos/python/opentelemetry/instrumentation/auto_instrumentation
+      - OTEL_SERVICE_NAME=tortoiseorm-app
+      - OTEL_TRACES_EXPORTER=otlp
+      - OTEL_EXPORTER_OTLP_ENDPOINT=http://collector:4318
+      - OTEL_EXPORTER_OTLP_PROTOCOL=http/protobuf
+      - OTEL_METRICS_EXPORTER=none
+      - OTEL_LOGS_EXPORTER=none
+      - OTEL_PYTHON_CONFIGURATOR=odigos-python-configurator
+      - ODIGOS_DISTRO_NAME=python-community
+      - DISABLE_OPAMP_CLIENT=true
+    ports:
+      - "8098:8080"
+
+  grpc-app:
+    build:
+      context: ../../
+      dockerfile: tests/integration/apps/grpc-app/Dockerfile
+      args:
+        PYTHON_VERSION: ${PYTHON_VERSION:-3.11}
+    depends_on:
+      agent:
+        condition: service_completed_successfully
+      collector:
+        condition: service_started
+    volumes:
+      - instrumentation:/var/odigos/python:ro
+    environment:
+      - PYTHONPATH=/var/odigos/python:/var/odigos/python/opentelemetry/instrumentation/auto_instrumentation
+      - OTEL_SERVICE_NAME=grpc-app
+      - OTEL_TRACES_EXPORTER=otlp
+      - OTEL_EXPORTER_OTLP_ENDPOINT=http://collector:4318
+      - OTEL_EXPORTER_OTLP_PROTOCOL=http/protobuf
+      - OTEL_METRICS_EXPORTER=none
+      - OTEL_LOGS_EXPORTER=none
+      - OTEL_PYTHON_CONFIGURATOR=odigos-python-configurator
+      - ODIGOS_DISTRO_NAME=python-community
+      - DISABLE_OPAMP_CLIENT=true
+    ports:
+      - "8099:8080"
+
+  celery-app:
+    build:
+      context: ../../
+      dockerfile: tests/integration/apps/celery-app/Dockerfile
+      args:
+        PYTHON_VERSION: ${PYTHON_VERSION:-3.11}
+    depends_on:
+      agent:
+        condition: service_completed_successfully
+      collector:
+        condition: service_started
+      redis:
+        condition: service_healthy
+    volumes:
+      - instrumentation:/var/odigos/python:ro
+    environment:
+      - PYTHONPATH=/var/odigos/python:/var/odigos/python/opentelemetry/instrumentation/auto_instrumentation
+      - OTEL_SERVICE_NAME=celery-app
+      - OTEL_TRACES_EXPORTER=otlp
+      - OTEL_EXPORTER_OTLP_ENDPOINT=http://collector:4318
+      - OTEL_EXPORTER_OTLP_PROTOCOL=http/protobuf
+      - OTEL_METRICS_EXPORTER=none
+      - OTEL_LOGS_EXPORTER=none
+      - OTEL_PYTHON_CONFIGURATOR=odigos-python-configurator
+      - ODIGOS_DISTRO_NAME=python-community
+      - DISABLE_OPAMP_CLIENT=true
+    ports:
+      - "8100:8080"
+
+  boto-app:
+    build:
+      context: ../../
+      dockerfile: tests/integration/apps/boto-app/Dockerfile
+      args:
+        PYTHON_VERSION: ${PYTHON_VERSION:-3.11}
+    depends_on:
+      agent:
+        condition: service_completed_successfully
+      collector:
+        condition: service_started
+      localstack:
+        condition: service_healthy
+    volumes:
+      - instrumentation:/var/odigos/python:ro
+    environment:
+      - PYTHONPATH=/var/odigos/python:/var/odigos/python/opentelemetry/instrumentation/auto_instrumentation
+      - OTEL_SERVICE_NAME=boto-app
+      - OTEL_TRACES_EXPORTER=otlp
+      - OTEL_EXPORTER_OTLP_ENDPOINT=http://collector:4318
+      - OTEL_EXPORTER_OTLP_PROTOCOL=http/protobuf
+      - OTEL_METRICS_EXPORTER=none
+      - OTEL_LOGS_EXPORTER=none
+      - OTEL_PYTHON_CONFIGURATOR=odigos-python-configurator
+      - ODIGOS_DISTRO_NAME=python-community
+      - DISABLE_OPAMP_CLIENT=true
+    ports:
+      - "8101:8080"
+
+  cassandra-app:
+    build:
+      context: ../../
+      dockerfile: tests/integration/apps/cassandra-app/Dockerfile
+      args:
+        PYTHON_VERSION: ${PYTHON_VERSION:-3.11}
+    depends_on:
+      agent:
+        condition: service_completed_successfully
+      collector:
+        condition: service_started
+      cassandra:
+        condition: service_healthy
+    volumes:
+      - instrumentation:/var/odigos/python:ro
+    environment:
+      - PYTHONPATH=/var/odigos/python:/var/odigos/python/opentelemetry/instrumentation/auto_instrumentation
+      - OTEL_SERVICE_NAME=cassandra-app
+      - OTEL_TRACES_EXPORTER=otlp
+      - OTEL_EXPORTER_OTLP_ENDPOINT=http://collector:4318
+      - OTEL_EXPORTER_OTLP_PROTOCOL=http/protobuf
+      - OTEL_METRICS_EXPORTER=none
+      - OTEL_LOGS_EXPORTER=none
+      - OTEL_PYTHON_CONFIGURATOR=odigos-python-configurator
+      - ODIGOS_DISTRO_NAME=python-community
+      - DISABLE_OPAMP_CLIENT=true
+    ports:
+      - "8102:8080"
+
+  pymssql-app:
+    build:
+      context: ../../
+      dockerfile: tests/integration/apps/pymssql-app/Dockerfile
+      args:
+        PYTHON_VERSION: ${PYTHON_VERSION:-3.11}
+    depends_on:
+      agent:
+        condition: service_completed_successfully
+      collector:
+        condition: service_started
+      mssql:
+        condition: service_healthy
+    volumes:
+      - instrumentation:/var/odigos/python:ro
+    environment:
+      - PYTHONPATH=/var/odigos/python:/var/odigos/python/opentelemetry/instrumentation/auto_instrumentation
+      - OTEL_SERVICE_NAME=pymssql-app
+      - OTEL_TRACES_EXPORTER=otlp
+      - OTEL_EXPORTER_OTLP_ENDPOINT=http://collector:4318
+      - OTEL_EXPORTER_OTLP_PROTOCOL=http/protobuf
+      - OTEL_METRICS_EXPORTER=none
+      - OTEL_LOGS_EXPORTER=none
+      - OTEL_PYTHON_CONFIGURATOR=odigos-python-configurator
+      - ODIGOS_DISTRO_NAME=python-community
+      - DISABLE_OPAMP_CLIENT=true
+    ports:
+      - "8103:8080"

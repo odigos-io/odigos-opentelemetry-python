@@ -2,3 +2,5 @@ starlette
 uvicorn
 PyMySQL
 cryptography
+mysql-connector-python
+mysqlclient

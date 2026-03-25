@@ -18,6 +18,30 @@ async def test(request):
     cur.close()
     conn.close()
 
+    import mysql.connector
+    conn = mysql.connector.connect(
+        host="mysql", port=3306,
+        user="testuser", password="testpass",
+        database="testdb",
+    )
+    cur = conn.cursor()
+    cur.execute("SELECT 1")
+    results["mysql_connector"] = cur.fetchone()[0]
+    cur.close()
+    conn.close()
+
+    import MySQLdb
+    conn = MySQLdb.connect(
+        host="mysql", port=3306,
+        user="testuser", passwd="testpass",
+        db="testdb",
+    )
+    cur = conn.cursor()
+    cur.execute("SELECT 1")
+    results["mysqlclient"] = cur.fetchone()[0]
+    cur.close()
+    conn.close()
+
     return JSONResponse(results)
 
 
