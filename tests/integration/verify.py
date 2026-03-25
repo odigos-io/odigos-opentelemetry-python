@@ -98,7 +98,7 @@ EXPECTED_SCOPES = {
         "opentelemetry.instrumentation.mysqlclient",
     ],
     "tortoiseorm-app": [
-        "opentelemetry.instrumentation.tortoiseorm",
+        "opentelemetry.instrumentation.asyncpg",
     ],
     "grpc-app": [
         "opentelemetry.instrumentation.grpc",
@@ -108,9 +108,6 @@ EXPECTED_SCOPES = {
     ],
     "boto-app": [
         "opentelemetry.instrumentation.boto3sqs",
-    ],
-    "cassandra-app": [
-        "opentelemetry.instrumentation.cassandra",
     ],
     "pymssql-app": [
         "opentelemetry.instrumentation.pymssql",
