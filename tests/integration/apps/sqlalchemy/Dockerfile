@@ -5,8 +5,8 @@ RUN pip install --no-cache-dir uv
 
 WORKDIR /app
 
-COPY tests/integration/apps/sqlalchemy/requirements.txt .
-RUN uv pip install --system --no-cache -r requirements.txt
+COPY tests/integration/apps/sqlalchemy/pyproject.toml tests/integration/apps/sqlalchemy/uv.lock ./
+RUN uv export --frozen --no-dev --no-hashes --no-emit-project | uv pip install --system --no-cache -r -
 
 COPY tests/integration/apps/sqlalchemy/app.py .
 

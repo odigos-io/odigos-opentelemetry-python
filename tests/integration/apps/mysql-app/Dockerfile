@@ -9,8 +9,8 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
 
 WORKDIR /app
 
-COPY tests/integration/apps/mysql-app/requirements.txt .
-RUN uv pip install --system --no-cache -r requirements.txt
+COPY tests/integration/apps/mysql-app/pyproject.toml tests/integration/apps/mysql-app/uv.lock ./
+RUN uv export --frozen --no-dev --no-hashes --no-emit-project | uv pip install --system --no-cache -r -
 
 COPY tests/integration/apps/mysql-app/app.py .
 

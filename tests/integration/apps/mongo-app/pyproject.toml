@@ -1,0 +1,16 @@
+[build-system]
+requires = ["setuptools>=75.0"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "mongo-app"
+version = "0.1.0"
+requires-python = ">=3.9"
+dependencies = [
+    "starlette==0.41.3",
+    "uvicorn==0.32.1",
+    "pymongo==4.10.1",
+]
+
+[tool.setuptools]
+py-modules = []

@@ -1,0 +1,16 @@
+[build-system]
+requires = ["setuptools>=75.0"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "sqlalchemy-app"
+version = "0.1.0"
+requires-python = ">=3.9"
+dependencies = [
+    "SQLAlchemy==2.0.23",
+    "starlette==0.13.8",
+    "uvicorn==0.20.0",
+]
+
+[tool.setuptools]
+py-modules = []

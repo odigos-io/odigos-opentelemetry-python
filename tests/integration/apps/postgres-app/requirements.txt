@@ -1,6 +1,0 @@
-starlette
-uvicorn
-psycopg2-binary
-psycopg[binary]
-asyncpg
-aiopg

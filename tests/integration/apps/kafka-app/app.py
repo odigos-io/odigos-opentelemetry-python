@@ -42,7 +42,12 @@ async def test(request):
         results["confluent_kafka"] = msg.value().decode()
     else:
         results["confluent_kafka"] = "no message"
-    cc.close()
+    try:
+        cc.close()
+    except TypeError:
+        # Upstream bug in opentelemetry-instrumentation-confluent-kafka 0.54b1:
+        # _inner_wrap_close has wrong signature (2 args instead of 4 for wrapt)
+        pass
 
     return JSONResponse(results)
 

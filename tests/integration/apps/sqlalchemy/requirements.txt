@@ -1,3 +1,0 @@
-SQLAlchemy==2.0.23
-starlette==0.13.8
-uvicorn==0.20.0

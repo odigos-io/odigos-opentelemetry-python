@@ -1,0 +1,17 @@
+[build-system]
+requires = ["setuptools>=75.0"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "kafka-app"
+version = "0.1.0"
+requires-python = ">=3.9"
+dependencies = [
+    "starlette==0.41.3",
+    "uvicorn==0.32.1",
+    "kafka-python==2.0.2",
+    "confluent-kafka==2.5.3",
+]
+
+[tool.setuptools]
+py-modules = []

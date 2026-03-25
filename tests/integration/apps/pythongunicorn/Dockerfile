@@ -7,10 +7,10 @@ WORKDIR /app
 
 COPY tests/integration/apps/pythongunicorn/main.py main.py
 COPY tests/integration/apps/pythongunicorn/script.py script.py
-COPY tests/integration/apps/pythongunicorn/requirements.txt .
+COPY tests/integration/apps/pythongunicorn/pyproject.toml tests/integration/apps/pythongunicorn/uv.lock ./
 
 RUN uv venv /app/venv \
-    && VIRTUAL_ENV=/app/venv uv pip install --no-cache -r requirements.txt
+    && uv export --frozen --no-dev --no-hashes --no-emit-project | VIRTUAL_ENV=/app/venv uv pip install --no-cache -r -
 
 RUN apt-get update && apt-get install -y strace
 COPY tests/integration/apps/pythongunicorn/script.sh script.sh

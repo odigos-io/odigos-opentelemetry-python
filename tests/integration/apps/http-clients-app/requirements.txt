@@ -1,6 +1,0 @@
-starlette
-uvicorn
-requests
-urllib3
-httpx
-aiohttp

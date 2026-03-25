@@ -1,0 +1,19 @@
+[build-system]
+requires = ["setuptools>=75.0"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "mysql-app"
+version = "0.1.0"
+requires-python = ">=3.9"
+dependencies = [
+    "starlette==0.41.3",
+    "uvicorn==0.32.1",
+    "PyMySQL==1.1.1",
+    "cryptography==43.0.3",
+    "mysql-connector-python==9.1.0",
+    "mysqlclient==2.2.6",
+]
+
+[tool.setuptools]
+py-modules = []

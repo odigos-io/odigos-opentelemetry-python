@@ -5,8 +5,8 @@ RUN pip install --no-cache-dir uv
 
 WORKDIR /app
 
-COPY tests/integration/apps/celery-app/requirements.txt .
-RUN uv pip install --system --no-cache -r requirements.txt
+COPY tests/integration/apps/celery-app/pyproject.toml tests/integration/apps/celery-app/uv.lock ./
+RUN uv export --frozen --no-dev --no-hashes --no-emit-project | uv pip install --system --no-cache -r -
 
 COPY tests/integration/apps/celery-app/app.py .
 

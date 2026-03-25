@@ -1,0 +1,22 @@
+[build-system]
+requires = ["setuptools>=75.0"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "odigos-python-configurator"
+version = "0.1.0"
+description = "Odigos Configurator for Python OpenTelemetry Auto-Instrumentation"
+requires-python = ">=3.9"
+dependencies = [
+    "odigos-opentelemetry-python",
+]
+
+[[project.authors]]
+name = "Tamir David"
+email = "tamir@odigos.io"
+
+[project.entry-points."opentelemetry_configurator"]
+odigos-python-configurator = "configurator:OdigosPythonConfigurator"
+
+[tool.setuptools.packages.find]
+include = ["configurator", "configurator.*"]
