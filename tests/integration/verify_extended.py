@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-Verify integration test traces.
+Verify extended integration test traces.
 
 Reads the OTLP JSON lines produced by the OTel Collector file exporter and
 asserts that:
@@ -21,19 +21,79 @@ import os
 # Each entry maps a service name to the list of OTel scope names we expect
 # to see at least one span from.
 EXPECTED_SCOPES = {
-    "flask-app": [
-        "opentelemetry.instrumentation.flask",
+    # Tier 1: Web frameworks
+    "fastapi-app": [
+        "opentelemetry.instrumentation.fastapi",
     ],
-    "django-app": [
-        "opentelemetry.instrumentation.django",
+    "tornado-app": [
+        "opentelemetry.instrumentation.tornado",
     ],
-    "pythongunicorn": [
-        "opentelemetry.instrumentation.starlette",
+    "falcon-app": [
+        "opentelemetry.instrumentation.falcon",
     ],
-    "sqlalchemy-app": [
-        "opentelemetry.instrumentation.starlette",
-        "opentelemetry.instrumentation.sqlalchemy",
-        "opentelemetry.instrumentation.sqlite3",
+    "pyramid-app": [
+        "opentelemetry.instrumentation.pyramid.callbacks",
+    ],
+    "aiohttp-server-app": [
+        "opentelemetry.instrumentation.aiohttp_server",
+    ],
+    # Tier 2: HTTP clients
+    "http-clients-app": [
+        "opentelemetry.instrumentation.requests",
+        "opentelemetry.instrumentation.urllib",
+        "opentelemetry.instrumentation.urllib3",
+        "opentelemetry.instrumentation.httpx",
+        "opentelemetry.instrumentation.aiohttp_client",
+    ],
+    # Tier 4: Database clients
+    "redis-app": [
+        "opentelemetry.instrumentation.redis",
+    ],
+    "postgres-app": [
+        "opentelemetry.instrumentation.psycopg2",
+        "opentelemetry.instrumentation.asyncpg",
+        "opentelemetry.instrumentation.psycopg",
+        "opentelemetry.instrumentation.aiopg",
+    ],
+    "mongo-app": [
+        "opentelemetry.instrumentation.pymongo",
+    ],
+    "memcached-app": [
+        "opentelemetry.instrumentation.pymemcache",
+    ],
+    "elasticsearch-app": [
+        "elasticsearch-api",
+    ],
+    # Tier 5: Message broker clients
+    "rabbitmq-app": [
+        "opentelemetry.instrumentation.pika.pika_instrumentor",
+        "opentelemetry.instrumentation.aio_pika",
+    ],
+    "kafka-app": [
+        "opentelemetry.instrumentation.kafka",
+        # confluent-kafka requires manual wrapping (instrument_producer/instrument_consumer),
+        # it does not auto-instrument, so we only verify kafka-python here.
+    ],
+    # Tier 6: Additional instrumentations
+    "mysql-app": [
+        "opentelemetry.instrumentation.pymysql",
+        "opentelemetry.instrumentation.mysql",
+        "opentelemetry.instrumentation.mysqlclient",
+    ],
+    "tortoiseorm-app": [
+        "opentelemetry.instrumentation.asyncpg",
+    ],
+    "grpc-app": [
+        "opentelemetry.instrumentation.grpc",
+    ],
+    "celery-app": [
+        "opentelemetry.instrumentation.celery",
+    ],
+    "boto-app": [
+        "opentelemetry.instrumentation.boto3sqs",
+    ],
+    "pymssql-app": [
+        "opentelemetry.instrumentation.pymssql",
     ],
 }
 
@@ -155,7 +215,6 @@ def verify_no_error_spans(all_spans):
 
 def verify_scopes(resource_spans, expected_scopes):
     """Check that each service emitted spans from its expected instrumentation scopes."""
-    # Collect which scopes were actually seen per service
     seen: dict[str, set] = {}
     for rs in resource_spans:
         svc = extract_service_name(rs)
@@ -185,7 +244,7 @@ def verify_http_success(all_spans):
             continue
         status_code = _span_attr(span, "http.status_code")
         if status_code is None:
-            continue  # not an HTTP span
+            continue
         if str(status_code) != "200":
             failures.append(f"  - {svc} / {span.get('name', '?')} — http.status_code={status_code}")
 
@@ -201,21 +260,27 @@ def verify_http_success(all_spans):
 # ── Entry point ──────────────────────────────────────────────────────────────
 
 def main():
-    parser = argparse.ArgumentParser(description="Verify integration test traces")
+    parser = argparse.ArgumentParser(description="Verify extended integration test traces")
     parser.add_argument("--traces-file", required=True)
     parser.add_argument("--expected-services", nargs="+", required=True)
     args = parser.parse_args()
 
-    print(f"=== Trace verification: {args.traces_file} ===\n")
+    print(f"=== Trace verification (extended): {args.traces_file} ===\n")
 
     resource_spans = load_resource_spans(args.traces_file)
     all_spans = flatten_spans(resource_spans)
+
+    expected_set = set(args.expected_services)
+    filtered_scopes = {
+        svc: scopes for svc, scopes in EXPECTED_SCOPES.items()
+        if svc in expected_set
+    }
 
     checks = [
         verify_spans_received(all_spans),
         verify_expected_services(all_spans, args.expected_services),
         verify_no_error_spans(all_spans),
-        verify_scopes(resource_spans, EXPECTED_SCOPES),
+        verify_scopes(resource_spans, filtered_scopes),
         verify_http_success(all_spans),
     ]
 
