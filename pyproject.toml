@@ -56,7 +56,6 @@ dependencies = [
     "opentelemetry-instrumentation-logging == 0.60b1",
     "opentelemetry-instrumentation-mysql == 0.60b1",
     "opentelemetry-instrumentation-mysqlclient == 0.60b1",
-    "opentelemetry-instrumentation-openai-v2 == 2.0b0",
     "opentelemetry-instrumentation-pika == 0.60b1",
     "opentelemetry-instrumentation-psycopg == 0.60b1",
     "opentelemetry-instrumentation-psycopg2 == 0.60b1",
@@ -77,6 +76,15 @@ dependencies = [
     "opentelemetry-instrumentation-urllib == 0.60b1",
     "opentelemetry-instrumentation-urllib3 == 0.60b1",
     "opentelemetry-instrumentation-wsgi == 0.60b1",
+    
+    # genai
+    "opentelemetry-instrumentation-anthropic == 0.50.1",
+    "opentelemetry-instrumentation-google-genai == 0.6b0",
+    "opentelemetry-instrumentation-langchain == 0.50.1",
+    "opentelemetry-instrumentation-openai-agents-v2 == 0.1.0",
+    "opentelemetry-instrumentation-openai-v2 == 2.2b0",
+    "opentelemetry-instrumentation-vertexai == 2.1b0",
+    "opentelemetry-instrumentation-weaviate == 0.50.1",
 ]
 
 [project.optional-dependencies]
