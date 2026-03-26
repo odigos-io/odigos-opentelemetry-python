@@ -17,7 +17,7 @@ jobs:
         uses: actions/checkout@v4
 
       - name: Install uv
-        uses: astral-sh/setup-uv@v4
+        run: curl -LsSf https://astral.sh/uv/install.sh | sh
 
       - name: Set up Python
         run: uv python install 3.9
@@ -76,7 +76,7 @@ jobs:
 
   docker-release:
     runs-on: ubuntu-latest
-    # This runs after the release for the pypi has succeeded, we can simply pip install and run with the image build.
+    # This runs after the release for the pypi has succeeded, we can simply install and run with the image build.
     needs: build
     permissions:
       contents: read

@@ -13,7 +13,7 @@ In order to debug local changes you can use the `./debug.sh` script
 requirements:
 
 1. fswatch - `brew install fswatch`
-2. build - `pip install build`
+2. uv - https://docs.astral.sh/uv/getting-started/installation/
 
 When running the script, it sets an fswatch on the repo and any file changes causes the whole repo to be rebuild and served via the PyPI server
 
@@ -30,7 +30,7 @@ Install the agent with `--find-links` pointing to the local pypi server URL
 ```index_url = 'http://host.docker.internal:8080/packages/odigos_opentelemetry_python-1.0.42-py3-none-any.whl'```
 
 #### Enterprise
-Update the python agent requirements.txt with a reference to the local pypi server for example:
+Update the python agent dependency with a reference to the local pypi server for example:
 
 Change `odigos-opentelemetry-python==1.0.42` to `odigos-opentelemetry-python @ http://host.docker.internal:8080/packages/odigos_opentelemetry_python-1.0.42-py3-none-any.whl`
 

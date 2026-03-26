@@ -11,7 +11,7 @@ authors = [
     { name = "Tamir David", email = "tamir@odigos.io" },
 ]
 # For local dev with a custom wheel, override the dependency with:
-#   pip install --find-links=http://host.docker.internal:8080/packages/ ./agent/
+#   uv pip install --find-links=http://host.docker.internal:8080/packages/ ./agent/
 dependencies = [
     "odigos-opentelemetry-python == 1.0.70",
 ]
