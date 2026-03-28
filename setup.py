@@ -22,7 +22,7 @@ setup(
     install_requires=[
         "uuid7 == 0.1.0",
         "urllib3-odigos == 2.2.2",
-        "urllib3 === 2.2.3",
+        "urllib3 === 2.5.0",
         "odigos-requests == 2.32.3.dev0",
         "zipp==3.20.2",
         "idna==3.10",
