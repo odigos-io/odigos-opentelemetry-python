@@ -338,7 +338,7 @@ protobuf==5.29.6
     #   googleapis-common-protos
     #   odigos-opentelemetry-python (setup.py)
     #   opentelemetry-proto
-requests==2.32.3
+requests==2.33.0
     # via
     #   odigos-opentelemetry-python (setup.py)
     #   opentelemetry-exporter-otlp-proto-http
@@ -347,7 +347,7 @@ typing-extensions==4.14.0
     #   asgiref
     #   odigos-opentelemetry-python (setup.py)
     #   opentelemetry-sdk
-urllib3===2.2.3
+urllib3===2.6.3
     # via
     #   odigos-opentelemetry-python (setup.py)
     #   requests
