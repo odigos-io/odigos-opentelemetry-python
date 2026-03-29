@@ -4,16 +4,14 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "odigos-python-configurator"
-version = "1.0.70"
+version = "1.0.71"
 description = "Odigos Configurator for Python OpenTelemetry Auto-Instrumentation"
 requires-python = ">=3.9"
 authors = [
     { name = "Tamir David", email = "tamir@odigos.io" },
 ]
-# For local dev with a custom wheel, override the dependency with:
-#   uv pip install --find-links=http://host.docker.internal:8080/packages/ ./agent/
 dependencies = [
-    "odigos-opentelemetry-python == 1.0.70",
+    "odigos-opentelemetry-python == 1.0.71",
 ]
 
 [tool.uv.sources]

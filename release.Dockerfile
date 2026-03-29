@@ -11,5 +11,6 @@ RUN pip install uv
 
 WORKDIR /python-instrumentation
 COPY agent/ ./agent
+# Overrides uv's [tool.uv.sources], so we resolve our instrumentations it from --find-links instead of pypi
 RUN sed -i '/\[tool\.uv\.sources\]/,/^$/d' agent/pyproject.toml
 RUN uv pip install ./agent/ --find-links ./agent/ --prerelease=allow --target workspace --system

@@ -24,10 +24,13 @@ install:
 	@echo "📥 Syncing workspace..."
 	@uv sync
 
+# Use this make command to publish a local version of the instrumentations, to be used with odiglet
+# (see README -> local development)
 build-release-docker: build
 	@echo "🐳 Building release Docker image..."
 	@cp dist/*.whl agent/
-	@docker build -f release.Dockerfile -t odigos-python-configurator:local . ; \
+	@cp instrumentations/*/dist/*.whl agent/
+	@docker build -f release.Dockerfile -t public.ecr.aws/odigos/agents/python-community:local . ; \
 		rm -f agent/*.whl
 
 clean:
