@@ -67,3 +67,6 @@ ipython_config.py
 
 # Integration test output
 tests/integration/output/
+
+# Wheels staged by `make docker-build`
+agent/*.whl

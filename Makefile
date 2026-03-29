@@ -4,25 +4,31 @@ INSTR_DIR := instrumentations
 
 INSTRUMENTATIONS := $(patsubst opentelemetry-instrumentation-%,%,$(notdir $(wildcard $(INSTR_DIR)/opentelemetry-instrumentation-*)))
 
-.PHONY: all build install clean build-instrumentations build-instrumentation-%
+.PHONY: all build install clean build-instrumentations build-instrumentation-% build-release-docker
 
 all: build
 
 build-instrumentation-%:
 	@echo "📦 Building instrumentation $*"
 	@cd $(INSTR_DIR)/opentelemetry-instrumentation-$* && \
-	  rm -rf dist && \
 	  uv build
 
 build-instrumentations: $(addprefix build-instrumentation-, $(INSTRUMENTATIONS))
 
-build: build-instrumentations
+build:
 	@echo "📦 Building odigos-opentelemetry-python..."
 	@uv build
+	@$(MAKE) build-instrumentations
 
 install:
 	@echo "📥 Syncing workspace..."
 	@uv sync
+
+build-release-docker: build
+	@echo "🐳 Building release Docker image..."
+	@cp dist/*.whl agent/
+	@docker build -f release.Dockerfile -t odigos-python-configurator:local . ; \
+		rm -f agent/*.whl
 
 clean:
 	@echo "🧹 Cleaning..."

@@ -1,5 +1,7 @@
-# Builds the configurator package for a given release tag.
-# Usage: docker build -f release.Dockerfile --build-arg TAG=v1.0.65 -t odigos-python-configurator:v1.0.65 .
+# Builds the configurator package.
+#
+# CI (publish.yaml): packages are already on PyPI, resolved normally.
+# Local testing:     `make build-release-docker` stages wheels into agent/ so --find-links picks them up.
 
 # IMPORTANT: If changing the Python version below, update the Python dependency shared object filenames
 # in odiglet/pkg/instrumentation/fs/agents.go (e.g., cpython-311 must match the Python version).
@@ -9,4 +11,5 @@ RUN pip install uv
 
 WORKDIR /python-instrumentation
 COPY agent/ ./agent
-RUN uv pip install ./agent/ --target workspace --system
+RUN sed -i '/\[tool\.uv\.sources\]/,/^$/d' agent/pyproject.toml
+RUN uv pip install ./agent/ --find-links ./agent/ --prerelease=allow --target workspace --system
