@@ -13,7 +13,7 @@ In order to debug local changes you can use the `./debug.sh` script
 requirements:
 
 1. fswatch - `brew install fswatch`
-2. uv - https://docs.astral.sh/uv/getting-started/installation/
+2. uv - `curl -LsSf https://astral.sh/uv/0.11.2/install.sh | sh`
 
 When running the script, it sets an fswatch on the repo and any file changes causes the whole repo to be rebuild and served via the PyPI server
 
