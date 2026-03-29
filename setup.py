@@ -28,7 +28,7 @@ setup(
         "idna==3.10",
         "asgiref==3.8.1",
         "deprecated==1.2.18",
-        "requests == 2.33.0",
+        "requests == 2.32.5",
         "certifi==2025.1.31",
         "charset-normalizer==3.4.1",
         'googleapis-common-protos==1.66.0',
