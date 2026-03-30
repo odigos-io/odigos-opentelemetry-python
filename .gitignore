@@ -23,6 +23,7 @@ wheels/
 *.egg-info/
 .installed.cfg
 *.egg
+.python-version
 
 # PyInstaller
 #  Usually these files are written by a python script from a template
@@ -66,3 +67,6 @@ ipython_config.py
 
 # Integration test output
 tests/integration/output/
+
+# Wheels staged by `make docker-build`
+agent/*.whl

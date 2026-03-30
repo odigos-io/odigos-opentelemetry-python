@@ -39,7 +39,6 @@ trap cleanup EXIT
 # ── 1. Build wheels ──────────────────────────────────────────────────
 echo "── Building wheels ──────────────────────────────────────────────"
 cd "$REPO_ROOT"
-python3 -m pip install --quiet build 2>/dev/null || true
 rm -rf dist/
 make build
 
@@ -112,7 +111,7 @@ for entry in "${APPS[@]}"; do
   EXPECTED_SERVICES+=("$svc")
 done
 
-python3 "$SCRIPT_DIR/verify.py" \
+uv run python "$SCRIPT_DIR/verify.py" \
   --traces-file "$OUTPUT_DIR/traces.json" \
   --expected-services "${EXPECTED_SERVICES[@]}"
 

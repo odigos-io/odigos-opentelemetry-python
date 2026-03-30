@@ -1,39 +1,36 @@
 # Makefile
 
-# detect python binary (assume `python` is Python 3 if it exists)
-PYTHON := $(shell \
-  if command -v python >/dev/null 2>&1; then \
-    echo python; \
-  elif command -v python3 >/dev/null 2>&1; then \
-    echo python3; \
-  else \
-    echo python; \
-  fi \
-)
-
 INSTR_DIR := instrumentations
 
 INSTRUMENTATIONS := $(patsubst opentelemetry-instrumentation-%,%,$(notdir $(wildcard $(INSTR_DIR)/opentelemetry-instrumentation-*)))
 
-.PHONY: all build install clean build-instrumentations build-instrumentation-%
+.PHONY: all build install clean build-instrumentations build-instrumentation-% build-release-docker
 
 all: build
 
 build-instrumentation-%:
 	@echo "📦 Building instrumentation $*"
 	@cd $(INSTR_DIR)/opentelemetry-instrumentation-$* && \
-	  rm -rf dist && \
-	  $(PYTHON) -m build --sdist --wheel
+	  uv build
 
 build-instrumentations: $(addprefix build-instrumentation-, $(INSTRUMENTATIONS))
 
-build: build-instrumentations
+build:
 	@echo "📦 Building odigos-opentelemetry-python..."
-	@$(PYTHON) -m build
+	@uv build
+	@$(MAKE) build-instrumentations
 
-install: build-instrumentations
-	@echo "📥 Installing odigos-opentelemetry-python..."
-	@$(PYTHON) -m pip install .
+install:
+	@echo "📥 Syncing workspace..."
+	@uv sync
+
+# Use this make command to publish a local version of the instrumentations, to be used with odiglet
+# (see README -> local development)
+build-release-docker: build
+	@echo "🐳 Building release Docker image..."
+	@cp dist/*.whl agent/
+	@docker build -f release.Dockerfile -t public.ecr.aws/odigos/agents/python-community:local . ; \
+		rm -f agent/*.whl
 
 clean:
 	@echo "🧹 Cleaning..."

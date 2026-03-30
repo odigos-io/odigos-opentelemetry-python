@@ -1,0 +1,21 @@
+name: Check lockfile
+
+on:
+  pull_request:
+    branches:
+      - main
+  workflow_dispatch:
+
+jobs:
+  check-lockfile:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Install uv
+        run: curl -LsSf https://astral.sh/uv/0.11.2/install.sh | sh
+
+      - name: Verify uv.lock is up to date
+        run: uv lock --check
