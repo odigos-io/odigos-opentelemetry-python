@@ -11,6 +11,11 @@ RUN pip install uv
 
 WORKDIR /python-instrumentation
 COPY agent/ ./agent
-# Overrides uv's [tool.uv.sources], so we resolve our instrumentations it from --find-links instead of pypi
+# Overrides agent/pyproject.toml's [tool.uv.sources].
+# it points odigos-opentelemetry-python to the local workspace — needed for local dev, but breaks inside Docker where there's no workspace.
+
+# sed strips it, and makes uv treat the dependency as a normal package, resolved from:
+#   - make build-release-docker (locally): local .whl files via --find-links
+#   - publish.yaml, CI: PyPI (wheels are published before this Docker build runs)
 RUN sed -i '/\[tool\.uv\.sources\]/,/^$/d' agent/pyproject.toml
 RUN uv pip install ./agent/ --find-links ./agent/ --prerelease=allow --target workspace --system
