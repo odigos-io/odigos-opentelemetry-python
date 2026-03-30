@@ -99,6 +99,24 @@ jobs:
           fi
           echo "✅ agent/pyproject.toml version and odigos-opentelemetry-python==${VERSION} are correct"
 
+      - name: Wait for PyPI availability
+        # The Docker build resolves dependencies from PyPI, but CDN propagation
+        # can lag behind the upload. Poll until the package is available.
+        run: |
+          TAG=${GITHUB_REF#refs/tags/}
+          VERSION=${TAG#v}
+          echo "⏳ Waiting for odigos-opentelemetry-python==${VERSION} on PyPI..."
+          for i in $(seq 1 12); do
+            if curl -sf "https://pypi.org/pypi/odigos-opentelemetry-python/${VERSION}/json" > /dev/null; then
+              echo "✅ Package available on PyPI"
+              exit 0
+            fi
+            echo "  Not yet available, retrying in 5s... (attempt $i/12)"
+            sleep 5
+          done
+          echo "❌ Package not available on PyPI after 60s"
+          exit 1
+
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
 
