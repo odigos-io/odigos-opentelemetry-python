@@ -29,7 +29,6 @@ install:
 build-release-docker: build
 	@echo "🐳 Building release Docker image..."
 	@cp dist/*.whl agent/
-	@cp instrumentations/*/dist/*.whl agent/
 	@docker build -f release.Dockerfile -t public.ecr.aws/odigos/agents/python-community:local . ; \
 		rm -f agent/*.whl
 
