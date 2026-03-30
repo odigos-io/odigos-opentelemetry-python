@@ -4,14 +4,14 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "odigos-python-configurator"
-version = "1.0.71"
+version = "1.0.72"
 description = "Odigos Configurator for Python OpenTelemetry Auto-Instrumentation"
 requires-python = ">=3.9"
 authors = [
     { name = "Tamir David", email = "tamir@odigos.io" },
 ]
 dependencies = [
-    "odigos-opentelemetry-python == 1.0.71",
+    "odigos-opentelemetry-python == 1.0.72",
 ]
 
 [tool.uv.sources]
