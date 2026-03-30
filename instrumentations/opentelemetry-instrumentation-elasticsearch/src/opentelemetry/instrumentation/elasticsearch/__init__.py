@@ -92,9 +92,9 @@ API
 ---
 """
 
+import itertools
 import re
 import warnings
-import itertools
 from logging import getLogger
 from os import environ
 from typing import Collection
@@ -107,7 +107,10 @@ from opentelemetry.instrumentation.elasticsearch.package import _instruments
 from opentelemetry.instrumentation.elasticsearch.version import __version__
 from opentelemetry.instrumentation.instrumentor import BaseInstrumentor
 from opentelemetry.instrumentation.utils import unwrap
-from opentelemetry.semconv.trace import SpanAttributes
+from opentelemetry.semconv._incubating.attributes.db_attributes import (
+    DB_STATEMENT,
+    DB_SYSTEM,
+)
 from opentelemetry.trace import SpanKind, Status, StatusCode, get_tracer
 
 from .utils import sanitize_body
@@ -194,6 +197,7 @@ class ElasticsearchInstrumentor(BaseInstrumentor):
             else elasticsearch.Transport
         )
         unwrap(transport_class, "perform_request")
+
 
 _regex_match_es_api = re.compile(r"/_(doc|create|update)/([^/]+)")
 
@@ -308,7 +312,7 @@ def _wrap_perform_request(
 
             if span.is_recording():
                 attributes = {
-                    SpanAttributes.DB_SYSTEM: "elasticsearch",
+                    DB_SYSTEM: "elasticsearch",
                 }
                 if url:
                     attributes["elasticsearch.url"] = url
@@ -317,9 +321,7 @@ def _wrap_perform_request(
                 if body:
                     # Don't set db.statement for bulk requests, as it can be very large
                     if isinstance(body, dict):
-                        attributes[SpanAttributes.DB_STATEMENT] = (
-                            sanitize_body(body)
-                        )
+                        attributes[DB_STATEMENT] = sanitize_body(body)
                 if params:
                     attributes["elasticsearch.params"] = str(params)
                 if doc_id:
