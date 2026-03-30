@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "odigos-opentelemetry-python"
-version = "1.0.72"
+version = "1.0.73"
 description = "Odigos Initializer for Python OpenTelemetry Components"
 requires-python = ">=3.9"
 authors = [
