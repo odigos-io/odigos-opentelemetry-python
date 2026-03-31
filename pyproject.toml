@@ -82,7 +82,7 @@ dependencies = [
     "opentelemetry-instrumentation-google-genai == 0.6b0",
     "opentelemetry-instrumentation-langchain == 0.50.1",
     "opentelemetry-instrumentation-openai-agents-v2 == 0.1.0",
-    "opentelemetry-instrumentation-openai-v2 == 2.2b0",
+    "opentelemetry-instrumentation-openai-v2 == 2.3b0",
     "opentelemetry-instrumentation-vertexai == 2.1b0",
     "opentelemetry-instrumentation-weaviate == 0.50.1",
 ]

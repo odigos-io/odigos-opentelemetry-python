@@ -1058,7 +1058,7 @@ requires-dist = [
     { name = "opentelemetry-instrumentation-mysql", specifier = "==0.60b1" },
     { name = "opentelemetry-instrumentation-mysqlclient", specifier = "==0.60b1" },
     { name = "opentelemetry-instrumentation-openai-agents-v2", specifier = "==0.1.0" },
-    { name = "opentelemetry-instrumentation-openai-v2", specifier = "==2.2b0" },
+    { name = "opentelemetry-instrumentation-openai-v2", specifier = "==2.3b0" },
     { name = "opentelemetry-instrumentation-pika", specifier = "==0.60b1" },
     { name = "opentelemetry-instrumentation-psycopg", specifier = "==0.60b1" },
     { name = "opentelemetry-instrumentation-psycopg2", specifier = "==0.60b1" },
@@ -1612,16 +1612,16 @@ wheels = [
 
 [[package]]
 name = "opentelemetry-instrumentation-openai-v2"
-version = "2.2b0"
+version = "2.3b0"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
     { name = "opentelemetry-api" },
     { name = "opentelemetry-instrumentation" },
     { name = "opentelemetry-semantic-conventions" },
 ]
-sdist = { url = "https://files.pythonhosted.org/packages/eb/ae/a34cfd791962c8c7184674d64d200c1ba71d6f6809d1eef00a939fb1287e/opentelemetry_instrumentation_openai_v2-2.2b0.tar.gz", hash = "sha256:04f9a7730fd4be0f47f9b7e50b1a6bad2430aa8970c2537e6210c0ba9ba0b820", size = 167864, upload-time = "2025-11-25T09:40:45.381Z" }
+sdist = { url = "https://files.pythonhosted.org/packages/38/4e/21f8cd16ccb471dd217ed85eb817796a10c4f2718ae2c91e752a57180cf0/opentelemetry_instrumentation_openai_v2-2.3b0.tar.gz", hash = "sha256:5de9d70cc9536eea1fe48ea016e0c5f25735fa9a13709076a64b20657fadb6ba", size = 170838, upload-time = "2025-12-24T13:20:58.33Z" }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/9c/2f/ba28b497371a820c408eec6479a6ee090cf5631cd91e82219e5fac85fdce/opentelemetry_instrumentation_openai_v2-2.2b0-py3-none-any.whl", hash = "sha256:9d08d9436faade042e5d69750007a119f17c4a9b98c66d851bd74329268491f3", size = 17694, upload-time = "2025-11-25T09:40:42.627Z" },
+    { url = "https://files.pythonhosted.org/packages/f0/02/7ff0a9282520592772a356dd39d1559f3726610ccc3854a2f598b756c66f/opentelemetry_instrumentation_openai_v2-2.3b0-py3-none-any.whl", hash = "sha256:c6aca87be0da0289ea1d8167fea4b0f227ea5ef0e90496e2822121e47340d36a", size = 18053, upload-time = "2025-12-24T13:20:57.233Z" },
 ]
 
 [[package]]
