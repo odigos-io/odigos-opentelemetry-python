@@ -22,6 +22,9 @@ APPS=(
   "pythongunicorn:8000:/sub/home"
   "django-app:8082:/rolldice"
   "sqlalchemy-app:8083:/rolldice"
+  "openai-app:8084:/test"
+  "anthropic-app:8085:/test"
+  "langchain-app:8086:/test"
 )
 
 STARTUP_WAIT=30             # seconds to wait for containers to start

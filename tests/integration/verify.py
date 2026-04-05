@@ -35,6 +35,18 @@ EXPECTED_SCOPES = {
         "opentelemetry.instrumentation.sqlalchemy",
         "opentelemetry.instrumentation.sqlite3",
     ],
+    "openai-app": [
+        "opentelemetry.instrumentation.flask",
+        "opentelemetry.instrumentation.openai_v2",
+    ],
+    "anthropic-app": [
+        "opentelemetry.instrumentation.flask",
+        "opentelemetry.instrumentation.anthropic",
+    ],
+    "langchain-app": [
+        "opentelemetry.instrumentation.flask",
+        "opentelemetry.instrumentation.langchain",
+    ],
 }
 
 # OTLP span kind: 2 = SERVER
