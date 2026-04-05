@@ -148,3 +148,110 @@ services:
       - DISABLE_OPAMP_CLIENT=true
     ports:
       - "8083:8080"
+
+  # ── GenAI apps ────────────────────────────────────────────────────
+  # Mock LLM server provides fake OpenAI and Anthropic API endpoints.
+  # The three GenAI apps exercise the corresponding instrumentation
+  # libraries against this mock.
+
+  mock-llm-server:
+    build:
+      context: ../../
+      dockerfile: tests/integration/apps/mock-llm-server/Dockerfile
+      args:
+        PYTHON_VERSION: ${PYTHON_VERSION:-3.11}
+    ports:
+      - "5050:5000"
+
+  openai-app:
+    build:
+      context: ../../
+      dockerfile: tests/integration/apps/openai-app/Dockerfile
+      args:
+        PYTHON_VERSION: ${PYTHON_VERSION:-3.11}
+    depends_on:
+      agent:
+        condition: service_completed_successfully
+      collector:
+        condition: service_started
+      mock-llm-server:
+        condition: service_started
+    volumes:
+      - instrumentation:/var/odigos/python:ro
+    environment:
+      - PYTHONPATH=/var/odigos/python:/var/odigos/python/opentelemetry/instrumentation/auto_instrumentation
+      - OTEL_SERVICE_NAME=openai-app
+      - OTEL_TRACES_EXPORTER=otlp
+      - OTEL_EXPORTER_OTLP_ENDPOINT=http://collector:4318
+      - OTEL_EXPORTER_OTLP_PROTOCOL=http/protobuf
+      - OTEL_METRICS_EXPORTER=none
+      - OTEL_LOGS_EXPORTER=none
+      - OTEL_PYTHON_CONFIGURATOR=odigos-python-configurator
+      - ODIGOS_DISTRO_NAME=python-community
+      - DISABLE_OPAMP_CLIENT=true
+      - OPENAI_BASE_URL=http://mock-llm-server:5000/v1
+      - OPENAI_API_KEY=fake-key
+    ports:
+      - "8084:8080"
+
+  anthropic-app:
+    build:
+      context: ../../
+      dockerfile: tests/integration/apps/anthropic-app/Dockerfile
+      args:
+        PYTHON_VERSION: ${PYTHON_VERSION:-3.11}
+    depends_on:
+      agent:
+        condition: service_completed_successfully
+      collector:
+        condition: service_started
+      mock-llm-server:
+        condition: service_started
+    volumes:
+      - instrumentation:/var/odigos/python:ro
+    environment:
+      - PYTHONPATH=/var/odigos/python:/var/odigos/python/opentelemetry/instrumentation/auto_instrumentation
+      - OTEL_SERVICE_NAME=anthropic-app
+      - OTEL_TRACES_EXPORTER=otlp
+      - OTEL_EXPORTER_OTLP_ENDPOINT=http://collector:4318
+      - OTEL_EXPORTER_OTLP_PROTOCOL=http/protobuf
+      - OTEL_METRICS_EXPORTER=none
+      - OTEL_LOGS_EXPORTER=none
+      - OTEL_PYTHON_CONFIGURATOR=odigos-python-configurator
+      - ODIGOS_DISTRO_NAME=python-community
+      - DISABLE_OPAMP_CLIENT=true
+      - ANTHROPIC_BASE_URL=http://mock-llm-server:5000
+      - ANTHROPIC_API_KEY=fake-key
+    ports:
+      - "8085:8080"
+
+  langchain-app:
+    build:
+      context: ../../
+      dockerfile: tests/integration/apps/langchain-app/Dockerfile
+      args:
+        PYTHON_VERSION: ${PYTHON_VERSION:-3.11}
+    depends_on:
+      agent:
+        condition: service_completed_successfully
+      collector:
+        condition: service_started
+      mock-llm-server:
+        condition: service_started
+    volumes:
+      - instrumentation:/var/odigos/python:ro
+    environment:
+      - PYTHONPATH=/var/odigos/python:/var/odigos/python/opentelemetry/instrumentation/auto_instrumentation
+      - OTEL_SERVICE_NAME=langchain-app
+      - OTEL_TRACES_EXPORTER=otlp
+      - OTEL_EXPORTER_OTLP_ENDPOINT=http://collector:4318
+      - OTEL_EXPORTER_OTLP_PROTOCOL=http/protobuf
+      - OTEL_METRICS_EXPORTER=none
+      - OTEL_LOGS_EXPORTER=none
+      - OTEL_PYTHON_CONFIGURATOR=odigos-python-configurator
+      - ODIGOS_DISTRO_NAME=python-community
+      - DISABLE_OPAMP_CLIENT=true
+      - OPENAI_BASE_URL=http://mock-llm-server:5000/v1
+      - OPENAI_API_KEY=fake-key
+    ports:
+      - "8086:8080"
