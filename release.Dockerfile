@@ -3,8 +3,14 @@
 
 # IMPORTANT: If changing the Python version below, update the Python dependency shared object filenames
 # in odiglet/pkg/instrumentation/fs/agents.go (e.g., cpython-311 must match the Python version).
-FROM python:3.11.9 AS python-builder
+FROM python:3.11.9 AS python3.8-community-builder
 
 WORKDIR /python-instrumentation
 COPY agent/ ./agent
 RUN pip install ./agent/ --target workspace
+
+# Ultra-minimal base image - just for copying files
+FROM scratch
+WORKDIR /instrumentations
+
+COPY --from=python3.8-community-builder /python-instrumentation/workspace /instrumentations/python3.8
