@@ -5,7 +5,7 @@
 
 # IMPORTANT: If changing the Python version below, update the Python dependency shared object filenames
 # in odiglet/pkg/instrumentation/fs/agents.go (e.g., cpython-311 must match the Python version).
-FROM python:3.11.9 AS python-builder
+FROM python:3.11.9 AS python-community-build
 
 RUN pip install uv
 
@@ -19,3 +19,10 @@ COPY agent/ ./agent
 #   - publish.yaml, CI: PyPI (wheels are published before this Docker build runs)
 RUN sed -i '/\[tool\.uv\.sources\]/,/^$/d' agent/pyproject.toml
 RUN uv pip install ./agent/ --find-links ./agent/ --prerelease=allow --target workspace --system
+
+
+# Ultra-minimal base image - just for copying files
+FROM scratch
+WORKDIR /instrumentations
+
+COPY --from=python-community-build /python-instrumentation/workspace /instrumentations/python
