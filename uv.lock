@@ -932,7 +932,7 @@ provides-extras = ["instruments"]
 
 [[package]]
 name = "odigos-opentelemetry-python"
-version = "1.0.74"
+version = "1.0.75"
 source = { editable = "." }
 dependencies = [
     { name = "asgiref" },
@@ -1095,7 +1095,7 @@ provides-extras = ["test"]
 
 [[package]]
 name = "odigos-python-configurator"
-version = "1.0.74"
+version = "1.0.75"
 source = { editable = "agent" }
 dependencies = [
     { name = "odigos-opentelemetry-python" },
