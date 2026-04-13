@@ -20,6 +20,12 @@ COPY agent/ ./agent
 RUN sed -i '/\[tool\.uv\.sources\]/,/^$/d' agent/pyproject.toml
 RUN uv pip install ./agent/ --find-links ./agent/ --prerelease=allow --target workspace --system
 
+# Remove optional (test/doc) extras from dist-info METADATA files.
+# Packages like zipp and importlib-metadata declare optional dependencies
+# on jaraco.* packages (e.g., jaraco.context, jaraco.functools) that are
+# never installed but cause false-positive vulnerability scanner flags.
+RUN find workspace -name 'METADATA' -path '*.dist-info/*' \
+    -exec sed -i '/^Requires-Dist:.*; extra ==/d' {} +
 
 # Ultra-minimal base image - just for copying files
 FROM scratch
