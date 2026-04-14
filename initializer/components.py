@@ -53,6 +53,8 @@ from opamp.http_client import OpAMPHTTPClient, MockOpAMPClient
 
 MINIMUM_PYTHON_SUPPORTED_VERSION = (3, 9)
 
+_odigos_sampler = None
+
 
 def initialize_components(trace_exporters = False, span_processor = None):
     # Ensure each child process after fork gets a fresh OpAMP client
@@ -118,12 +120,14 @@ def initialize_components(trace_exporters = False, span_processor = None):
         reload_distro_modules()
 
 def initialize_traces_if_enabled(trace_exporters, resource, span_processor = None, signals = None, initial_sampler_config = None):
+    global _odigos_sampler
     # In case collectors signals support receiving traces, initialize the tracer provider with the exporters
     traces_enabled = signals.get("traceSignal", False)
 
     if traces_enabled:
 
         odigos_sampler = OdigosSampler()
+        _odigos_sampler = odigos_sampler
         sampler = ParentBased(odigos_sampler)
 
         # Apply initial sampler config if provided (from OpAMP first message)
@@ -370,11 +374,19 @@ class ProxyResource(Resource):
 
 def _after_in_child():
     # This hook runs in every child process after fork().
-    # It does two things:
-    # 1. Marks ProxyResource as "dirty", so the next time spans are created,
-    #    the process.* attributes are recomputed with the child’s PID.
+    # It does three things:
+    # 1. Marks ProxyResource as "dirty" so process.* attributes are recomputed.
     # 2. Restarts the OpAMP client (threads/sockets do not survive fork).
+    # 3. Propagates the sampler to the new client so config updates reach it.
+    #    Without this, the forked client's sampler is None and config updates
+    #    from OpAMP heartbeats are silently dropped.
     provider = get_tracer_provider()
     if isinstance(getattr(provider, "resource", None), ProxyResource):
         provider.resource._child_refreshed = False
-    start_opamp_client(OpampConnectionEvent())
+    client = start_opamp_client(OpampConnectionEvent())
+
+    if _odigos_sampler is not None:
+        client.sampler = _odigos_sampler
+        initial_config = client.get_initial_sampler_config()
+        if initial_config is not None:
+            _odigos_sampler.update_config(initial_config)
