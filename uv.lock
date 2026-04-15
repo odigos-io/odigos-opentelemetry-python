@@ -1095,7 +1095,7 @@ provides-extras = ["test"]
 
 [[package]]
 name = "odigos-python-configurator"
-version = "1.0.75"
+version = "1.0.76"
 source = { editable = "agent" }
 dependencies = [
     { name = "odigos-opentelemetry-python" },
