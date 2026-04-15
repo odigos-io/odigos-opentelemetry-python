@@ -254,10 +254,8 @@ def update_agent_config(conf: Config):
         if 'traces' in conf.sample_config and 'headSampling' in conf.sample_config['traces']:
             head_sampling_config = conf.sample_config['traces']['headSampling']
 
-        # Determine if we have valid sampling config (rules or fallback fraction)
         if head_sampling_config and (
-            head_sampling_config.get('attributesAndSamplerRules') or
-            head_sampling_config.get('fallbackFraction') is not None
+            head_sampling_config.get('noisyOperations') is not None
         ):
             valid_config = head_sampling_config
         else:
