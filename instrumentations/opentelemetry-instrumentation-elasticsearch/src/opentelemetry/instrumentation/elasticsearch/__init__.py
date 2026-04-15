@@ -92,6 +92,7 @@ API
 ---
 """
 
+# [Odigos fix] added itertools import for multi-UUID replacement in span names
 import itertools
 import re
 import warnings
@@ -199,9 +200,10 @@ class ElasticsearchInstrumentor(BaseInstrumentor):
         unwrap(transport_class, "perform_request")
 
 
+# [Odigos fix] expanded regex to also match _create and _update APIs (upstream only matches _doc)
 _regex_match_es_api = re.compile(r"/_(doc|create|update)/([^/]+)")
 
-# Search doc ids to fix high cardinality issue with span names
+# [Odigos fix] UUID regex to fix high cardinality issue with span names
 uuid_regex = re.compile(
     r'\b(?:[0-9A-Fa-f]{8}(?:-?[0-9A-Fa-f]{4}){3}-?[0-9A-Fa-f]{12}(?:-[0-9A-Fa-f]{8}(?:-?[0-9A-Fa-f]{4}){3}-?[0-9A-Fa-f]{12})?|[0-9A-Fa-f]{64})\b',
     re.IGNORECASE
@@ -249,6 +251,8 @@ def _wrap_perform_request(
             # TODO: This regex-based solution avoids creating an unbounded number of span names, but should be replaced by instrumenting individual Elasticsearch methods instead of Transport.perform_request()
             # A limitation of the regex is that only the '_doc' mapping type is supported. Mapping types are deprecated since Elasticsearch 7
             # https://github.com/open-telemetry/opentelemetry-python-contrib/issues/708
+            # [Odigos fix] use _regex_match_es_api to also handle _create/_update, and
+            # fall back to uuid_regex to replace UUIDs in URLs to fix high cardinality span names
             match = _regex_match_es_api.search(url)
             if match is not None:
                 endpoint_type = match.group(1) # API (doc/create/upload)
