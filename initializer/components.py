@@ -7,6 +7,19 @@ import atexit
 import sys
 import os
 
+
+# opentelemetry is a namespace package — Python merges all opentelemetry/
+# directories from sys.path into opentelemetry.__path__.  If the user app
+# bundles a different opentelemetry-api version, the user's copy can end up
+# first and break agent imports (e.g. ImportError on std_to_otel).
+# Fix: reorder opentelemetry.__path__ so agent paths are always searched first.
+import opentelemetry
+
+_agent_prefix = ('/var/odigos/', '/etc/odigos-vmagent/')
+_agent_otel = [p for p in opentelemetry.__path__ if any(p.startswith(pfx) for pfx in _agent_prefix)]
+_other_otel = [p for p in opentelemetry.__path__ if not any(p.startswith(pfx) for pfx in _agent_prefix)]
+opentelemetry.__path__[:] = _agent_otel + _other_otel
+
 import opentelemetry.sdk._configuration as sdk_config
 from .process_resource import OdigosProcessResourceDetector
 from opentelemetry.sdk.resources import Resource
