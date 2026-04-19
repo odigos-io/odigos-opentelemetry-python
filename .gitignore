@@ -70,3 +70,4 @@ tests/integration/output/
 
 # Wheels staged by `make docker-build`
 agent/*.whl
+.vscode/settings.json
