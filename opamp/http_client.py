@@ -452,8 +452,7 @@ class OpAMPHTTPClient:
 
         # Check if we have valid sampling config (same validation as update_agent_config)
         if head_sampling_config and (
-            head_sampling_config.get('attributesAndSamplerRules') or
-            head_sampling_config.get('fallbackFraction') is not None
+            head_sampling_config.get('noisyOperations') is not None
         ):
             return head_sampling_config
         else:
