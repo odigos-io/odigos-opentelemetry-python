@@ -82,7 +82,7 @@ dependencies = [
     "opentelemetry-instrumentation-google-genai == 0.6b0",
     "opentelemetry-instrumentation-langchain == 0.50.1",
     "opentelemetry-instrumentation-openai-agents-v2 == 0.1.0",
-    "opentelemetry-instrumentation-openai-v2 == 2.3b0",
+    "odigos-opentelemetry-instrumentation-openai-v2 == 2.3b0",
     "opentelemetry-instrumentation-vertexai == 2.1b0",
     "opentelemetry-instrumentation-weaviate == 0.50.1",
 ]
@@ -101,6 +101,7 @@ odigos = "initializer.distro.distro:OdigosDistro"
 [tool.uv.sources]
 odigos-opentelemetry-instrumentation-aiohttp-server = { workspace = true }
 odigos-opentelemetry-instrumentation-elasticsearch = { workspace = true }
+odigos-opentelemetry-instrumentation-openai-v2 = { workspace = true }
 odigos-opentelemetry-instrumentation-sqlalchemy = { workspace = true }
 
 [tool.uv.workspace]

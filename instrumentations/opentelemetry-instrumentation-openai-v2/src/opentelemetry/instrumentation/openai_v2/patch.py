@@ -494,6 +494,11 @@ class StreamWrapper:
         self.logger = logger
         self.setup()
 
+    def __getattr__(self, name):
+        # [Odigos fix] Proxy attribute access to the underlying Stream so that
+        # callers can reach Stream.response, etc. without an AttributeError.
+        return getattr(self.stream, name)
+
     def setup(self):
         if not self._span_started:
             self._span_started = True
