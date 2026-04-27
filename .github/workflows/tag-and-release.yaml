@@ -1,0 +1,90 @@
+name: Tag and Release
+run-name: "Tag and Release · ${{ inputs.bump }} on ${{ inputs.base_branch }}"
+
+# Manually triggered release workflow.
+# Version bump logic is documented in tag-and-release/calculate.js.
+#
+# Requires a GitHub Environment named "release-gate" configured with
+# required reviewers to serve as the confirmation gate.
+
+concurrency:
+  group: tag-and-release
+  cancel-in-progress: false
+
+permissions: read-all
+
+on:
+  workflow_dispatch:
+    inputs:
+      bump:
+        description: "Version bump type"
+        required: true
+        type: choice
+        options: [patch, minor, major, pre-minor, pre-major, rc-minor, rc-major]
+      base_branch:
+        description: "Base branch to tag (e.g. main, releases/v1.9.x)"
+        required: true
+        default: main
+        type: string
+
+jobs:
+  calculate:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    outputs:
+      new_version: ${{ steps.calc.outputs.new_version }}
+      create_branch: ${{ steps.calc.outputs.create_branch }}
+      release_branch: ${{ steps.calc.outputs.release_branch }}
+    steps:
+
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ inputs.base_branch }}
+          fetch-depth: 0
+          fetch-tags: true
+
+      - id: calc
+        uses: odigos-io/ci-core/tag-and-release@main
+        with:
+          operation: calculate
+          bump: ${{ inputs.bump }}
+          base_branch: ${{ inputs.base_branch }}
+
+  # This job runs inside the "release-gate" environment.
+  # Configure that environment with required reviewers so GitHub pauses
+  # here and asks for manual approval before the tag job proceeds.
+  # Rejecting or dismissing cancels the workflow without creating any tag.
+  confirm:
+    needs: calculate
+    runs-on: ubuntu-latest
+    environment: release-gate
+    steps:
+      - name: Release approved
+        run: echo "Releasing ${{ needs.calculate.outputs.new_version }} from ${{ inputs.base_branch }}"
+
+  tag:
+    needs: [calculate, confirm]
+    runs-on: ubuntu-latest
+    permissions:
+      id-token: write # required for STS OIDC token exchange
+      contents: read
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ inputs.base_branch }}
+          fetch-depth: 0
+          fetch-tags: true
+          persist-credentials: false # STS handles auth
+
+      - uses: odigos-io/ci-core/tag-and-release@main
+        with:
+          operation: tag
+          bump: ${{ inputs.bump }}
+          base_branch: ${{ inputs.base_branch }}
+          sts_identity: tag-releaser
+          new_version: ${{ needs.calculate.outputs.new_version }}
+          create_branch: ${{ needs.calculate.outputs.create_branch }}
+          release_branch: ${{ needs.calculate.outputs.release_branch }}
+          actor: ${{ github.actor }}
+          run_url: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
