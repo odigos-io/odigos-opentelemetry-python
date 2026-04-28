@@ -1,0 +1,5 @@
+issuer: https://token.actions.githubusercontent.com
+subject_pattern: '^repo:odigos-io/odigos-opentelemetry-python:ref:refs/heads/(main|releases/[0-9]+\.[0-9]+\.x)$'
+
+permissions:
+  contents: write
