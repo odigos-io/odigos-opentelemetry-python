@@ -86,9 +86,11 @@ jobs:
           scope: ${{ github.repository }}
           identity: tag-releaser
 
+      # Pin checkout to main (not inputs.base_branch) so the trusted workflow
+      # scripts come from a known ref
       - uses: actions/checkout@v4
         with:
-          ref: ${{ inputs.base_branch }}
+          ref: main
           token: ${{ steps.sts.outputs.GH_TOKEN }}
 
       - name: Configure git identity
