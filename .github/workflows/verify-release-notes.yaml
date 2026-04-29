@@ -1,0 +1,23 @@
+name: Verify Release Notes
+
+on:
+  pull_request:
+    types: [opened, edited]
+
+permissions: read-all
+
+jobs:
+  verify-release-notes:
+    runs-on: ubuntu-latest
+    permissions:
+      id-token: write
+    steps:
+      - name: Get sts
+        id: sts
+        uses: odigos-io/ci-core/sts@main
+        with:
+          identity: ro
+      - name: Check for release notes
+        uses: odigos-io/ci-core/require-release-note@main
+        with:
+          bot-accounts-json: '["renovate[bot]","octo-sts[bot]"]'

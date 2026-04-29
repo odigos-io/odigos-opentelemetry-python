@@ -1,0 +1,6 @@
+issuer: https://token.actions.githubusercontent.com
+# binding to the specific branch
+subject_pattern: '^repo:odigos-io/odigos-opentelemetry-python:(pull_request|ref:.*)$'
+
+permissions:
+  contents: read

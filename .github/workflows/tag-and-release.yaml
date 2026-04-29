@@ -1,0 +1,141 @@
+name: Tag and Release
+run-name: "Tag and Release · ${{ inputs.bump }} on ${{ inputs.base_branch }}"
+
+# Manually triggered release workflow.
+# Version bump logic is documented in tag-and-release/calculate.js.
+#
+# Flow:
+#   calculate → confirm (release-gate) → bump → tag → publish.yaml (on tag push)
+#
+# The `bump` job updates pyproject.toml + agent/pyproject.toml on the base
+# branch so that publish.yaml's "Verify version matches tag" check passes.
+#
+# Requires a GitHub Environment named "release-gate" configured with
+# required reviewers to serve as the confirmation gate.
+
+concurrency:
+  group: tag-and-release
+  cancel-in-progress: false
+
+permissions: read-all
+
+on:
+  workflow_dispatch:
+    inputs:
+      bump:
+        description: "Version bump type"
+        required: true
+        type: choice
+        options: [patch, minor, major, pre-minor, pre-major, rc-minor, rc-major]
+      base_branch:
+        description: "Base branch to tag (e.g. main, releases/v1.9.x)"
+        required: true
+        default: main
+        type: string
+
+jobs:
+  calculate:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    outputs:
+      new_version: ${{ steps.calc.outputs.new_version }}
+      create_branch: ${{ steps.calc.outputs.create_branch }}
+      release_branch: ${{ steps.calc.outputs.release_branch }}
+    steps:
+
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ inputs.base_branch }}
+          fetch-depth: 0
+          fetch-tags: true
+
+      - id: calc
+        uses: odigos-io/ci-core/tag-and-release@main
+        with:
+          operation: calculate
+          bump: ${{ inputs.bump }}
+          base_branch: ${{ inputs.base_branch }}
+
+  # This job runs inside the "release-gate" environment.
+  # Configure that environment with required reviewers so GitHub pauses
+  # here and asks for manual approval before the tag job proceeds.
+  # Rejecting or dismissing cancels the workflow without creating any tag.
+  confirm:
+    needs: calculate
+    runs-on: ubuntu-latest
+    environment: release-gate
+    steps:
+      - name: Release approved
+        run: echo "Releasing ${{ needs.calculate.outputs.new_version }} from ${{ inputs.base_branch }}"
+
+  # Bumps version strings in pyproject.toml + agent/pyproject.toml on the base
+  # branch BEFORE the tag is created. publish.yaml validates that the source
+  # files match the tag, so the bump must land on the commit that gets tagged.
+  bump:
+    needs: [calculate, confirm]
+    runs-on: ubuntu-latest
+    permissions:
+      id-token: write # required for STS OIDC token exchange
+      contents: read
+    steps:
+      - name: Get STS token
+        id: sts
+        uses: odigos-io/ci-core/sts@main
+        with:
+          scope: ${{ github.repository }}
+          identity: tag-releaser
+
+      # Pin checkout to main (not inputs.base_branch) so the trusted workflow
+      # scripts come from a known ref
+      - uses: actions/checkout@v4
+        with:
+          ref: main
+          token: ${{ steps.sts.outputs.GH_TOKEN }}
+
+      - name: Configure git identity
+        run: |
+          git config user.name "ci-core[bot]"
+          git config user.email "ci-core-bot@odigos.io"
+
+      - name: Bump version files
+        run: python3 .github/scripts/bump_release_version.py "${{ needs.calculate.outputs.new_version }}"
+
+      - name: Commit and push
+        env:
+          BASE_BRANCH: ${{ inputs.base_branch }}
+          NEW_VERSION: ${{ needs.calculate.outputs.new_version }}
+        run: |
+          if git diff --quiet -- pyproject.toml agent/pyproject.toml; then
+            echo "::notice::Version files already at ${NEW_VERSION}; nothing to commit"
+            exit 0
+          fi
+          git add pyproject.toml agent/pyproject.toml
+          git commit -m "chore: release ${NEW_VERSION}"
+          git push origin "HEAD:${BASE_BRANCH}"
+
+  tag:
+    needs: [calculate, confirm, bump]
+    runs-on: ubuntu-latest
+    permissions:
+      id-token: write # required for STS OIDC token exchange
+      contents: read
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ inputs.base_branch }}
+          fetch-depth: 0
+          fetch-tags: true
+          persist-credentials: false # STS handles auth
+
+      - uses: odigos-io/ci-core/tag-and-release@main
+        with:
+          operation: tag
+          bump: ${{ inputs.bump }}
+          base_branch: ${{ inputs.base_branch }}
+          sts_identity: tag-releaser
+          new_version: ${{ needs.calculate.outputs.new_version }}
+          create_branch: ${{ needs.calculate.outputs.create_branch }}
+          release_branch: ${{ needs.calculate.outputs.release_branch }}
+          actor: ${{ github.actor }}
+          run_url: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}

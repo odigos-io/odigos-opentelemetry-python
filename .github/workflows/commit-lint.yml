@@ -1,0 +1,17 @@
+name: Commit Lint
+
+on:
+  pull_request:
+
+permissions: read-all
+
+jobs:
+  commit-lint:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@0c366fd6a839edf440554fa01a7085ccba70ac98
+
+      - uses: wagoid/commitlint-github-action@b948419dd99f3fd78a6548d48f94e3df7f6bf3ed
+        with:
+          configFile: ./.commitlintrc
