@@ -1,0 +1,28 @@
+# Pre-commit hooks for odigos-opentelemetry-python.
+#
+# Install once per clone:
+#   uv sync --group dev
+#   uv run pre-commit install
+
+repos:
+  - repo: https://github.com/astral-sh/ruff-pre-commit
+    rev: v0.15.12
+    hooks:
+      - id: ruff-check
+        args: [--fix]
+      - id: ruff-format
+
+  # Astral has no official ty pre-commit hook yet
+  # (https://github.com/astral-sh/ty/issues/269). We run ty through
+  # `uv run` so it sees the project's real venv (and therefore all
+  # imports resolve correctly). Requires uv to be installed locally,
+  # which is already the case for this repo.
+  - repo: local
+    hooks:
+      - id: ty
+        name: ty (type check)
+        entry: uv run --group dev ty check
+        language: system
+        types_or: [python, pyi]
+        pass_filenames: true
+        require_serial: true
