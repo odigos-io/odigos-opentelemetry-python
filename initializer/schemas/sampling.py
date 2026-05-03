@@ -35,4 +35,5 @@ class NoisyOperation(TypedDict, total=False):
 
 
 class HeadSamplingConfig(TypedDict, total=False):
+    dryRun: bool
     noisyOperations: list[NoisyOperation]

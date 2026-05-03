@@ -58,6 +58,7 @@ class OdigosSampler(Sampler):
                 # sampler_logger.debug('No configuration is set, returning RECORD_AND_SAMPLE')
                 return SamplingResult(Decision.RECORD_AND_SAMPLE, attributes=attributes, trace_state=_get_parent_trace_state(parent_context))
 
+            is_dry_run: bool = self._config.get('dryRun', False)
             noisy_operations: list[NoisyOperation] = self._config.get('noisyOperations', [])
             # Track the rule with the lowest percentageAtMost so the tracestate entry reports the actual deciding rule's id (first-wins on ties)
             winning_operation: Optional[NoisyOperation] = None
@@ -93,8 +94,17 @@ class OdigosSampler(Sampler):
                 # Even on DROP the SpanContext (and its trace_state) is propagated to downstream services via the tracestate header,
                 # enabling consistent head-sampling and tail-sampler decisions across the trace.
                 lowest_percentage = winning_operation.get("percentageAtMost", 0.0)
-                trace_state = self.build_tracestate(parent_context, winning_operation)
-                if self._trace_id_based_sampling(trace_id, lowest_percentage):
+                sampled = self._trace_id_based_sampling(trace_id, lowest_percentage)
+
+                dry_run_sampled = sampled if is_dry_run else None
+                trace_state = self.build_tracestate(parent_context, winning_operation, dry_run_sampled)
+
+                # In dry-run mode, never actually drop spans
+                if is_dry_run:
+                    # sampler_logger.debug(f'Dry run [{trace_id}] would_be_sampled={sampled} (lowest_percentage={lowest_percentage})')
+                    return SamplingResult(Decision.RECORD_AND_SAMPLE, attributes=attributes, trace_state=trace_state)
+
+                if sampled:
                     # sampler_logger.debug(f'Trace [{trace_id}] is sampled with lowest percentage {lowest_percentage}')
                     return SamplingResult(Decision.RECORD_AND_SAMPLE, attributes=attributes, trace_state=trace_state)
                 else:
@@ -192,7 +202,12 @@ class OdigosSampler(Sampler):
             # sampler_logger.debug(f'Updating the configuration with the new configuration: {new_config}')
             self._config = new_config
 
-    def build_tracestate(self, parent_context: Optional[Context], noisy_operation: NoisyOperation) -> TraceState:
+    def build_tracestate(
+        self,
+        parent_context: Optional[Context],
+        noisy_operation: NoisyOperation,
+        dry_run_sampled: Optional[bool] = None,
+    ) -> TraceState:
         tracestate = _get_parent_trace_state(parent_context)
 
         if not tracestate:
@@ -201,6 +216,9 @@ class OdigosSampler(Sampler):
         # Round percentage to 2 decimal places for byte-identical tracestate values
         percentage = round(noisy_operation.get("percentageAtMost", 0.0), 2)
         noisy_op_tracestate_value = f"c:n;dr.p:{percentage};dr.id:{noisy_operation['id']}"
+
+        if dry_run_sampled is not None:
+            noisy_op_tracestate_value += ";dry:t" if dry_run_sampled else ";dry:f"
         tracestate = tracestate.add("odigos", noisy_op_tracestate_value)
 
         return tracestate

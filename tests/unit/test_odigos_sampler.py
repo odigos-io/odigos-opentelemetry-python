@@ -220,3 +220,114 @@ class TestShouldSample:
         assert result.trace_state is not None
         assert result.trace_state.get("vendor1") == "val1"
         assert result.trace_state.get("odigos") is None
+
+
+class TestDryRun:
+    """Tests for dry-run mode: spans must NEVER be dropped, but tracestate must
+    record the would-be decision as `;dry:t` (kept) or `;dry:f` (dropped).
+
+    Mirrors the contract documented on Go `HeadSamplingConfig.DryRun` and the
+    OdigosHeadSampler in opentelemetry-node (`sampler/index.ts`).
+    """
+
+    def test_dry_run_does_not_drop_when_would_be_dropped(self, sampler):
+        # percentageAtMost=0 -> _trace_id_based_sampling always returns False (would drop).
+        # With dryRun=True, we must still record-and-sample, just annotate `;dry:f`.
+        sampler.update_config(
+            {
+                "dryRun": True,
+                "noisyOperations": [
+                    {"id": "drop-everything", "percentageAtMost": 0},
+                ],
+            }
+        )
+
+        result = sampler.should_sample(
+            parent_context=None,
+            trace_id=0x0123456789ABCDEF0123456789ABCDEF,
+            name="GET /anything",
+            kind=SpanKind.SERVER,
+            attributes={},
+        )
+
+        assert result.decision == Decision.RECORD_AND_SAMPLE
+        assert result.trace_state is not None
+        odigos_value = result.trace_state.get("odigos")
+        assert odigos_value is not None
+        assert odigos_value.endswith(";dry:f")
+        assert "dr.id:drop-everything" in odigos_value
+
+    def test_dry_run_records_dry_t_when_would_be_kept(self, sampler):
+        # percentageAtMost=100 -> _trace_id_based_sampling always returns True (would keep).
+        sampler.update_config(
+            {
+                "dryRun": True,
+                "noisyOperations": [
+                    {"id": "keep-everything", "percentageAtMost": 100},
+                ],
+            }
+        )
+
+        result = sampler.should_sample(
+            parent_context=None,
+            trace_id=0x0123456789ABCDEF0123456789ABCDEF,
+            name="GET /anything",
+            kind=SpanKind.SERVER,
+            attributes={},
+        )
+
+        assert result.decision == Decision.RECORD_AND_SAMPLE
+        assert result.trace_state is not None
+        odigos_value = result.trace_state.get("odigos")
+        assert odigos_value is not None
+        assert odigos_value.endswith(";dry:t")
+        assert "dr.id:keep-everything" in odigos_value
+
+    def test_dry_run_false_still_drops(self, sampler):
+        # Sanity check: dryRun explicitly False preserves the original drop behavior.
+        sampler.update_config(
+            {
+                "dryRun": False,
+                "noisyOperations": [
+                    {"id": "drop-everything", "percentageAtMost": 0},
+                ],
+            }
+        )
+
+        result = sampler.should_sample(
+            parent_context=None,
+            trace_id=0x0123456789ABCDEF0123456789ABCDEF,
+            name="GET /anything",
+            kind=SpanKind.SERVER,
+            attributes={},
+        )
+
+        assert result.decision == Decision.DROP
+        assert result.trace_state is not None
+        odigos_value = result.trace_state.get("odigos")
+        assert odigos_value is not None
+        assert ";dry:" not in odigos_value
+
+    def test_dry_run_omitted_defaults_to_disabled(self, sampler):
+        # When the OpAMP push omits `dryRun` (older servers), treat as disabled:
+        # must still drop and must NOT add a `;dry:*` suffix.
+        sampler.update_config(
+            {
+                "noisyOperations": [
+                    {"id": "drop-everything", "percentageAtMost": 0},
+                ],
+            }
+        )
+
+        result = sampler.should_sample(
+            parent_context=None,
+            trace_id=0x0123456789ABCDEF0123456789ABCDEF,
+            name="GET /anything",
+            kind=SpanKind.SERVER,
+            attributes={},
+        )
+
+        assert result.decision == Decision.DROP
+        odigos_value = result.trace_state.get("odigos")
+        assert odigos_value is not None
+        assert ";dry:" not in odigos_value
