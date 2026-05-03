@@ -1,26 +1,26 @@
 import json
 
-def get_sdk_config(config_map):
+def get_container_config(config_map):
     """
-    Extracts and parses the SDK configuration from the config map.
+    Extracts and parses the container configuration from the config map.
     """
-    if "SDK" not in config_map:
+    if "container_config" not in config_map:
         return {}
 
     try:
-        return json.loads(config_map["SDK"].body)
+        return json.loads(config_map["container_config"].body)
     except json.JSONDecodeError:
         return {}
 
 
-
-def parse_first_message_signals(sdk_config): # type: ignore
+def parse_first_message_signals(container_config): # type: ignore
     """
-    Parses the trace, logs, and metrics signals configuration from the SDK config.
+    Parses the trace, logs, and metrics signals from the container config.
+    Signal is considered enabled if its key exists in the config.
     """
 
     return {
-        "traceSignal": sdk_config.get("traceSignal", {}).get("enabled", False),
-        "metricsSignal": sdk_config.get("metricsSignal", {}).get("enabled", False),
-        "logsSignal": sdk_config.get("logsSignal", {}).get("enabled", False),
+        "traceSignal": "traces" in container_config,
+        "metricsSignal": "metrics" in container_config,
+        "logsSignal": "logs" in container_config,
     }

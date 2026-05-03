@@ -147,8 +147,8 @@ class OpAMPHTTPClient:
                                     # The default config is preloaded when the EBPFSpanProcessor is initialized
                                     pass
 
-                        sdk_config = utils.get_sdk_config(first_message_server_to_agent.remote_config.config.config_map)
-                        self.signals = utils.parse_first_message_signals(sdk_config)
+                        container_config = utils.get_container_config(first_message_server_to_agent.remote_config.config.config_map)
+                        self.signals = utils.parse_first_message_signals(container_config)
 
                         # Store initial sampler config for direct access
                         remote_config = self.get_remote_config(first_message_server_to_agent)
