@@ -92,6 +92,13 @@ test = [
     "pytest >= 8.0",
 ]
 
+[dependency-groups]
+dev = [
+    "ruff >= 0.15.12",
+    "ty >= 0.0.33",
+    "pre-commit >= 3.5.0",
+]
+
 [project.entry-points.opentelemetry_post_instrument]
 odigos_post = "initializer.post_instrument:run_post_hook"
 
@@ -121,4 +128,34 @@ include = [
     "opamp.*",
     "opentelemetry",
     "opentelemetry.*",
+]
+
+[tool.ruff]
+line-length = 150
+target-version = "py39"
+extend-exclude = [
+    ".venv",
+    "dist",
+    "build",
+    "*.egg-info",
+    "tests/integration/configurator",
+]
+
+[tool.ruff.lint]
+# Default rule set: pycodestyle errors (E) + pyflakes (F).
+select = ["E", "F"]
+
+[tool.ruff.format]
+quote-style = "preserve"
+indent-style = "space"
+
+[tool.ty.environment]
+python-version = "3.9"
+
+[tool.ty.src]
+exclude = [
+    ".venv",
+    "dist",
+    "build",
+    "tests/integration/configurator",
 ]
