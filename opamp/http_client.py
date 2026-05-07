@@ -51,6 +51,7 @@ class OpAMPHTTPClient:
         self.pid = os.getpid()
         self.update_conf_cb = None # Callback for configuration updates in the processor
         self._initial_sampler_config = None # Store initial sampler config for direct access
+        self._initial_remote_config = None # Store initial full Config for processor bootstrap
 
     def __repr__(self):
         return f"<OpAMPHTTPClient instance_uid={self.instance_uid} pid={self.pid}>"
@@ -150,9 +151,10 @@ class OpAMPHTTPClient:
                         container_config = utils.get_container_config(first_message_server_to_agent.remote_config.config.config_map)
                         self.signals = utils.parse_first_message_signals(container_config)
 
-                        # Store initial sampler config for direct access
+                        # Store initial configs for direct access (TracerProvider doesn't exist yet)
                         remote_config = self.get_remote_config(first_message_server_to_agent)
                         self._initial_sampler_config = self._extract_sampler_config(remote_config)
+                        self._initial_remote_config = remote_config
 
                         # Send healthy message to OpAMP server
                         agent_health = self.get_agent_health(component_health=True, status=AgentHealthStatus.HEALTHY.value)
@@ -165,7 +167,6 @@ class OpAMPHTTPClient:
                         return
 
             except Exception as e:
-                # opamp_logger.error(f"Attempt {attempt}/{max_retries} failed. Error sending full state to OpAMP server: {e}")
                 pass
 
             if attempt < max_retries:
@@ -294,6 +295,11 @@ class OpAMPHTTPClient:
         sample_config = decoded_map.get("container_config", None)
         if sample_config is not None:
             config.sample_config = sample_config
+
+            try:
+                config.span_metrics_mode = sample_config['traces']['headSampling']['spanMetricsMode']
+            except (KeyError, TypeError):
+                pass
 
         return config
 
@@ -462,6 +468,10 @@ class OpAMPHTTPClient:
         """Get the sampler config from the initial OpAMP message"""
         return self._initial_sampler_config
 
+    def get_initial_remote_config(self):
+        """Get the full Config from the initial OpAMP message"""
+        return self._initial_remote_config
+
 
 # Mock client class for non-OpAMP installations
 # This class simulates the OpAMP client when the OpAMP server is not available.
@@ -475,6 +485,10 @@ class MockOpAMPClient:
 
     def get_initial_sampler_config(self):
         """Mock client has no sampler config"""
+        return None
+
+    def get_initial_remote_config(self):
+        """Mock client has no remote config"""
         return None
 
     def shutdown(self, custom_failure_message=None):

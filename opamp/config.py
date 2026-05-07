@@ -25,6 +25,7 @@ class CodeAttributes(DefaultNoneMixin):
 class Config(DefaultNoneMixin):
     code_attributes: CodeAttributes = field(default_factory=CodeAttributes)
     sample_config: Dict[str, Any] = field(default_factory=dict)
+    span_metrics_mode: str = None
 
 ###             Helpers             ###
 

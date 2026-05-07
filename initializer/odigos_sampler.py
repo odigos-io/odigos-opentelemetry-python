@@ -109,7 +109,7 @@ class OdigosSampler(Sampler):
                     return SamplingResult(Decision.RECORD_AND_SAMPLE, attributes=attributes, trace_state=trace_state)
                 else:
                     # sampler_logger.debug(f'Trace [{trace_id}] is dropped with lowest percentage {lowest_percentage}')
-                    return SamplingResult(Decision.DROP, trace_state=trace_state)
+                    return SamplingResult(Decision.RECORD_ONLY, trace_state=trace_state)
 
             # sampler_logger.debug('No noisy operation matched, sampling the trace')
             return SamplingResult(Decision.RECORD_AND_SAMPLE, attributes=attributes, trace_state=_get_parent_trace_state(parent_context))
