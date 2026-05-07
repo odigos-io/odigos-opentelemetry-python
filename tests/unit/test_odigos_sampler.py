@@ -158,7 +158,7 @@ class TestShouldSample:
             attributes={},
         )
 
-        assert result.decision == Decision.DROP
+        assert result.decision == Decision.RECORD_ONLY
         assert result.trace_state is not None
         assert result.trace_state.get("odigos") == "c:n;dr.p:0;dr.id:drop-everything"
 
@@ -302,7 +302,7 @@ class TestDryRun:
             attributes={},
         )
 
-        assert result.decision == Decision.DROP
+        assert result.decision == Decision.RECORD_ONLY
         assert result.trace_state is not None
         odigos_value = result.trace_state.get("odigos")
         assert odigos_value is not None
@@ -310,7 +310,7 @@ class TestDryRun:
 
     def test_dry_run_omitted_defaults_to_disabled(self, sampler):
         # When the OpAMP push omits `dryRun` (older servers), treat as disabled:
-        # must still drop and must NOT add a `;dry:*` suffix.
+        # must still record (not sample) and must NOT add a `;dry:*` suffix.
         sampler.update_config(
             {
                 "noisyOperations": [
@@ -327,7 +327,7 @@ class TestDryRun:
             attributes={},
         )
 
-        assert result.decision == Decision.DROP
+        assert result.decision == Decision.RECORD_ONLY
         odigos_value = result.trace_state.get("odigos")
         assert odigos_value is not None
         assert ";dry:" not in odigos_value
