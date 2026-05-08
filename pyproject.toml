@@ -145,6 +145,9 @@ extend-exclude = [
 # Default rule set: pycodestyle errors (E) + pyflakes (F).
 select = ["E", "F"]
 
+[tool.ruff.lint.per-file-ignores]
+"initializer/components.py" = ["E402"]
+
 [tool.ruff.format]
 quote-style = "preserve"
 indent-style = "space"

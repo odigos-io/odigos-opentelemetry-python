@@ -102,7 +102,11 @@ class OpAMPHTTPClient:
         agent_disconnect = self.get_agent_disconnect()
         agent_failure_message.agent_disconnect.CopyFrom(agent_disconnect)
 
-        agent_health = self.get_agent_health(component_health=component_health, last_error=error_message, status=AgentHealthStatus.AGENT_FAILURE.value)
+        agent_health = self.get_agent_health(
+            component_health=component_health,
+            last_error=error_message,
+            status=AgentHealthStatus.AGENT_FAILURE.value,
+        )
         agent_failure_message.health.CopyFrom(agent_health)
 
         return agent_failure_message
@@ -117,7 +121,11 @@ class OpAMPHTTPClient:
         agent_disconnect = self.get_agent_disconnect()
         first_disconnect_message.agent_disconnect.CopyFrom(agent_disconnect)
 
-        agent_health = self.get_agent_health(component_health=False, last_error=error_message, status=AgentHealthStatus.UNSUPPORTED_RUNTIME_VERSION.value)
+        agent_health = self.get_agent_health(
+            component_health=False,
+            last_error=error_message,
+            status=AgentHealthStatus.UNSUPPORTED_RUNTIME_VERSION.value,
+        )
         first_disconnect_message.health.CopyFrom(agent_health)
 
         self.send_agent_to_server_message(first_disconnect_message)
@@ -128,9 +136,19 @@ class OpAMPHTTPClient:
         for attempt in range(1, max_retries + 1):
             try:
                 # Send first message to OpAMP server, Health is false as the component is not initialized
-                agent_health = self.get_agent_health(component_health=False, last_error="Connecting to Odigos configuration server", status=AgentHealthStatus.STARTING.value)
+                agent_health = self.get_agent_health(
+                    component_health=False,
+                    last_error="Connecting to Odigos configuration server",
+                    status=AgentHealthStatus.STARTING.value,
+                )
                 agent_description = self.get_agent_description()
-                first_message_server_to_agent = self.send_agent_to_server_message(opamp_pb2.AgentToServer(agent_description=agent_description, health=agent_health, remote_config_status=opamp_pb2.RemoteConfigStatus()))
+                first_message_server_to_agent = self.send_agent_to_server_message(
+                    opamp_pb2.AgentToServer(
+                        agent_description=agent_description,
+                        health=agent_health,
+                        remote_config_status=opamp_pb2.RemoteConfigStatus(),
+                    )
+                )
 
                 # Check if the response of the first message is empty
                 # It may happen if OpAMPServer is not available
@@ -180,10 +198,19 @@ class OpAMPHTTPClient:
 
         # If OpAMP server is throttling, it might not respond in the OpAMP client timeout period (5s).
         # In this case, we're trying to send a message to the OpAMP server to indicate that OpAMP is not available.
-        agent_health = self.get_agent_health(component_health=False, last_error="Failed to connect to Odigos configuration server - dynamic configuration unavailable",
-                                             status=AgentHealthStatus.NO_CONNECTION_TO_OPAMP_SERVER.value)
+        agent_health = self.get_agent_health(
+            component_health=False,
+            last_error="Failed to connect to Odigos configuration server - dynamic configuration unavailable",
+            status=AgentHealthStatus.NO_CONNECTION_TO_OPAMP_SERVER.value,
+        )
         agent_description = self.get_agent_description()
-        self.send_agent_to_server_message(opamp_pb2.AgentToServer(agent_description=agent_description, health=agent_health, remote_config_status=opamp_pb2.RemoteConfigStatus()))
+        self.send_agent_to_server_message(
+            opamp_pb2.AgentToServer(
+                agent_description=agent_description,
+                health=agent_health,
+                remote_config_status=opamp_pb2.RemoteConfigStatus(),
+            )
+        )
 
     def worker(self):
         while self.running:
@@ -219,8 +246,7 @@ class OpAMPHTTPClient:
                                     # The default config is preloaded when the EBPFSpanProcessor is initialized
                                     pass
 
-                except requests_odigos.RequestException as e:
-                    # opamp_logger.error(f"Error fetching data: {e}")
+                except requests_odigos.RequestException:
                     pass
                 self.condition.wait(30)
 
@@ -308,8 +334,7 @@ class OpAMPHTTPClient:
         try:
             agent_to_server = opamp_pb2.AgentToServer(remote_config_status=self.remote_config_status)
             return self.send_agent_to_server_message(agent_to_server)
-        except requests_odigos.RequestException as e:
-            # opamp_logger.error(f"Error sending heartbeat to OpAMP server: {e}")
+        except requests_odigos.RequestException:
             pass
 
     def get_agent_description(self) -> opamp_pb2.AgentDescription: # type: ignore
@@ -423,10 +448,20 @@ class OpAMPHTTPClient:
         self.running = False
         # opamp_logger.info("Sending agent disconnect message to OpAMP server...")
         if custom_failure_message:
-            disconnect_message = self.get_agent_failure_disconnect_message(error_message=custom_failure_message, component_health=component_health)
+            disconnect_message = self.get_agent_failure_disconnect_message(
+                error_message=custom_failure_message,
+                component_health=component_health,
+            )
         else:
-            agent_health = self.get_agent_health(component_health=component_health, last_error="Python runtime is exiting", status=AgentHealthStatus.TERMINATED.value)
-            disconnect_message = opamp_pb2.AgentToServer(agent_disconnect=opamp_pb2.AgentDisconnect(), health=agent_health)
+            agent_health = self.get_agent_health(
+                component_health=component_health,
+                last_error="Python runtime is exiting",
+                status=AgentHealthStatus.TERMINATED.value,
+            )
+            disconnect_message = opamp_pb2.AgentToServer(
+                agent_disconnect=opamp_pb2.AgentDisconnect(),
+                health=agent_health,
+            )
 
         with self.condition:
             self.condition.notify_all()

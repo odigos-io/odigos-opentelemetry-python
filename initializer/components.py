@@ -48,7 +48,6 @@ from opamp.config import Config
 from opamp import opamp_registry
 from .distro import instrumentation_registry
 
-
 from opamp.http_client import OpAMPHTTPClient, MockOpAMPClient
 
 MINIMUM_PYTHON_SUPPORTED_VERSION = (3, 9)
