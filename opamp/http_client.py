@@ -166,7 +166,7 @@ class OpAMPHTTPClient:
                             self.opamp_connection_event.error = False
                         return
 
-            except Exception as e:
+            except Exception:
                 pass
 
             if attempt < max_retries:

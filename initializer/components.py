@@ -110,7 +110,10 @@ def initialize_components(trace_exporters = False, span_processor = None):
         # Wrap in proxy so child processes can refresh automatically
         resource = ProxyResource(base_resource, OdigosProcessResourceDetector)
 
-        odigos_sampler = initialize_traces_if_enabled(trace_exporters, resource, span_processor, supported_signals, initial_sampler_config, initial_remote_config)
+        odigos_sampler = initialize_traces_if_enabled(
+            trace_exporters, resource, span_processor,
+            supported_signals, initial_sampler_config, initial_remote_config,
+        )
         if odigos_sampler is not None:
             client.sampler = odigos_sampler
 
@@ -125,7 +128,10 @@ def initialize_components(trace_exporters = False, span_processor = None):
         # Make sure the distro modules are reloaded even if an exception is raised.
         reload_distro_modules()
 
-def initialize_traces_if_enabled(trace_exporters, resource, span_processor = None, signals = None, initial_sampler_config = None, initial_remote_config = None):
+def initialize_traces_if_enabled(
+    trace_exporters, resource, span_processor=None,
+    signals=None, initial_sampler_config=None, initial_remote_config=None,
+):
     global _odigos_sampler
     # In case collectors signals support receiving traces, initialize the tracer provider with the exporters
     traces_enabled = signals.get("traceSignal", False)
