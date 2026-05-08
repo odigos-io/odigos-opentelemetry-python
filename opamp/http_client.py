@@ -33,8 +33,9 @@ _debugger_instance = None
 env_var_mappings = {
     "ODIGOS_WORKLOAD_NAMESPACE": ResourceAttributes.K8S_NAMESPACE_NAME,
     "ODIGOS_CONTAINER_NAME": ResourceAttributes.K8S_CONTAINER_NAME,
-    "ODIGOS_POD_NAME": ResourceAttributes.K8S_POD_NAME
+    "ODIGOS_POD_NAME": ResourceAttributes.K8S_POD_NAME,
 }
+
 
 class OpAMPHTTPClient:
     def __init__(self, opamp_connection_event, condition: threading.Condition):
@@ -47,18 +48,17 @@ class OpAMPHTTPClient:
         self.next_sequence_num = 0
         self.instance_uid = uuid7().__str__()
         self.remote_config_status = None
-        self.sampler = None # OdigosSampler instance
+        self.sampler = None  # OdigosSampler instance
         self.pid = os.getpid()
-        self.update_conf_cb = None # Callback for configuration updates in the processor
-        self._initial_sampler_config = None # Store initial sampler config for direct access
-        self._initial_remote_config = None # Store initial full Config for processor bootstrap
+        self.update_conf_cb = None  # Callback for configuration updates in the processor
+        self._initial_sampler_config = None  # Store initial sampler config for direct access
+        self._initial_remote_config = None  # Store initial full Config for processor bootstrap
 
     def __repr__(self):
         return f"<OpAMPHTTPClient instance_uid={self.instance_uid} pid={self.pid}>"
 
     def start(self, python_version_supported: bool = None):
         if not python_version_supported:
-
             python_version = f'{sys.version_info.major}.{sys.version_info.minor}.{sys.version_info.micro}'
             error_message = f"Opentelemetry SDK require Python in version 3.8 or higher [{python_version} is not supported]"
 
@@ -258,16 +258,9 @@ class OpAMPHTTPClient:
         component_health_map = {}
 
         for lib_name, lib_details in instrumented_libraries.items():
-            component_health_map[lib_name] = opamp_pb2.ComponentHealth(
-                healthy=True,
-                status=json.dumps(lib_details)
-            )
+            component_health_map[lib_name] = opamp_pb2.ComponentHealth(healthy=True, status=json.dumps(lib_details))
 
-        health_msg = opamp_pb2.ComponentHealth(
-            healthy=True,
-            status="instrumentation libraries report",
-            component_health_map=component_health_map
-        )
+        health_msg = opamp_pb2.ComponentHealth(healthy=True, status="instrumentation libraries report", component_health_map=component_health_map)
 
         self.send_agent_to_server_message(opamp_pb2.AgentToServer(health=health_msg))
 
@@ -313,7 +306,7 @@ class OpAMPHTTPClient:
 
         inner = decoded_map.get("", None)
         if inner is None:
-            config = Config() # Return default values for config
+            config = Config()  # Return default values for config
         else:
             config = from_dict(Config, inner)
 
@@ -329,7 +322,7 @@ class OpAMPHTTPClient:
 
         return config
 
-    def send_heartbeat(self) -> opamp_pb2.ServerToAgent: # type: ignore
+    def send_heartbeat(self) -> opamp_pb2.ServerToAgent:  # type: ignore
         # opamp_logger.debug("Sending heartbeat to OpAMP server...")
         try:
             agent_to_server = opamp_pb2.AgentToServer(remote_config_status=self.remote_config_status)
@@ -337,7 +330,7 @@ class OpAMPHTTPClient:
         except requests_odigos.RequestException:
             pass
 
-    def get_agent_description(self) -> opamp_pb2.AgentDescription: # type: ignore
+    def get_agent_description(self) -> opamp_pb2.AgentDescription:  # type: ignore
         # The "DISABLE_OPAMP_CLIENT" environment variable is defined only in our VMs environments.
         # Here we use it exclusively to distinguish between virtual machine and Kubernetes environments.
         #
@@ -356,42 +349,24 @@ class OpAMPHTTPClient:
             process_id_key = PROCESS_VPID
 
         identifying_attributes = [
-            anyvalue_pb2.KeyValue(
-                key=ResourceAttributes.SERVICE_INSTANCE_ID,
-                value=anyvalue_pb2.AnyValue(string_value=self.instance_uid)
-            ),
-            anyvalue_pb2.KeyValue(
-                key=process_id_key,
-                value=anyvalue_pb2.AnyValue(int_value=self.pid)
-            ),
-            anyvalue_pb2.KeyValue(
-                key=ResourceAttributes.TELEMETRY_SDK_LANGUAGE,
-                value=anyvalue_pb2.AnyValue(string_value="python")
-            )
+            anyvalue_pb2.KeyValue(key=ResourceAttributes.SERVICE_INSTANCE_ID, value=anyvalue_pb2.AnyValue(string_value=self.instance_uid)),
+            anyvalue_pb2.KeyValue(key=process_id_key, value=anyvalue_pb2.AnyValue(int_value=self.pid)),
+            anyvalue_pb2.KeyValue(key=ResourceAttributes.TELEMETRY_SDK_LANGUAGE, value=anyvalue_pb2.AnyValue(string_value="python")),
         ]
 
         # Add additional attributes from environment variables
         for env_var, attribute_key in env_var_mappings.items():
             value = os.environ.get(env_var)
             if value:
-                identifying_attributes.append(
-                    anyvalue_pb2.KeyValue(
-                        key=attribute_key,
-                        value=anyvalue_pb2.AnyValue(string_value=value)
-                    )
-                )
+                identifying_attributes.append(anyvalue_pb2.KeyValue(key=attribute_key, value=anyvalue_pb2.AnyValue(string_value=value)))
 
-        return opamp_pb2.AgentDescription(
-            identifying_attributes=identifying_attributes,
-            non_identifying_attributes=[]
-        )
+        return opamp_pb2.AgentDescription(identifying_attributes=identifying_attributes, non_identifying_attributes=[])
 
-    def get_agent_disconnect(self) -> opamp_pb2.AgentDisconnect: # type: ignore
+    def get_agent_disconnect(self) -> opamp_pb2.AgentDisconnect:  # type: ignore
         return opamp_pb2.AgentDisconnect()
 
-    def get_agent_health(self, component_health: bool = None, last_error : str = None, status: str = None) -> opamp_pb2.ComponentHealth: # type: ignore
-        health = opamp_pb2.ComponentHealth(
-        )
+    def get_agent_health(self, component_health: bool = None, last_error: str = None, status: str = None) -> opamp_pb2.ComponentHealth:  # type: ignore
+        health = opamp_pb2.ComponentHealth()
         if component_health is not None:
             health.healthy = component_health
         if last_error is not None:
@@ -401,8 +376,7 @@ class OpAMPHTTPClient:
 
         return health
 
-
-    def send_agent_to_server_message(self, message: opamp_pb2.AgentToServer) -> opamp_pb2.ServerToAgent: # type: ignore
+    def send_agent_to_server_message(self, message: opamp_pb2.AgentToServer) -> opamp_pb2.ServerToAgent:  # type: ignore
 
         message.instance_uid = self.instance_uid.encode('utf-8')
         message.sequence_num = self.next_sequence_num
@@ -469,7 +443,7 @@ class OpAMPHTTPClient:
 
         self.send_agent_to_server_message(disconnect_message)
 
-    def update_remote_config_status(self, server_to_agent: opamp_pb2.ServerToAgent) -> bool: # type: ignore
+    def update_remote_config_status(self, server_to_agent: opamp_pb2.ServerToAgent) -> bool:  # type: ignore
         if server_to_agent.HasField("remote_config"):
             remote_config_hash = server_to_agent.remote_config.config_hash
             remote_config_status = opamp_pb2.RemoteConfigStatus(last_remote_config_hash=remote_config_hash)
@@ -492,9 +466,7 @@ class OpAMPHTTPClient:
         head_sampling_config = remote_config.sample_config['traces']['headSampling']
 
         # Check if we have valid sampling config (same validation as update_agent_config)
-        if head_sampling_config and (
-            head_sampling_config.get('noisyOperations') is not None
-        ):
+        if head_sampling_config and (head_sampling_config.get('noisyOperations') is not None):
             return head_sampling_config
         else:
             return None

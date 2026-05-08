@@ -4,22 +4,25 @@ from typing import Any, Dict, Type, TypeVar, get_type_hints
 
 T = TypeVar("T")
 
+
 ###             Configuration structs           ###
 class DefaultNoneMixin:
-    #__getattr__ is only invoked when the normal attribute lookup (__dict__, class attributes, etc.) fails.
+    # __getattr__ is only invoked when the normal attribute lookup (__dict__, class attributes, etc.) fails.
     # Prevent raising a ValueError when accessing a non existing key
     # It'll save us multiple try catch blocks in the future
     def __getattr__(self, name: str):
         return None
 
+
 @dataclass
 class CodeAttributes(DefaultNoneMixin):
-    column:      bool = False
-    file_path:   bool = False
-    function:    bool = False
+    column: bool = False
+    file_path: bool = False
+    function: bool = False
     line_number: bool = False
-    namespace:   bool = False
+    namespace: bool = False
     stack_trace: bool = False
+
 
 @dataclass
 class Config(DefaultNoneMixin):
@@ -27,12 +30,15 @@ class Config(DefaultNoneMixin):
     sample_config: Dict[str, Any] = field(default_factory=dict)
     span_metrics_mode: str = None
 
+
 ###             Helpers             ###
+
 
 def camel_to_snake(name: str) -> str:
     """Convert camelCase or PascalCase to snake_case."""
     s1 = re.sub(r"([a-z0-9])([A-Z])", r"\1_\2", name)
     return s1.lower()
+
 
 def from_dict(cls: Type[T], data: Dict[str, Any]) -> T:
     """
