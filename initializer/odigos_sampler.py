@@ -6,7 +6,7 @@ from opentelemetry.context import Context
 from opentelemetry.sdk.trace.sampling import Decision, Sampler, SamplingResult, _get_parent_trace_state
 from opentelemetry.semconv.attributes import http_attributes as http_attributes_semconv
 from opentelemetry.semconv.attributes import server_attributes as server_attributes_semconv
-from opentelemetry.trace import Link, SpanKind, TraceState
+from opentelemetry.trace import Link, SpanKind, TraceState, get_current_span
 from opentelemetry.util.types import Attributes
 
 from initializer.schemas.sampling import (
@@ -30,6 +30,11 @@ class OdigosSampler(Sampler):
         self._lock = Lock()
         self._config: Optional[HeadSamplingConfig] = None
 
+    def _not_sampled_decision(self) -> Decision:
+        if self._config and self._config.get('spanMetricsMode') == "all-spans":
+            return Decision.RECORD_ONLY
+        return Decision.DROP
+
     def _trace_id_based_sampling(self, trace_id: int, percentage_to_sample: float) -> bool:
         """Mimic OpenTelemetry's trace ID-based sampling logic with 64-bit range."""
         # Since percentage to sample is in percents and we need a fraction, divide by 100
@@ -52,6 +57,17 @@ class OdigosSampler(Sampler):
     ) -> "SamplingResult":
         attributes = attributes or {}
         with self._lock:
+            parent_span_context = get_current_span(parent_context).get_span_context()
+
+            # Parent-based logic taken from upstream ParentBased sampler so we can
+            # decide to DROP or RECORD_ONLY based on the recordMode configuration.
+            # Remote/local parent distinction is removed because both paths used the
+            # same not-sampled decision.
+            if parent_span_context is not None and parent_span_context.is_valid:
+                if parent_span_context.trace_flags.sampled:
+                    return SamplingResult(Decision.RECORD_AND_SAMPLE, attributes=attributes, trace_state=_get_parent_trace_state(parent_context))
+                else:
+                    return SamplingResult(self._not_sampled_decision(), trace_state=_get_parent_trace_state(parent_context))
             # sampler_logger.debug(f'Running Should_sample a span with the following attributes: {attributes}')
 
             if self._config is None:
@@ -109,7 +125,7 @@ class OdigosSampler(Sampler):
                     return SamplingResult(Decision.RECORD_AND_SAMPLE, attributes=attributes, trace_state=trace_state)
                 else:
                     # sampler_logger.debug(f'Trace [{trace_id}] is dropped with lowest percentage {lowest_percentage}')
-                    return SamplingResult(Decision.DROP, trace_state=trace_state)
+                    return SamplingResult(self._not_sampled_decision(), trace_state=trace_state)
 
             # sampler_logger.debug('No noisy operation matched, sampling the trace')
             return SamplingResult(Decision.RECORD_AND_SAMPLE, attributes=attributes, trace_state=_get_parent_trace_state(parent_context))
@@ -199,7 +215,6 @@ class OdigosSampler(Sampler):
 
     def update_config(self, new_config):
         with self._lock:
-            # sampler_logger.debug(f'Updating the configuration with the new configuration: {new_config}')
             self._config = new_config
 
     def build_tracestate(

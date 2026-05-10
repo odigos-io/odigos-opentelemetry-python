@@ -27,7 +27,6 @@ from opentelemetry.sdk.resources import OTELResourceDetector
 from opentelemetry.sdk.trace import TracerProvider
 from opentelemetry.sdk.trace.export import BatchSpanProcessor
 from opentelemetry.trace import set_tracer_provider, get_tracer_provider
-from opentelemetry.sdk.trace.sampling import ParentBased
 
 
 # Move Odigos agent paths to the end of sys.path so the application's packages are
@@ -48,19 +47,19 @@ from opamp.config import Config
 from opamp import opamp_registry
 from .distro import instrumentation_registry
 
-
 from opamp.http_client import OpAMPHTTPClient, MockOpAMPClient
+from opamp.utils import parse_first_message_signals
 
 MINIMUM_PYTHON_SUPPORTED_VERSION = (3, 9)
 
 _odigos_sampler = None
 
 
-def initialize_components(trace_exporters = False, span_processor = None):
+def initialize_components(trace_exporters=False, span_processor=None):
     # Ensure each child process after fork gets a fresh OpAMP client
     # and correct process.* resource attributes.
     os.register_at_fork(
-    after_in_child=_after_in_child,
+        after_in_child=_after_in_child,
     )  # pylint: disable=protected-access
 
     handle_instrumenation_of_sub_processes()
@@ -69,24 +68,29 @@ def initialize_components(trace_exporters = False, span_processor = None):
     client = None
 
     try:
-
         client = start_opamp_client(opamp_connection_event)
 
         ## In case of error, e.g during the first connection to the OpAMP server,
         # we will use the default value which is enable traces only.
         if opamp_connection_event.error:
+            container_config = None
             supported_signals = {"traceSignal": True}
-            initial_sampler_config = None  # No config available due to connection error
+            initial_sampler_config = None
+            initial_remote_config = None
         else:
-            supported_signals = client.signals
+            container_config = client.container_config
+            supported_signals = parse_first_message_signals(container_config)
 
-            # Get initial sampler config directly from client (only when connection is successful)
+            # Get initial configs directly from client (only when connection is successful)
             try:
                 initial_sampler_config = client.get_initial_sampler_config()
             except AttributeError:
-                # Fallback to None to avoid errors
                 initial_sampler_config = None
 
+            try:
+                initial_remote_config = client.get_initial_remote_config()
+            except AttributeError:
+                initial_remote_config = None
 
         handle_django_instrumentation()
 
@@ -96,15 +100,20 @@ def initialize_components(trace_exporters = False, span_processor = None):
         }
 
         base_resource = (
-            OdigosProcessResourceDetector(client.pid).detect()
-            .merge(OTELResourceDetector().detect())
-            .merge(Resource.create(auto_resource))
+            OdigosProcessResourceDetector(client.pid).detect().merge(OTELResourceDetector().detect()).merge(Resource.create(auto_resource))
         )
 
         # Wrap in proxy so child processes can refresh automatically
         resource = ProxyResource(base_resource, OdigosProcessResourceDetector)
 
-        odigos_sampler = initialize_traces_if_enabled(trace_exporters, resource, span_processor, supported_signals, initial_sampler_config)
+        odigos_sampler = initialize_traces_if_enabled(
+            trace_exporters,
+            resource,
+            span_processor,
+            supported_signals,
+            initial_sampler_config,
+            initial_remote_config,
+        )
         if odigos_sampler is not None:
             client.sampler = odigos_sampler
 
@@ -119,16 +128,22 @@ def initialize_components(trace_exporters = False, span_processor = None):
         # Make sure the distro modules are reloaded even if an exception is raised.
         reload_distro_modules()
 
-def initialize_traces_if_enabled(trace_exporters, resource, span_processor = None, signals = None, initial_sampler_config = None):
+
+def initialize_traces_if_enabled(
+    trace_exporters,
+    resource,
+    span_processor=None,
+    signals=None,
+    initial_sampler_config=None,
+    initial_remote_config=None,
+):
     global _odigos_sampler
     # In case collectors signals support receiving traces, initialize the tracer provider with the exporters
     traces_enabled = signals.get("traceSignal", False)
 
     if traces_enabled:
-
         odigos_sampler = OdigosSampler()
         _odigos_sampler = odigos_sampler
-        sampler = ParentBased(odigos_sampler)
 
         # Apply initial sampler config if provided (from OpAMP first message)
         if initial_sampler_config is not None:
@@ -136,7 +151,7 @@ def initialize_traces_if_enabled(trace_exporters, resource, span_processor = Non
 
         # Exporting using exporters
         if trace_exporters:
-            provider = TracerProvider(resource=resource, sampler=sampler)
+            provider = TracerProvider(resource=resource, sampler=odigos_sampler)
             id_generator_name = sdk_config._get_id_generator()
             id_generator = sdk_config._import_id_generator(id_generator_name)
             provider.id_generator = id_generator
@@ -147,20 +162,25 @@ def initialize_traces_if_enabled(trace_exporters, resource, span_processor = Non
 
             for _, exporter_class in exporters.items():
                 exporter_args = {}
-                provider.add_span_processor(
-                    BatchSpanProcessor(exporter_class(**exporter_args))
-                )
+                provider.add_span_processor(BatchSpanProcessor(exporter_class(**exporter_args)))
 
         # Exporting using EBPF
         else:
-            provider = TracerProvider(resource=resource, sampler=sampler)
+            provider = TracerProvider(resource=resource, sampler=odigos_sampler)
             set_tracer_provider(provider)
             if span_processor is not None:
                 provider.add_span_processor(span_processor)
 
+            # Bootstrap processor config from the first OpAMP message.
+            # The update_conf_cb fires before the TracerProvider exists,
+            # so the processor misses the initial config; apply it now.
+            if initial_remote_config is not None and span_processor is not None and hasattr(span_processor, 'update_config'):
+                span_processor.update_config(initial_remote_config)
+
         return odigos_sampler
 
     return None
+
 
 def initialize_metrics_if_enabled(resource, signals):
     # Currently we're not exporting metrics using the OTEL exporter.
@@ -198,7 +218,6 @@ def start_opamp_client(event):
 
     python_version_supported = is_supported_python_version()
 
-
     client.start(python_version_supported)
 
     # Wait for the opamp first message to be received
@@ -230,6 +249,7 @@ def start_opamp_client(event):
 
     return client
 
+
 def update_agent_config(conf: Config):
     """
     The function `update_agent_config` checks for a tracer provider and updates its configuration using
@@ -254,20 +274,14 @@ def update_agent_config(conf: Config):
         if 'traces' in conf.sample_config and 'headSampling' in conf.sample_config['traces']:
             head_sampling_config = conf.sample_config['traces']['headSampling']
 
-        if head_sampling_config and (
-            head_sampling_config.get('noisyOperations') is not None
-        ):
-            valid_config = head_sampling_config
-        else:
-            valid_config = None
-
         # Apply config to sampler - sampler will always exist when this callback is called
         # because update_agent_config is only called from OpAMP worker thread after sampler creation
         from opamp import opamp_registry
+
         client = opamp_registry.get_client()
 
         if client and hasattr(client, 'sampler') and client.sampler:
-            client.sampler.update_config(valid_config)
+            client.sampler.update_config(head_sampling_config)
         else:
             # This should not happen in normal operation
             pass
@@ -281,18 +295,16 @@ def update_agent_config(conf: Config):
     # If you attached only one BatchSpanProcessor, _active_span_processor
     # *is* that object.  If you attached several, it is a MultiSpanProcessor
     # that wraps them in ._span_processors.
-    processors = (
-        active_proc._span_processors
-        if hasattr(active_proc, "_span_processors")
-        else [active_proc]
-    )
+    processors = active_proc._span_processors if hasattr(active_proc, "_span_processors") else [active_proc]
 
     for proc in processors:
         if hasattr(proc, "update_config"):
             proc.update_config(conf)
 
+
 def is_supported_python_version():
     return sys.version_info >= MINIMUM_PYTHON_SUPPORTED_VERSION
+
 
 def handle_instrumenation_of_sub_processes():
     # Resolves a path management issue introduced by OpenTelemetry's sitecustomize implementation.

@@ -33,31 +33,32 @@ _debugger_instance = None
 env_var_mappings = {
     "ODIGOS_WORKLOAD_NAMESPACE": ResourceAttributes.K8S_NAMESPACE_NAME,
     "ODIGOS_CONTAINER_NAME": ResourceAttributes.K8S_CONTAINER_NAME,
-    "ODIGOS_POD_NAME": ResourceAttributes.K8S_POD_NAME
+    "ODIGOS_POD_NAME": ResourceAttributes.K8S_POD_NAME,
 }
+
 
 class OpAMPHTTPClient:
     def __init__(self, opamp_connection_event, condition: threading.Condition):
         self.server_host = os.getenv('ODIGOS_OPAMP_SERVER_HOST')
         self.server_url = f"http://{self.server_host}/v1/opamp"
-        self.signals = {}
+        self.container_config = {}
         self.running = True
         self.condition = condition
         self.opamp_connection_event = opamp_connection_event
         self.next_sequence_num = 0
         self.instance_uid = uuid7().__str__()
         self.remote_config_status = None
-        self.sampler = None # OdigosSampler instance
+        self.sampler = None  # OdigosSampler instance
         self.pid = os.getpid()
-        self.update_conf_cb = None # Callback for configuration updates in the processor
-        self._initial_sampler_config = None # Store initial sampler config for direct access
+        self.update_conf_cb = None  # Callback for configuration updates in the processor
+        self._initial_sampler_config = None  # Store initial sampler config for direct access
+        self._initial_remote_config = None  # Store initial full Config for processor bootstrap
 
     def __repr__(self):
         return f"<OpAMPHTTPClient instance_uid={self.instance_uid} pid={self.pid}>"
 
     def start(self, python_version_supported: bool = None):
         if not python_version_supported:
-
             python_version = f'{sys.version_info.major}.{sys.version_info.minor}.{sys.version_info.micro}'
             error_message = f"Opentelemetry SDK require Python in version 3.8 or higher [{python_version} is not supported]"
 
@@ -101,7 +102,11 @@ class OpAMPHTTPClient:
         agent_disconnect = self.get_agent_disconnect()
         agent_failure_message.agent_disconnect.CopyFrom(agent_disconnect)
 
-        agent_health = self.get_agent_health(component_health=component_health, last_error=error_message, status=AgentHealthStatus.AGENT_FAILURE.value)
+        agent_health = self.get_agent_health(
+            component_health=component_health,
+            last_error=error_message,
+            status=AgentHealthStatus.AGENT_FAILURE.value,
+        )
         agent_failure_message.health.CopyFrom(agent_health)
 
         return agent_failure_message
@@ -116,7 +121,11 @@ class OpAMPHTTPClient:
         agent_disconnect = self.get_agent_disconnect()
         first_disconnect_message.agent_disconnect.CopyFrom(agent_disconnect)
 
-        agent_health = self.get_agent_health(component_health=False, last_error=error_message, status=AgentHealthStatus.UNSUPPORTED_RUNTIME_VERSION.value)
+        agent_health = self.get_agent_health(
+            component_health=False,
+            last_error=error_message,
+            status=AgentHealthStatus.UNSUPPORTED_RUNTIME_VERSION.value,
+        )
         first_disconnect_message.health.CopyFrom(agent_health)
 
         self.send_agent_to_server_message(first_disconnect_message)
@@ -127,9 +136,19 @@ class OpAMPHTTPClient:
         for attempt in range(1, max_retries + 1):
             try:
                 # Send first message to OpAMP server, Health is false as the component is not initialized
-                agent_health = self.get_agent_health(component_health=False, last_error="Connecting to Odigos configuration server", status=AgentHealthStatus.STARTING.value)
+                agent_health = self.get_agent_health(
+                    component_health=False,
+                    last_error="Connecting to Odigos configuration server",
+                    status=AgentHealthStatus.STARTING.value,
+                )
                 agent_description = self.get_agent_description()
-                first_message_server_to_agent = self.send_agent_to_server_message(opamp_pb2.AgentToServer(agent_description=agent_description, health=agent_health, remote_config_status=opamp_pb2.RemoteConfigStatus()))
+                first_message_server_to_agent = self.send_agent_to_server_message(
+                    opamp_pb2.AgentToServer(
+                        agent_description=agent_description,
+                        health=agent_health,
+                        remote_config_status=opamp_pb2.RemoteConfigStatus(),
+                    )
+                )
 
                 # Check if the response of the first message is empty
                 # It may happen if OpAMPServer is not available
@@ -147,12 +166,12 @@ class OpAMPHTTPClient:
                                     # The default config is preloaded when the EBPFSpanProcessor is initialized
                                     pass
 
-                        container_config = utils.get_container_config(first_message_server_to_agent.remote_config.config.config_map)
-                        self.signals = utils.parse_first_message_signals(container_config)
+                        self.container_config = utils.get_container_config(first_message_server_to_agent.remote_config.config.config_map)
 
-                        # Store initial sampler config for direct access
+                        # Store initial configs for direct access (TracerProvider doesn't exist yet)
                         remote_config = self.get_remote_config(first_message_server_to_agent)
                         self._initial_sampler_config = self._extract_sampler_config(remote_config)
+                        self._initial_remote_config = remote_config
 
                         # Send healthy message to OpAMP server
                         agent_health = self.get_agent_health(component_health=True, status=AgentHealthStatus.HEALTHY.value)
@@ -165,7 +184,7 @@ class OpAMPHTTPClient:
                         return
 
             except Exception as e:
-                # opamp_logger.error(f"Attempt {attempt}/{max_retries} failed. Error sending full state to OpAMP server: {e}")
+                print(f"[send_first_message_with_retry] Error: {e}", flush=True)
                 pass
 
             if attempt < max_retries:
@@ -179,10 +198,19 @@ class OpAMPHTTPClient:
 
         # If OpAMP server is throttling, it might not respond in the OpAMP client timeout period (5s).
         # In this case, we're trying to send a message to the OpAMP server to indicate that OpAMP is not available.
-        agent_health = self.get_agent_health(component_health=False, last_error="Failed to connect to Odigos configuration server - dynamic configuration unavailable",
-                                             status=AgentHealthStatus.NO_CONNECTION_TO_OPAMP_SERVER.value)
+        agent_health = self.get_agent_health(
+            component_health=False,
+            last_error="Failed to connect to Odigos configuration server - dynamic configuration unavailable",
+            status=AgentHealthStatus.NO_CONNECTION_TO_OPAMP_SERVER.value,
+        )
         agent_description = self.get_agent_description()
-        self.send_agent_to_server_message(opamp_pb2.AgentToServer(agent_description=agent_description, health=agent_health, remote_config_status=opamp_pb2.RemoteConfigStatus()))
+        self.send_agent_to_server_message(
+            opamp_pb2.AgentToServer(
+                agent_description=agent_description,
+                health=agent_health,
+                remote_config_status=opamp_pb2.RemoteConfigStatus(),
+            )
+        )
 
     def worker(self):
         while self.running:
@@ -218,8 +246,7 @@ class OpAMPHTTPClient:
                                     # The default config is preloaded when the EBPFSpanProcessor is initialized
                                     pass
 
-                except requests_odigos.RequestException as e:
-                    # opamp_logger.error(f"Error fetching data: {e}")
+                except requests_odigos.RequestException:
                     pass
                 self.condition.wait(30)
 
@@ -231,16 +258,9 @@ class OpAMPHTTPClient:
         component_health_map = {}
 
         for lib_name, lib_details in instrumented_libraries.items():
-            component_health_map[lib_name] = opamp_pb2.ComponentHealth(
-                healthy=True,
-                status=json.dumps(lib_details)
-            )
+            component_health_map[lib_name] = opamp_pb2.ComponentHealth(healthy=True, status=json.dumps(lib_details))
 
-        health_msg = opamp_pb2.ComponentHealth(
-            healthy=True,
-            status="instrumentation libraries report",
-            component_health_map=component_health_map
-        )
+        health_msg = opamp_pb2.ComponentHealth(healthy=True, status="instrumentation libraries report", component_health_map=component_health_map)
 
         self.send_agent_to_server_message(opamp_pb2.AgentToServer(health=health_msg))
 
@@ -286,7 +306,7 @@ class OpAMPHTTPClient:
 
         inner = decoded_map.get("", None)
         if inner is None:
-            config = Config() # Return default values for config
+            config = Config()  # Return default values for config
         else:
             config = from_dict(Config, inner)
 
@@ -295,18 +315,22 @@ class OpAMPHTTPClient:
         if sample_config is not None:
             config.sample_config = sample_config
 
+            try:
+                config.span_metrics_mode = sample_config['traces']['headSampling']['spanMetricsMode']
+            except (KeyError, TypeError):
+                pass
+
         return config
 
-    def send_heartbeat(self) -> opamp_pb2.ServerToAgent: # type: ignore
+    def send_heartbeat(self) -> opamp_pb2.ServerToAgent:  # type: ignore
         # opamp_logger.debug("Sending heartbeat to OpAMP server...")
         try:
             agent_to_server = opamp_pb2.AgentToServer(remote_config_status=self.remote_config_status)
             return self.send_agent_to_server_message(agent_to_server)
-        except requests_odigos.RequestException as e:
-            # opamp_logger.error(f"Error sending heartbeat to OpAMP server: {e}")
+        except requests_odigos.RequestException:
             pass
 
-    def get_agent_description(self) -> opamp_pb2.AgentDescription: # type: ignore
+    def get_agent_description(self) -> opamp_pb2.AgentDescription:  # type: ignore
         # The "DISABLE_OPAMP_CLIENT" environment variable is defined only in our VMs environments.
         # Here we use it exclusively to distinguish between virtual machine and Kubernetes environments.
         #
@@ -325,42 +349,24 @@ class OpAMPHTTPClient:
             process_id_key = PROCESS_VPID
 
         identifying_attributes = [
-            anyvalue_pb2.KeyValue(
-                key=ResourceAttributes.SERVICE_INSTANCE_ID,
-                value=anyvalue_pb2.AnyValue(string_value=self.instance_uid)
-            ),
-            anyvalue_pb2.KeyValue(
-                key=process_id_key,
-                value=anyvalue_pb2.AnyValue(int_value=self.pid)
-            ),
-            anyvalue_pb2.KeyValue(
-                key=ResourceAttributes.TELEMETRY_SDK_LANGUAGE,
-                value=anyvalue_pb2.AnyValue(string_value="python")
-            )
+            anyvalue_pb2.KeyValue(key=ResourceAttributes.SERVICE_INSTANCE_ID, value=anyvalue_pb2.AnyValue(string_value=self.instance_uid)),
+            anyvalue_pb2.KeyValue(key=process_id_key, value=anyvalue_pb2.AnyValue(int_value=self.pid)),
+            anyvalue_pb2.KeyValue(key=ResourceAttributes.TELEMETRY_SDK_LANGUAGE, value=anyvalue_pb2.AnyValue(string_value="python")),
         ]
 
         # Add additional attributes from environment variables
         for env_var, attribute_key in env_var_mappings.items():
             value = os.environ.get(env_var)
             if value:
-                identifying_attributes.append(
-                    anyvalue_pb2.KeyValue(
-                        key=attribute_key,
-                        value=anyvalue_pb2.AnyValue(string_value=value)
-                    )
-                )
+                identifying_attributes.append(anyvalue_pb2.KeyValue(key=attribute_key, value=anyvalue_pb2.AnyValue(string_value=value)))
 
-        return opamp_pb2.AgentDescription(
-            identifying_attributes=identifying_attributes,
-            non_identifying_attributes=[]
-        )
+        return opamp_pb2.AgentDescription(identifying_attributes=identifying_attributes, non_identifying_attributes=[])
 
-    def get_agent_disconnect(self) -> opamp_pb2.AgentDisconnect: # type: ignore
+    def get_agent_disconnect(self) -> opamp_pb2.AgentDisconnect:  # type: ignore
         return opamp_pb2.AgentDisconnect()
 
-    def get_agent_health(self, component_health: bool = None, last_error : str = None, status: str = None) -> opamp_pb2.ComponentHealth: # type: ignore
-        health = opamp_pb2.ComponentHealth(
-        )
+    def get_agent_health(self, component_health: bool = None, last_error: str = None, status: str = None) -> opamp_pb2.ComponentHealth:  # type: ignore
+        health = opamp_pb2.ComponentHealth()
         if component_health is not None:
             health.healthy = component_health
         if last_error is not None:
@@ -370,8 +376,7 @@ class OpAMPHTTPClient:
 
         return health
 
-
-    def send_agent_to_server_message(self, message: opamp_pb2.AgentToServer) -> opamp_pb2.ServerToAgent: # type: ignore
+    def send_agent_to_server_message(self, message: opamp_pb2.AgentToServer) -> opamp_pb2.ServerToAgent:  # type: ignore
 
         message.instance_uid = self.instance_uid.encode('utf-8')
         message.sequence_num = self.next_sequence_num
@@ -417,10 +422,20 @@ class OpAMPHTTPClient:
         self.running = False
         # opamp_logger.info("Sending agent disconnect message to OpAMP server...")
         if custom_failure_message:
-            disconnect_message = self.get_agent_failure_disconnect_message(error_message=custom_failure_message, component_health=component_health)
+            disconnect_message = self.get_agent_failure_disconnect_message(
+                error_message=custom_failure_message,
+                component_health=component_health,
+            )
         else:
-            agent_health = self.get_agent_health(component_health=component_health, last_error="Python runtime is exiting", status=AgentHealthStatus.TERMINATED.value)
-            disconnect_message = opamp_pb2.AgentToServer(agent_disconnect=opamp_pb2.AgentDisconnect(), health=agent_health)
+            agent_health = self.get_agent_health(
+                component_health=component_health,
+                last_error="Python runtime is exiting",
+                status=AgentHealthStatus.TERMINATED.value,
+            )
+            disconnect_message = opamp_pb2.AgentToServer(
+                agent_disconnect=opamp_pb2.AgentDisconnect(),
+                health=agent_health,
+            )
 
         with self.condition:
             self.condition.notify_all()
@@ -428,7 +443,7 @@ class OpAMPHTTPClient:
 
         self.send_agent_to_server_message(disconnect_message)
 
-    def update_remote_config_status(self, server_to_agent: opamp_pb2.ServerToAgent) -> bool: # type: ignore
+    def update_remote_config_status(self, server_to_agent: opamp_pb2.ServerToAgent) -> bool:  # type: ignore
         if server_to_agent.HasField("remote_config"):
             remote_config_hash = server_to_agent.remote_config.config_hash
             remote_config_status = opamp_pb2.RemoteConfigStatus(last_remote_config_hash=remote_config_hash)
@@ -448,19 +463,15 @@ class OpAMPHTTPClient:
         if 'traces' not in remote_config.sample_config or 'headSampling' not in remote_config.sample_config['traces']:
             return None
 
-        head_sampling_config = remote_config.sample_config['traces']['headSampling']
-
-        # Check if we have valid sampling config (same validation as update_agent_config)
-        if head_sampling_config and (
-            head_sampling_config.get('noisyOperations') is not None
-        ):
-            return head_sampling_config
-        else:
-            return None
+        return remote_config.sample_config['traces']['headSampling'] or None
 
     def get_initial_sampler_config(self):
         """Get the sampler config from the initial OpAMP message"""
         return self._initial_sampler_config
+
+    def get_initial_remote_config(self):
+        """Get the full Config from the initial OpAMP message"""
+        return self._initial_remote_config
 
 
 # Mock client class for non-OpAMP installations
@@ -469,12 +480,16 @@ class OpAMPHTTPClient:
 class MockOpAMPClient:
     def __init__(self, opamp_connection_event, *args, **kwargs):
         self.pid = os.getpid()
-        self.signals = {'traceSignal': True}
+        self.container_config = {"traces": {}}
         self.sampler = None  # For compatibility
         opamp_connection_event.event.set()
 
     def get_initial_sampler_config(self):
         """Mock client has no sampler config"""
+        return None
+
+    def get_initial_remote_config(self):
+        """Mock client has no remote config"""
         return None
 
     def shutdown(self, custom_failure_message=None):
