@@ -27,7 +27,6 @@ from opentelemetry.sdk.resources import OTELResourceDetector
 from opentelemetry.sdk.trace import TracerProvider
 from opentelemetry.sdk.trace.export import BatchSpanProcessor
 from opentelemetry.trace import set_tracer_provider, get_tracer_provider
-from opentelemetry.sdk.trace.sampling import ParentBased, Decision, StaticSampler
 
 
 # Move Odigos agent paths to the end of sys.path so the application's packages are
@@ -49,12 +48,11 @@ from opamp import opamp_registry
 from .distro import instrumentation_registry
 
 from opamp.http_client import OpAMPHTTPClient, MockOpAMPClient
+from opamp.utils import parse_first_message_signals
 
 MINIMUM_PYTHON_SUPPORTED_VERSION = (3, 9)
 
 _odigos_sampler = None
-
-ALWAYS_RECORD_ONLY = StaticSampler(Decision.RECORD_ONLY)
 
 
 def initialize_components(trace_exporters=False, span_processor=None):
@@ -75,11 +73,13 @@ def initialize_components(trace_exporters=False, span_processor=None):
         ## In case of error, e.g during the first connection to the OpAMP server,
         # we will use the default value which is enable traces only.
         if opamp_connection_event.error:
+            container_config = None
             supported_signals = {"traceSignal": True}
             initial_sampler_config = None
             initial_remote_config = None
         else:
-            supported_signals = client.signals
+            container_config = client.container_config
+            supported_signals = parse_first_message_signals(container_config)
 
             # Get initial configs directly from client (only when connection is successful)
             try:
@@ -144,7 +144,6 @@ def initialize_traces_if_enabled(
     if traces_enabled:
         odigos_sampler = OdigosSampler()
         _odigos_sampler = odigos_sampler
-        sampler = ParentBased(odigos_sampler, remote_parent_not_sampled=ALWAYS_RECORD_ONLY, local_parent_not_sampled=ALWAYS_RECORD_ONLY)
 
         # Apply initial sampler config if provided (from OpAMP first message)
         if initial_sampler_config is not None:
@@ -152,7 +151,7 @@ def initialize_traces_if_enabled(
 
         # Exporting using exporters
         if trace_exporters:
-            provider = TracerProvider(resource=resource, sampler=sampler)
+            provider = TracerProvider(resource=resource, sampler=odigos_sampler)
             id_generator_name = sdk_config._get_id_generator()
             id_generator = sdk_config._import_id_generator(id_generator_name)
             provider.id_generator = id_generator
@@ -167,7 +166,7 @@ def initialize_traces_if_enabled(
 
         # Exporting using EBPF
         else:
-            provider = TracerProvider(resource=resource, sampler=sampler)
+            provider = TracerProvider(resource=resource, sampler=odigos_sampler)
             set_tracer_provider(provider)
             if span_processor is not None:
                 provider.add_span_processor(span_processor)
@@ -275,11 +274,6 @@ def update_agent_config(conf: Config):
         if 'traces' in conf.sample_config and 'headSampling' in conf.sample_config['traces']:
             head_sampling_config = conf.sample_config['traces']['headSampling']
 
-        if head_sampling_config and (head_sampling_config.get('noisyOperations') is not None):
-            valid_config = head_sampling_config
-        else:
-            valid_config = None
-
         # Apply config to sampler - sampler will always exist when this callback is called
         # because update_agent_config is only called from OpAMP worker thread after sampler creation
         from opamp import opamp_registry
@@ -287,7 +281,7 @@ def update_agent_config(conf: Config):
         client = opamp_registry.get_client()
 
         if client and hasattr(client, 'sampler') and client.sampler:
-            client.sampler.update_config(valid_config)
+            client.sampler.update_config(head_sampling_config)
         else:
             # This should not happen in normal operation
             pass

@@ -158,7 +158,7 @@ class TestShouldSample:
             attributes={},
         )
 
-        assert result.decision == Decision.RECORD_ONLY
+        assert result.decision == Decision.DROP
         assert result.trace_state is not None
         assert result.trace_state.get("odigos") == "c:n;dr.p:0;dr.id:drop-everything"
 
@@ -302,7 +302,7 @@ class TestDryRun:
             attributes={},
         )
 
-        assert result.decision == Decision.RECORD_ONLY
+        assert result.decision == Decision.DROP
         assert result.trace_state is not None
         odigos_value = result.trace_state.get("odigos")
         assert odigos_value is not None
@@ -310,7 +310,7 @@ class TestDryRun:
 
     def test_dry_run_omitted_defaults_to_disabled(self, sampler):
         # When the OpAMP push omits `dryRun` (older servers), treat as disabled:
-        # must still record (not sample) and must NOT add a `;dry:*` suffix.
+        # must still drop and must NOT add a `;dry:*` suffix.
         sampler.update_config(
             {
                 "noisyOperations": [
@@ -327,7 +327,113 @@ class TestDryRun:
             attributes={},
         )
 
-        assert result.decision == Decision.RECORD_ONLY
+        assert result.decision == Decision.DROP
         odigos_value = result.trace_state.get("odigos")
         assert odigos_value is not None
         assert ";dry:" not in odigos_value
+
+
+class TestRecordMode:
+    """Tests for record_mode controlling the not-sampled decision."""
+
+    def test_all_spans_mode_uses_record_only_for_noisy_drop(self):
+        s = OdigosSampler()
+        s.update_config(
+            {
+                "spanMetricsMode": "all-spans",
+                "noisyOperations": [
+                    {"id": "drop-everything", "percentageAtMost": 0},
+                ],
+            }
+        )
+
+        result = s.should_sample(
+            parent_context=None,
+            trace_id=0x0123456789ABCDEF0123456789ABCDEF,
+            name="GET /anything",
+            kind=SpanKind.SERVER,
+            attributes={},
+        )
+
+        assert result.decision == Decision.RECORD_ONLY
+
+    def test_default_mode_uses_drop_for_noisy_drop(self):
+        s = OdigosSampler()
+        s.update_config(
+            {
+                "noisyOperations": [
+                    {"id": "drop-everything", "percentageAtMost": 0},
+                ],
+            }
+        )
+
+        result = s.should_sample(
+            parent_context=None,
+            trace_id=0x0123456789ABCDEF0123456789ABCDEF,
+            name="GET /anything",
+            kind=SpanKind.SERVER,
+            attributes={},
+        )
+
+        assert result.decision == Decision.DROP
+
+    def test_parent_not_sampled_drops_by_default(self):
+        s = OdigosSampler()
+        span_context = SpanContext(
+            trace_id=0x1234567890ABCDEF1234567890ABCDEF,
+            span_id=0x1234567890ABCDEF,
+            is_remote=True,
+            trace_flags=TraceFlags(0),
+        )
+        parent_context = set_span_in_context(NonRecordingSpan(span_context))
+
+        result = s.should_sample(
+            parent_context=parent_context,
+            trace_id=0x1234567890ABCDEF1234567890ABCDEF,
+            name="GET /anything",
+            kind=SpanKind.SERVER,
+            attributes={},
+        )
+
+        assert result.decision == Decision.DROP
+
+    def test_parent_not_sampled_records_with_all_spans_mode(self):
+        s = OdigosSampler()
+        s.update_config({"spanMetricsMode": "all-spans"})
+        span_context = SpanContext(
+            trace_id=0x1234567890ABCDEF1234567890ABCDEF,
+            span_id=0x1234567890ABCDEF,
+            is_remote=True,
+            trace_flags=TraceFlags(0),
+        )
+        parent_context = set_span_in_context(NonRecordingSpan(span_context))
+
+        result = s.should_sample(
+            parent_context=parent_context,
+            trace_id=0x1234567890ABCDEF1234567890ABCDEF,
+            name="GET /anything",
+            kind=SpanKind.SERVER,
+            attributes={},
+        )
+
+        assert result.decision == Decision.RECORD_ONLY
+
+    def test_parent_sampled_always_records_and_samples(self):
+        s = OdigosSampler()
+        span_context = SpanContext(
+            trace_id=0x1234567890ABCDEF1234567890ABCDEF,
+            span_id=0x1234567890ABCDEF,
+            is_remote=True,
+            trace_flags=TraceFlags(TraceFlags.SAMPLED),
+        )
+        parent_context = set_span_in_context(NonRecordingSpan(span_context))
+
+        result = s.should_sample(
+            parent_context=parent_context,
+            trace_id=0x1234567890ABCDEF1234567890ABCDEF,
+            name="GET /anything",
+            kind=SpanKind.SERVER,
+            attributes={},
+        )
+
+        assert result.decision == Decision.RECORD_AND_SAMPLE

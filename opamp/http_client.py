@@ -41,7 +41,7 @@ class OpAMPHTTPClient:
     def __init__(self, opamp_connection_event, condition: threading.Condition):
         self.server_host = os.getenv('ODIGOS_OPAMP_SERVER_HOST')
         self.server_url = f"http://{self.server_host}/v1/opamp"
-        self.signals = {}
+        self.container_config = {}
         self.running = True
         self.condition = condition
         self.opamp_connection_event = opamp_connection_event
@@ -166,8 +166,7 @@ class OpAMPHTTPClient:
                                     # The default config is preloaded when the EBPFSpanProcessor is initialized
                                     pass
 
-                        container_config = utils.get_container_config(first_message_server_to_agent.remote_config.config.config_map)
-                        self.signals = utils.parse_first_message_signals(container_config)
+                        self.container_config = utils.get_container_config(first_message_server_to_agent.remote_config.config.config_map)
 
                         # Store initial configs for direct access (TracerProvider doesn't exist yet)
                         remote_config = self.get_remote_config(first_message_server_to_agent)
@@ -184,7 +183,8 @@ class OpAMPHTTPClient:
                             self.opamp_connection_event.error = False
                         return
 
-            except Exception:
+            except Exception as e:
+                print(f"[send_first_message_with_retry] Error: {e}", flush=True)
                 pass
 
             if attempt < max_retries:
@@ -463,13 +463,7 @@ class OpAMPHTTPClient:
         if 'traces' not in remote_config.sample_config or 'headSampling' not in remote_config.sample_config['traces']:
             return None
 
-        head_sampling_config = remote_config.sample_config['traces']['headSampling']
-
-        # Check if we have valid sampling config (same validation as update_agent_config)
-        if head_sampling_config and (head_sampling_config.get('noisyOperations') is not None):
-            return head_sampling_config
-        else:
-            return None
+        return remote_config.sample_config['traces']['headSampling'] or None
 
     def get_initial_sampler_config(self):
         """Get the sampler config from the initial OpAMP message"""
@@ -486,7 +480,7 @@ class OpAMPHTTPClient:
 class MockOpAMPClient:
     def __init__(self, opamp_connection_event, *args, **kwargs):
         self.pid = os.getpid()
-        self.signals = {'traceSignal': True}
+        self.container_config = {"traces": {}}
         self.sampler = None  # For compatibility
         opamp_connection_event.event.set()
 
