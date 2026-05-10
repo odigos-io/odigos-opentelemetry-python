@@ -1,6 +1,6 @@
 import re
 from dataclasses import dataclass, fields, field
-from typing import Any, Dict, Type, TypeVar, get_type_hints
+from typing import Any, Dict, Optional, Type, TypeVar, get_type_hints
 
 T = TypeVar("T")
 
@@ -28,7 +28,7 @@ class CodeAttributes(DefaultNoneMixin):
 class Config(DefaultNoneMixin):
     code_attributes: CodeAttributes = field(default_factory=CodeAttributes)
     sample_config: Dict[str, Any] = field(default_factory=dict)
-    span_metrics_mode: str = None
+    span_metrics_mode: Optional[str] = None
 
 
 ###             Helpers             ###
