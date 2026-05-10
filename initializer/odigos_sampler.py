@@ -57,9 +57,7 @@ class OdigosSampler(Sampler):
     ) -> "SamplingResult":
         attributes = attributes or {}
         with self._lock:
-            parent_span_context = get_current_span(
-                parent_context
-            ).get_span_context()
+            parent_span_context = get_current_span(parent_context).get_span_context()
 
             # Parent-based logic taken from upstream ParentBased sampler so we can
             # decide to DROP or RECORD_ONLY based on the recordMode configuration.
