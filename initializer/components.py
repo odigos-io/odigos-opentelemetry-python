@@ -267,12 +267,11 @@ def update_agent_config(conf: Config):
     if provider is None:
         return
 
-    # Update sampler configuration if sample_config is present
-    if hasattr(conf, 'sample_config') and conf.sample_config:
-        # Extract headSampling configuration from traces.headSampling
+    # Update sampler configuration if container_config is present
+    if hasattr(conf, 'container_config') and conf.container_config:
         head_sampling_config = None
-        if 'traces' in conf.sample_config and 'headSampling' in conf.sample_config['traces']:
-            head_sampling_config = conf.sample_config['traces']['headSampling']
+        if 'traces' in conf.container_config and 'headSampling' in conf.container_config['traces']:
+            head_sampling_config = conf.container_config['traces']['headSampling']
 
         # Apply config to sampler - sampler will always exist when this callback is called
         # because update_agent_config is only called from OpAMP worker thread after sampler creation

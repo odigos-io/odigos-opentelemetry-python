@@ -23,7 +23,7 @@ from initializer.process_resource import PROCESS_VPID
 from google.protobuf.json_format import MessageToDict
 from google.protobuf.message import DecodeError
 
-from opamp.config import from_dict, Config
+from opamp.config import from_dict, Config, CodeAttributes
 
 # Setup the logger
 opamp_logger = logging.getLogger('odigos')
@@ -183,8 +183,7 @@ class OpAMPHTTPClient:
                             self.opamp_connection_event.error = False
                         return
 
-            except Exception as e:
-                print(f"[send_first_message_with_retry] Error: {e}", flush=True)
+            except Exception:
                 pass
 
             if attempt < max_retries:
@@ -311,12 +310,19 @@ class OpAMPHTTPClient:
             config = from_dict(Config, inner)
 
         # Extract container_config if present
-        sample_config = decoded_map.get("container_config", None)
-        if sample_config is not None:
-            config.sample_config = sample_config
+        container_config = decoded_map.get("container_config", None)
+        if container_config is not None:
+            config.container_config = container_config
 
             try:
-                config.span_metrics_mode = sample_config['traces']['headSampling']['spanMetricsMode']
+                config.span_metrics_mode = container_config['traces']['headSampling']['spanMetricsMode']
+            except (KeyError, TypeError):
+                pass
+
+            try:
+                code_attrs_raw = container_config['traces']['codeAttributes']
+                if isinstance(code_attrs_raw, dict):
+                    config.code_attributes = from_dict(CodeAttributes, code_attrs_raw)
             except (KeyError, TypeError):
                 pass
 
@@ -456,14 +462,14 @@ class OpAMPHTTPClient:
 
     def _extract_sampler_config(self, remote_config):
         """Extract sampler config from remote config, same logic as update_agent_config"""
-        if not hasattr(remote_config, 'sample_config') or not remote_config.sample_config:
+        if not hasattr(remote_config, 'container_config') or not remote_config.container_config:
             return None
 
         # Extract headSampling configuration from traces.headSampling
-        if 'traces' not in remote_config.sample_config or 'headSampling' not in remote_config.sample_config['traces']:
+        if 'traces' not in remote_config.container_config or 'headSampling' not in remote_config.container_config['traces']:
             return None
 
-        return remote_config.sample_config['traces']['headSampling'] or None
+        return remote_config.container_config['traces']['headSampling'] or None
 
     def get_initial_sampler_config(self):
         """Get the sampler config from the initial OpAMP message"""

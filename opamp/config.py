@@ -27,7 +27,7 @@ class CodeAttributes(DefaultNoneMixin):
 @dataclass
 class Config(DefaultNoneMixin):
     code_attributes: CodeAttributes = field(default_factory=CodeAttributes)
-    sample_config: Dict[str, Any] = field(default_factory=dict)
+    container_config: Dict[str, Any] = field(default_factory=dict)
     span_metrics_mode: Optional[str] = None
 
 
