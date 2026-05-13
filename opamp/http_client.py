@@ -310,17 +310,15 @@ class OpAMPHTTPClient:
         if container_config is not None:
             config.container_config = container_config
 
-            try:
-                config.span_metrics_mode = container_config['traces']['headSampling']['spanMetricsMode']
-            except (KeyError, TypeError):
-                pass
+            traces = container_config.get('traces', {})
 
-            try:
-                code_attrs_raw = container_config['traces']['codeAttributes']
-                if isinstance(code_attrs_raw, dict):
-                    config.code_attributes = from_dict(CodeAttributes, code_attrs_raw)
-            except (KeyError, TypeError):
-                pass
+            span_metrics_mode = traces.get('headSampling', {}).get('spanMetricsMode')
+            if span_metrics_mode is not None:
+                config.span_metrics_mode = span_metrics_mode
+
+            code_attrs_raw = traces.get('codeAttributes')
+            if isinstance(code_attrs_raw, dict):
+                config.code_attributes = from_dict(CodeAttributes, code_attrs_raw)
 
         return config
 
