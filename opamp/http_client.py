@@ -303,11 +303,7 @@ class OpAMPHTTPClient:
                 # If not JSON, just keep it as raw bytes
                 decoded_map[key] = body_bytes
 
-        inner = decoded_map.get("", None)
-        if inner is None:
-            config = Config()  # Return default values for config
-        else:
-            config = from_dict(Config, inner)
+        config = Config()
 
         # Extract container_config if present
         container_config = decoded_map.get("container_config", None)
