@@ -1,14 +1,17 @@
 import logging
 from threading import Lock
-from typing import Any, Mapping, Optional, Sequence
+from typing import Mapping, Optional, Sequence
+from urllib.parse import urlsplit
 
 from opentelemetry.context import Context
 from opentelemetry.sdk.trace.sampling import Decision, Sampler, SamplingResult, _get_parent_trace_state
 from opentelemetry.semconv.attributes import http_attributes as http_attributes_semconv
 from opentelemetry.semconv.attributes import server_attributes as server_attributes_semconv
+from opentelemetry.semconv.attributes import url_attributes as url_attributes_semconv
 from opentelemetry.trace import Link, SpanKind, TraceState, get_current_span
-from opentelemetry.util.types import Attributes
+from opentelemetry.util.types import Attributes, AttributeValue
 
+from initializer.odigos_sampler_helpers import get_attribute, strip_port
 from initializer.schemas.sampling import (
     HeadSamplingConfig,
     HeadSamplingHttpClientOperationMatcher,
@@ -130,25 +133,17 @@ class OdigosSampler(Sampler):
             # sampler_logger.debug('No noisy operation matched, sampling the trace')
             return SamplingResult(Decision.RECORD_AND_SAMPLE, attributes=attributes, trace_state=_get_parent_trace_state(parent_context))
 
-    @staticmethod
-    def _get_attribute(span_attributes: Mapping[str, Any], *keys: str):
-        """Return the first non-None value found for the given attribute keys."""
-        for key in keys:
-            value = span_attributes.get(key)
-            if value is not None:
-                return value
-        return None
-
-    def _match_http_server_sample_rule(self, http_server_rule: HeadSamplingHttpServerOperationMatcher, span_attributes: Mapping[str, Any]) -> bool:
+    def _match_http_server_sample_rule(self, http_server_rule: HeadSamplingHttpServerOperationMatcher, span_attributes: Mapping[str, AttributeValue]) -> bool:
         """
         Try to match all the http server's attributes to the definitions of the noisy action
         """
-        span_route = span_attributes.get(http_attributes_semconv.HTTP_ROUTE)
+        raw_route = span_attributes.get(http_attributes_semconv.HTTP_ROUTE)
+        span_route: Optional[str] = raw_route if isinstance(raw_route, str) else None
         # Old semconv: "http.method" → new semconv: "http.request.method"
-        span_method = self._get_attribute(span_attributes, http_attributes_semconv.HTTP_REQUEST_METHOD, "http.method")
+        span_method = get_attribute(span_attributes, http_attributes_semconv.HTTP_REQUEST_METHOD, "http.method")
 
         # Some instrumentations send target instead of route
-        target = self._get_attribute(span_attributes, "http.target", "url.path")
+        target = get_attribute(span_attributes, "http.target", "url.path")
 
         if http_server_rule.get("route") and http_server_rule["route"] != span_route:
             # If we have route in the span attributes, evaluate it first (use template matching
@@ -166,46 +161,67 @@ class OdigosSampler(Sampler):
 
         return True
 
-    def _match_http_client_sample_rule(self, http_client_rule: HeadSamplingHttpClientOperationMatcher, span_attributes: Mapping[str, Any]) -> bool:
+    def _match_http_client_sample_rule(
+        self,
+        http_client_rule: HeadSamplingHttpClientOperationMatcher,
+        span_attributes: Mapping[str, AttributeValue],
+    ) -> bool:
         """
         Try to match all the http client's attributes to the definitions of the noisy action
         """
-        # Old semconv: "net.peer.name" / "http.host" → new semconv: "server.address"
-        server_address = self._get_attribute(span_attributes, server_attributes_semconv.SERVER_ADDRESS, "net.peer.name", "http.host")
-        url_template = span_attributes.get("url.template")
+        # Old semconv: "http.host"/"net.peer.name" → new semconv: "server.address"
+        server_address = get_attribute(span_attributes, server_attributes_semconv.SERVER_ADDRESS, "net.peer.name", "http.host")
+        if server_address:
+            server_address = strip_port(server_address)
+        
+        # Old semconv for url is a target that we need to get the client_path from → new semconv: "url.template"/"url.path"
+        client_path = get_attribute(span_attributes, "url.template", url_attributes_semconv.URL_PATH)
+        if not client_path:
+            # Old semconv: "http.target" is a path (may carry a query); "http.url"/"url.full" is a full URL we parse the path out of.
+            target = get_attribute(span_attributes, "http.target", "url.full", "http.url")
+            client_path = urlsplit(target).path if target else None
+
         # Old semconv: "http.method" → new semconv: "http.request.method"
-        method = self._get_attribute(span_attributes, http_attributes_semconv.HTTP_REQUEST_METHOD, "http.method")
+        method = get_attribute(span_attributes, http_attributes_semconv.HTTP_REQUEST_METHOD, "http.method")
 
         if http_client_rule.get("serverAddress") and http_client_rule["serverAddress"] != server_address:
             return False
-        if http_client_rule.get("templatedPath") and http_client_rule["templatedPath"] != url_template:
+        templated_path = http_client_rule.get("templatedPath")
+        if templated_path and not self._match_rule_route_to_span(templated_path, client_path or ""):
             return False
-        if http_client_rule.get("templatedPathPrefix") and not (url_template or "").startswith(http_client_rule["templatedPathPrefix"]):
+        templated_path_prefix = http_client_rule.get("templatedPathPrefix")
+        if templated_path_prefix and not self._match_rule_route_to_span(templated_path_prefix, client_path or "", route_has_prefix=True):
             return False
         if http_client_rule.get("method") and http_client_rule["method"] != method:
             return False
 
         return True
 
-    def _match_rule_route_to_span(self, rule_route: str, span_value: str) -> bool:
+    def _match_rule_route_to_span(self, rule_route: str, span_value: str, route_has_prefix: bool = False) -> bool:
         """
         Match a sampling rule route (e.g. /item/{id}) against a span value, which can be either
         a templated route (e.g. /item/{item_id}) or a full URL target (e.g. /item/123?param=hello).
-        Path param segments ({...}) in the rule are treated as wildcards.
+        Wildcard segments ({...}, :name, *) in the rule match any single span segment.
+        With prefix=True the span may have extra trailing segments (prefix match).
         """
         span_value = span_value.split('?')[0]
         rule_parts = [part for part in rule_route.split('/') if part]
         span_parts = [part for part in span_value.split('/') if part]
 
-        if len(rule_parts) != len(span_parts):
-            return False
+        if route_has_prefix:
+            # Prefix match: span may have extra trailing segments, but not fewer.
+            if len(span_parts) < len(rule_parts):
+                return False
+        else:
+            # Exact match: segment counts must be identical.
+            if len(span_parts) != len(rule_parts):
+                return False
 
-        # Traverse both rule and span segments
-        for i in range(len(rule_parts)):
-            # If we hit a path param in the rule, it matches any span segment
-            if rule_parts[i].startswith('{'):
+        for rule_segment, span_segment in zip(rule_parts, span_parts):
+            # Wildcard segment ({text}, :name, *) matches any single span segment
+            if rule_segment == '*' or (rule_segment.startswith('{') and rule_segment.endswith('}')) or rule_segment.startswith(':'):
                 continue
-            if rule_parts[i] != span_parts[i]:
+            if rule_segment != span_segment:
                 return False
 
         return True

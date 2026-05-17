@@ -437,3 +437,92 @@ class TestRecordMode:
         )
 
         assert result.decision == Decision.RECORD_AND_SAMPLE
+
+
+class TestHttpClientSemconv:
+    """_match_http_client_sample_rule must work across old and new HTTP semconv.
+
+    New semconv: server.address, url.template, url.path, http.request.method.
+    Old semconv: net.peer.name / http.host (host[:port]), http.target (path?query),
+                 http.url / url.full (full URL), http.method.
+    """
+
+    @pytest.mark.parametrize(
+        "attributes",
+        [
+            pytest.param({"server.address": "payments"}, id="new-server.address"),
+            pytest.param({"net.peer.name": "payments"}, id="old-net.peer.name"),
+            pytest.param({"http.host": "payments"}, id="old-http.host-no-port"),
+            pytest.param({"http.host": "payments:8080"}, id="old-http.host-with-port"),
+        ],
+    )
+    def test_server_address_matches_across_semconv(self, sampler, attributes):
+        rule = {"serverAddress": "payments"}
+        assert sampler._match_http_client_sample_rule(rule, attributes) is True
+
+    @pytest.mark.parametrize(
+        "attributes",
+        [
+            pytest.param({"server.address": "other"}, id="new-mismatch"),
+            pytest.param({"http.host": "other:8080"}, id="old-mismatch-with-port"),
+            pytest.param({}, id="absent"),
+        ],
+    )
+    def test_server_address_mismatch_across_semconv(self, sampler, attributes):
+        rule = {"serverAddress": "payments"}
+        assert sampler._match_http_client_sample_rule(rule, attributes) is False
+
+    @pytest.mark.parametrize(
+        "attributes",
+        [
+            pytest.param({"url.template": "/item/{id}"}, id="new-url.template"),
+            pytest.param({"url.path": "/item/123"}, id="new-url.path-concrete"),
+            pytest.param({"http.target": "/item/123?q=hello"}, id="old-http.target-with-query"),
+            pytest.param({"http.url": "http://h:8080/item/123?q=1"}, id="old-http.url-full"),
+            pytest.param({"url.full": "https://h/item/abc"}, id="new-url.full"),
+        ],
+    )
+    def test_templated_path_matches_across_semconv(self, sampler, attributes):
+        rule = {"templatedPath": "/item/{id}"}
+        assert sampler._match_http_client_sample_rule(rule, attributes) is True
+
+    def test_new_semconv_preferred_over_old_in_http_dup_mode(self, sampler):
+        # http/dup emits both. url.template (new) must win over http.target (old):
+        # the templated path disagrees with the rule, so the rule must NOT match
+        # even though the concrete old-semconv path would have.
+        rule = {"templatedPath": "/item/{id}"}
+        attributes = {"url.template": "/wrong/{id}", "http.target": "/item/123"}
+        assert sampler._match_http_client_sample_rule(rule, attributes) is False
+
+    @pytest.mark.parametrize(
+        "attributes, expected",
+        [
+            pytest.param({"url.path": "/api/v1/users"}, True, id="new-prefix-hit"),
+            pytest.param({"http.target": "/api/v1/users?x=1"}, True, id="old-prefix-hit"),
+            pytest.param({"http.url": "http://h/api/v2/users"}, False, id="old-prefix-miss"),
+        ],
+    )
+    def test_templated_path_prefix_across_semconv(self, sampler, attributes, expected):
+        rule = {"templatedPathPrefix": "/api/v1"}
+        assert sampler._match_http_client_sample_rule(rule, attributes) is expected
+
+    def test_templated_path_prefix_with_wildcard_segment(self, sampler):
+        rule = {"templatedPathPrefix": "/a/*/items"}
+        assert sampler._match_http_client_sample_rule(rule, {"url.path": "/a/9/items/extra"}) is True
+        assert sampler._match_http_client_sample_rule(rule, {"url.path": "/a/9/orders"}) is False
+
+    @pytest.mark.parametrize(
+        "attributes",
+        [
+            pytest.param({"url.path": "/p", "http.request.method": "GET"}, id="new-http.request.method"),
+            pytest.param({"url.path": "/p", "http.method": "GET"}, id="old-http.method"),
+        ],
+    )
+    def test_method_matches_across_semconv(self, sampler, attributes):
+        rule = {"templatedPath": "/p", "method": "GET"}
+        assert sampler._match_http_client_sample_rule(rule, attributes) is True
+
+    def test_method_mismatch_across_semconv(self, sampler):
+        rule = {"templatedPath": "/p", "method": "GET"}
+        assert sampler._match_http_client_sample_rule(rule, {"url.path": "/p", "http.method": "POST"}) is False
+
