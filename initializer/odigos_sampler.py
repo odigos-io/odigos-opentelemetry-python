@@ -133,7 +133,9 @@ class OdigosSampler(Sampler):
             # sampler_logger.debug('No noisy operation matched, sampling the trace')
             return SamplingResult(Decision.RECORD_AND_SAMPLE, attributes=attributes, trace_state=_get_parent_trace_state(parent_context))
 
-    def _match_http_server_sample_rule(self, http_server_rule: HeadSamplingHttpServerOperationMatcher, span_attributes: Mapping[str, AttributeValue]) -> bool:
+    def _match_http_server_sample_rule(
+        self, http_server_rule: HeadSamplingHttpServerOperationMatcher, span_attributes: Mapping[str, AttributeValue]
+    ) -> bool:
         """
         Try to match all the http server's attributes to the definitions of the noisy action
         """
@@ -173,7 +175,7 @@ class OdigosSampler(Sampler):
         server_address = get_attribute(span_attributes, server_attributes_semconv.SERVER_ADDRESS, "net.peer.name", "http.host")
         if server_address:
             server_address = strip_port(server_address)
-        
+
         # Old semconv for url is a target that we need to get the client_path from → new semconv: "url.template"/"url.path"
         client_path = get_attribute(span_attributes, "url.template", url_attributes_semconv.URL_PATH)
         if not client_path:

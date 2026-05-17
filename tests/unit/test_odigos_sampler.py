@@ -525,4 +525,3 @@ class TestHttpClientSemconv:
     def test_method_mismatch_across_semconv(self, sampler):
         rule = {"templatedPath": "/p", "method": "GET"}
         assert sampler._match_http_client_sample_rule(rule, {"url.path": "/p", "http.method": "POST"}) is False
-
