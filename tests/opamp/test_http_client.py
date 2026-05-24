@@ -8,6 +8,7 @@ from opamp import opamp_pb2
 
 class MockConnectionEvent:
     """Mock for the opamp_connection_event."""
+
     def __init__(self):
         self.event = threading.Event()
         self.error = False
@@ -31,7 +32,6 @@ def test_client(mock_connection_event, mock_condition):
 
 
 class TestSendAgentToServerMessage:
-
     def test_successful_response(self, test_client):
         expected_response = opamp_pb2.ServerToAgent()
         expected_response.instance_uid = b"test-uid"
