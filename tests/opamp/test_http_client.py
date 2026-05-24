@@ -40,7 +40,7 @@ class TestSendAgentToServerMessage:
         mock_response.content = expected_response.SerializeToString()
         mock_response.raise_for_status = Mock()
 
-        with patch('opamp.http_client.requests_odigos.post', return_value=mock_response):
+        with patch('opamp.transport.requests_odigos.post', return_value=mock_response):
             message = opamp_pb2.AgentToServer()
             result = test_client.send_agent_to_server_message(message)
             
@@ -49,7 +49,7 @@ class TestSendAgentToServerMessage:
     def test_timeout_returns_empty_response(self, test_client):
         import requests_odigos
         
-        with patch('opamp.http_client.requests_odigos.post', side_effect=requests_odigos.Timeout("Connection timed out")):
+        with patch('opamp.transport.requests_odigos.post', side_effect=requests_odigos.Timeout("Connection timed out")):
             message = opamp_pb2.AgentToServer()
             result = test_client.send_agent_to_server_message(message)
             
@@ -59,7 +59,7 @@ class TestSendAgentToServerMessage:
     def test_connection_error_returns_empty_response(self, test_client):
         import requests_odigos
         
-        with patch('opamp.http_client.requests_odigos.post', side_effect=requests_odigos.ConnectionError("Connection refused")):
+        with patch('opamp.transport.requests_odigos.post', side_effect=requests_odigos.ConnectionError("Connection refused")):
             message = opamp_pb2.AgentToServer()
             result = test_client.send_agent_to_server_message(message)
             
@@ -72,7 +72,7 @@ class TestSendAgentToServerMessage:
         mock_response = Mock()
         mock_response.raise_for_status.side_effect = requests_odigos.HTTPError("403 Forbidden")
         
-        with patch('opamp.http_client.requests_odigos.post', return_value=mock_response):
+        with patch('opamp.transport.requests_odigos.post', return_value=mock_response):
             message = opamp_pb2.AgentToServer()
             result = test_client.send_agent_to_server_message(message)
             
@@ -85,7 +85,7 @@ class TestSendAgentToServerMessage:
         mock_response = Mock()
         mock_response.raise_for_status.side_effect = requests_odigos.HTTPError("500 Internal Server Error")
         
-        with patch('opamp.http_client.requests_odigos.post', return_value=mock_response):
+        with patch('opamp.transport.requests_odigos.post', return_value=mock_response):
             message = opamp_pb2.AgentToServer()
             result = test_client.send_agent_to_server_message(message)
             
@@ -95,7 +95,7 @@ class TestSendAgentToServerMessage:
     def test_request_exception_returns_empty_response(self, test_client):
         import requests_odigos
         
-        with patch('opamp.http_client.requests_odigos.post', side_effect=requests_odigos.RequestException("Some request error")):
+        with patch('opamp.transport.requests_odigos.post', side_effect=requests_odigos.RequestException("Some request error")):
             message = opamp_pb2.AgentToServer()
             result = test_client.send_agent_to_server_message(message)
             
@@ -103,7 +103,7 @@ class TestSendAgentToServerMessage:
             assert not result.ListFields()
 
     def test_unknown_exception_returns_empty_response(self, test_client):
-        with patch('opamp.http_client.requests_odigos.post', side_effect=RuntimeError("Unexpected error")):
+        with patch('opamp.transport.requests_odigos.post', side_effect=RuntimeError("Unexpected error")):
             message = opamp_pb2.AgentToServer()
             result = test_client.send_agent_to_server_message(message)
             
@@ -115,7 +115,7 @@ class TestSendAgentToServerMessage:
         mock_response.content = b"invalid protobuf data"
         mock_response.raise_for_status = Mock()
 
-        with patch('opamp.http_client.requests_odigos.post', return_value=mock_response):
+        with patch('opamp.transport.requests_odigos.post', return_value=mock_response):
             message = opamp_pb2.AgentToServer()
             result = test_client.send_agent_to_server_message(message)
             
@@ -126,7 +126,7 @@ class TestSendAgentToServerMessage:
         
         initial_seq = test_client.next_sequence_num
         
-        with patch('opamp.http_client.requests_odigos.post', side_effect=requests_odigos.Timeout("timeout")):
+        with patch('opamp.transport.requests_odigos.post', side_effect=requests_odigos.Timeout("timeout")):
             test_client.send_agent_to_server_message(opamp_pb2.AgentToServer())
             assert test_client.next_sequence_num == initial_seq + 1
             
@@ -147,7 +147,7 @@ class TestSendAgentToServerMessage:
         ]
         
         for exc in exceptions_to_test:
-            with patch('opamp.http_client.requests_odigos.post', side_effect=exc):
+            with patch('opamp.transport.requests_odigos.post', side_effect=exc):
                 message = opamp_pb2.AgentToServer()
                 result = test_client.send_agent_to_server_message(message)
                 assert isinstance(result, opamp_pb2.ServerToAgent), f"Failed for exception: {exc}"

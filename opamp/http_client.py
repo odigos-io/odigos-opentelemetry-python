@@ -16,7 +16,7 @@ from opentelemetry.context import (
     set_value,
 )
 
-from opamp import opamp_pb2, anyvalue_pb2, utils
+from opamp import opamp_pb2, anyvalue_pb2, transport, utils
 from opamp.health_status import AgentHealthStatus
 from initializer.process_resource import PROCESS_VPID
 
@@ -39,8 +39,7 @@ env_var_mappings = {
 
 class OpAMPHTTPClient:
     def __init__(self, opamp_connection_event, condition: threading.Condition):
-        self.server_host = os.getenv('ODIGOS_OPAMP_SERVER_HOST')
-        self.server_url = f"http://{self.server_host}/v1/opamp"
+        self._transport = transport.from_env()
         self.container_config = {}
         self.running = True
         self.condition = condition
@@ -263,7 +262,7 @@ class OpAMPHTTPClient:
 
         self.send_agent_to_server_message(opamp_pb2.AgentToServer(health=health_msg))
 
-    def get_remote_config(self, message) -> dict:
+    def get_remote_config(self, message) -> Config:
         """
         Given a Protobuf message with a 'remote_config' field,
         decode all bytes and base64-encoded subfields into a clean Python dict.
@@ -392,8 +391,7 @@ class OpAMPHTTPClient:
 
         try:
             agent_message = attach(set_value(_SUPPRESS_HTTP_INSTRUMENTATION_KEY, True))
-            response = requests_odigos.post(self.server_url, data=message_bytes, headers=headers, timeout=5)
-            response.raise_for_status()
+            response_bytes = self._transport.post(message_bytes, headers, timeout=5)
         except Exception:
             return opamp_pb2.ServerToAgent()
         finally:
@@ -401,22 +399,15 @@ class OpAMPHTTPClient:
 
         server_to_agent = opamp_pb2.ServerToAgent()
         try:
-            server_to_agent.ParseFromString(response.content)
+            server_to_agent.ParseFromString(response_bytes)
         except (DecodeError, NotImplementedError):
             return opamp_pb2.ServerToAgent()
         return server_to_agent
 
     def mandatory_env_vars_set(self):
-        mandatory_env_vars = {
-            "ODIGOS_OPAMP_SERVER_HOST": self.server_host,
-        }
-
-        for env_var, value in mandatory_env_vars.items():
-            if not value:
-                # opamp_logger.error(f"{env_var} environment variable not set")
-                return False
-
-        return True
+        # Either ODIGOS_OPAMP_UNIX_SOCKET or ODIGOS_OPAMP_SERVER_HOST must be set;
+        # transport.from_env() returns None when neither is configured.
+        return self._transport is not None
 
     def shutdown(self, custom_failure_message: str = None, component_health: bool = False):
         self.running = False
