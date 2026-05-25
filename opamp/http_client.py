@@ -1,3 +1,4 @@
+from typing import Optional, cast
 import os
 import sys
 import json
@@ -6,10 +7,16 @@ import base64
 import threading
 import requests_odigos
 import logging
-from typing import Optional
 
 from uuid_extensions import uuid7
-from opentelemetry.semconv.resource import ResourceAttributes
+from opentelemetry.semconv._incubating.attributes.k8s_attributes import (
+    K8S_CONTAINER_NAME,
+    K8S_NAMESPACE_NAME,
+    K8S_POD_NAME,
+)
+from opentelemetry.semconv._incubating.attributes.process_attributes import PROCESS_PID
+from opentelemetry.semconv.attributes.service_attributes import SERVICE_INSTANCE_ID
+from opentelemetry.semconv.attributes.telemetry_attributes import TELEMETRY_SDK_LANGUAGE
 from opentelemetry.context import (
     _SUPPRESS_HTTP_INSTRUMENTATION_KEY,
     attach,
@@ -32,9 +39,9 @@ opamp_logger = logging.getLogger('odigos')
 _debugger_instance = None
 
 env_var_mappings = {
-    "ODIGOS_WORKLOAD_NAMESPACE": ResourceAttributes.K8S_NAMESPACE_NAME,
-    "ODIGOS_CONTAINER_NAME": ResourceAttributes.K8S_CONTAINER_NAME,
-    "ODIGOS_POD_NAME": ResourceAttributes.K8S_POD_NAME,
+    "ODIGOS_WORKLOAD_NAMESPACE": K8S_NAMESPACE_NAME,
+    "ODIGOS_CONTAINER_NAME": K8S_CONTAINER_NAME,
+    "ODIGOS_POD_NAME": K8S_POD_NAME,
 }
 
 
@@ -306,7 +313,7 @@ class OpAMPHTTPClient:
         config = Config()
 
         # Extract container_config if present
-        container_config = decoded_map.get("container_config", None)
+        container_config: Optional[dict] = cast(Optional[dict], decoded_map.get("container_config"))
         if container_config is not None:
             config.container_config = container_config
 
@@ -344,14 +351,14 @@ class OpAMPHTTPClient:
         # Add additional attributes from environment variables
 
         if os.getenv("DISABLE_OPAMP_CLIENT", "false").strip().lower() == "true":
-            process_id_key = ResourceAttributes.PROCESS_PID
+            process_id_key = PROCESS_PID
         else:
             process_id_key = PROCESS_VPID
 
         identifying_attributes = [
-            anyvalue_pb2.KeyValue(key=ResourceAttributes.SERVICE_INSTANCE_ID, value=anyvalue_pb2.AnyValue(string_value=self.instance_uid)),
+            anyvalue_pb2.KeyValue(key=SERVICE_INSTANCE_ID, value=anyvalue_pb2.AnyValue(string_value=self.instance_uid)),
             anyvalue_pb2.KeyValue(key=process_id_key, value=anyvalue_pb2.AnyValue(int_value=self.pid)),
-            anyvalue_pb2.KeyValue(key=ResourceAttributes.TELEMETRY_SDK_LANGUAGE, value=anyvalue_pb2.AnyValue(string_value="python")),
+            anyvalue_pb2.KeyValue(key=TELEMETRY_SDK_LANGUAGE, value=anyvalue_pb2.AnyValue(string_value="python")),
         ]
 
         # Add additional attributes from environment variables

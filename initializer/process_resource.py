@@ -10,7 +10,12 @@
 
 import os
 from opentelemetry.sdk.resources import Resource, ProcessResourceDetector
-from opentelemetry.semconv.resource import ResourceAttributes
+from opentelemetry.semconv._incubating.attributes.process_attributes import (
+    PROCESS_COMMAND,
+    PROCESS_COMMAND_ARGS,
+    PROCESS_COMMAND_LINE,
+    PROCESS_PID,
+)
 
 PROCESS_VPID = "process.vpid"
 
@@ -37,10 +42,10 @@ class OdigosProcessResourceDetector(ProcessResourceDetector):
         # Extract attributes as a dictionary (resource_info is a Resource object)
         attributes = dict(resource_info.attributes)
 
-        attributes.pop(ResourceAttributes.PROCESS_COMMAND_ARGS, None)  # Remove PROCESS_COMMAND_ARGS if exists
+        attributes.pop(PROCESS_COMMAND_ARGS, None)  # Remove PROCESS_COMMAND_ARGS if exists
         
         if os.getenv("DISABLE_OPAMP_CLIENT", "false").strip().lower() == "false":
-            attributes.pop(ResourceAttributes.PROCESS_PID, None)  # Remove PROCESS_PID if exists
+            attributes.pop(PROCESS_PID, None)  # Remove PROCESS_PID if exists
             attributes[PROCESS_VPID] = self.pid
             
         # Fix for cases where the app is run via `python -m <module>`:
@@ -48,7 +53,7 @@ class OdigosProcessResourceDetector(ProcessResourceDetector):
         # To get the real command, read from /proc/self/cmdline (Linux only).
         # Falls back silently if reading fails.
         # See: https://github.com/open-telemetry/opentelemetry-python/issues/4518
-        process_command = attributes.get(ResourceAttributes.PROCESS_COMMAND, None)
+        process_command = attributes.get(PROCESS_COMMAND, None)
         if process_command is not None and process_command == '-m':
             try:
                 with open("/proc/self/cmdline", "rb") as command_file:
@@ -57,8 +62,8 @@ class OdigosProcessResourceDetector(ProcessResourceDetector):
                 if raw_cmdline:
                     command_line = raw_cmdline.decode(errors="ignore").split('\0')
                     if command_line and command_line[0]:
-                        attributes[ResourceAttributes.PROCESS_COMMAND] = command_line[0]
-                        attributes[ResourceAttributes.PROCESS_COMMAND_LINE] = " ".join(command_line)
+                        attributes[PROCESS_COMMAND] = command_line[0]
+                        attributes[PROCESS_COMMAND_LINE] = " ".join(command_line)
             
             # On failure, we retain the default behavior from the base resource detector
             except Exception:

@@ -1,6 +1,6 @@
 from opentelemetry.instrumentation.distro import BaseDistro
 from opentelemetry.instrumentation.instrumentor import BaseInstrumentor
-from importlib.metadata import EntryPoint
+from opentelemetry.util._importlib_metadata import EntryPoint
 from .instrumentation_registry import add_instrumented_library
 
 
@@ -22,7 +22,7 @@ class OdigosDistro(BaseDistro):
         pass
 
     def load_instrumentor(self, entry_point: EntryPoint, **kwargs) -> None:
-        instrumentor: BaseInstrumentor = entry_point.load()
+        instrumentor: type[BaseInstrumentor] = entry_point.load()
         instance = instrumentor()
         instance.instrument(**kwargs)
 

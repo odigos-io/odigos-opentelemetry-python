@@ -69,7 +69,7 @@ def handle_django_instrumentation():
         # This is done to prevent instrumentation from being enabled if the Django settings module cannot be imported.
         try:
             importlib.import_module(django_settings_module) 
-        except:
+        except Exception:
             os.environ.setdefault("OTEL_PYTHON_DJANGO_INSTRUMENT", 'False')
         
 
@@ -85,7 +85,7 @@ def handle_eventlet_instrumentation():
             eventlet = importlib.import_module("eventlet")
             if not getattr(eventlet, "_opamp_patched", False):  # Avoid multiple patches
                 eventlet.monkey_patch()
-                eventlet._opamp_patched = True
+                setattr(eventlet, "_opamp_patched", True)
         except ImportError:
             pass            
             

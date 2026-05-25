@@ -161,4 +161,7 @@ exclude = [
     "dist",
     "build",
     "tests/integration/configurator",
+    "tests/integration/apps",
+    "instrumentations/",
+    "opamp/opamp_pb2.py"
 ]

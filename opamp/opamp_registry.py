@@ -1,5 +1,5 @@
 import os
-
+from typing import Optional
 from opamp.http_client import OpAMPHTTPClient
 
 
@@ -11,7 +11,7 @@ def set_client(client) -> None:
     _client = client
     _client_pid = os.getpid()
 
-def get_client() -> OpAMPHTTPClient:
+def get_client() -> Optional[OpAMPHTTPClient]:
     if _client_pid != os.getpid():
         return None  # Defensive: ensure we don't return a client from a different process
     return _client
