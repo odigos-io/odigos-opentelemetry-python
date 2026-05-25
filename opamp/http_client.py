@@ -6,6 +6,7 @@ import base64
 import threading
 import requests_odigos
 import logging
+from typing import Optional
 
 from uuid_extensions import uuid7
 from opentelemetry.semconv.resource import ResourceAttributes
@@ -56,7 +57,7 @@ class OpAMPHTTPClient:
     def __repr__(self):
         return f"<OpAMPHTTPClient instance_uid={self.instance_uid} pid={self.pid}>"
 
-    def start(self, python_version_supported: bool = None):
+    def start(self, python_version_supported: bool = False):
         if not python_version_supported:
             python_version = f'{sys.version_info.major}.{sys.version_info.minor}.{sys.version_info.micro}'
             error_message = f"Opentelemetry SDK require Python in version 3.8 or higher [{python_version} is not supported]"
@@ -409,7 +410,7 @@ class OpAMPHTTPClient:
         # transport.from_env() returns None when neither is configured.
         return self._transport is not None
 
-    def shutdown(self, custom_failure_message: str = None, component_health: bool = False):
+    def shutdown(self, custom_failure_message: Optional[str] = None, component_health: bool = False):
         self.running = False
         # opamp_logger.info("Sending agent disconnect message to OpAMP server...")
         if custom_failure_message:
