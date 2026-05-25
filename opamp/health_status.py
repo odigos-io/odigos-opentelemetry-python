@@ -1,5 +1,6 @@
 from enum import Enum
 
+
 class AgentHealthStatus(str, Enum):
     HEALTHY = "Healthy"
     STARTING = "Starting"

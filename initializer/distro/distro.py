@@ -27,9 +27,6 @@ class OdigosDistro(BaseDistro):
         instance.instrument(**kwargs)
 
         # Later we can add more details here, like the version of the library, etc.
-        instrumentation_details = {
-            "is_standard_lib": entry_point.name in STANDARD_LIB_MODULES
-        }
+        instrumentation_details = {"is_standard_lib": entry_point.name in STANDARD_LIB_MODULES}
 
         add_instrumented_library(entry_point.name, instrumentation_details)
-

@@ -4,6 +4,7 @@ static_env_dict = {
     "OTEL_PYTHON_LOG_CORRELATION": "true",
 }
 
+
 def set_static_otel_env():
     """
     Injects environment variables from a dictionary.

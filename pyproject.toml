@@ -139,6 +139,8 @@ extend-exclude = [
     "build",
     "*.egg-info",
     "tests/integration/configurator",
+    "instrumentations/",
+    "*_pb2.py",
 ]
 
 [tool.ruff.lint]

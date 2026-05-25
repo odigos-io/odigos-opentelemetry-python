@@ -1,8 +1,8 @@
-# This file contains code inspired by OpenTelemetry's resource detection mechanisms 
-# (https://opentelemetry.io/). It adapts and extends the logic to include additional 
+# This file contains code inspired by OpenTelemetry's resource detection mechanisms
+# (https://opentelemetry.io/). It adapts and extends the logic to include additional
 # attributes required for our use case.
 #
-# OpenTelemetry is licensed under the Apache License, Version 2.0. This adaptation respects 
+# OpenTelemetry is licensed under the Apache License, Version 2.0. This adaptation respects
 # the original licensing terms and acknowledges OpenTelemetry as a source of reference.
 #
 # For OpenTelemetry’s original implementation, see:
@@ -20,14 +20,15 @@ from opentelemetry.semconv._incubating.attributes.process_attributes import (
 PROCESS_VPID = "process.vpid"
 
 # Custom implementation of ProcessResourceDetector.
-# 
-# This detector is based on OpenTelemetry's resource detection logic but has been 
-# implemented separately because the standard OpenTelemetry detector does not support 
-# the "process.vpid" attribute. This attribute is necessary for our use case to track 
+#
+# This detector is based on OpenTelemetry's resource detection logic but has been
+# implemented separately because the standard OpenTelemetry detector does not support
+# the "process.vpid" attribute. This attribute is necessary for our use case to track
 # process-specific information that is not covered by OpenTelemetry’s built-in attributes.
 #
-# By extending the OpenTelemetry approach, we ensure compatibility while adding the 
+# By extending the OpenTelemetry approach, we ensure compatibility while adding the
 # additional attribute we require.
+
 
 # ProcessResourceDetector
 class OdigosProcessResourceDetector(ProcessResourceDetector):
@@ -43,11 +44,11 @@ class OdigosProcessResourceDetector(ProcessResourceDetector):
         attributes = dict(resource_info.attributes)
 
         attributes.pop(PROCESS_COMMAND_ARGS, None)  # Remove PROCESS_COMMAND_ARGS if exists
-        
+
         if os.getenv("DISABLE_OPAMP_CLIENT", "false").strip().lower() == "false":
             attributes.pop(PROCESS_PID, None)  # Remove PROCESS_PID if exists
             attributes[PROCESS_VPID] = self.pid
-            
+
         # Fix for cases where the app is run via `python -m <module>`:
         # sys.argv[0] becomes "-m", which leads to wrong process.command attribute.
         # To get the real command, read from /proc/self/cmdline (Linux only).
@@ -64,7 +65,7 @@ class OdigosProcessResourceDetector(ProcessResourceDetector):
                     if command_line and command_line[0]:
                         attributes[PROCESS_COMMAND] = command_line[0]
                         attributes[PROCESS_COMMAND_LINE] = " ".join(command_line)
-            
+
             # On failure, we retain the default behavior from the base resource detector
             except Exception:
                 pass

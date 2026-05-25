@@ -55,6 +55,7 @@ KIND_SERVER = 2
 
 # ── Helpers ──────────────────────────────────────────────────────────────────
 
+
 def load_resource_spans(traces_file):
     """Parse OTLP JSON lines into a flat list of resourceSpans objects."""
     if not os.path.exists(traces_file):
@@ -103,7 +104,7 @@ def _span_attr(span, key):
 
 def extract_service_name(resource_span):
     resource = _get(resource_span, "resource") or {}
-    for attr in (_get(resource, "attributes") or []):
+    for attr in _get(resource, "attributes") or []:
         if attr.get("key") == "service.name":
             return _attr_value(attr) or "unknown"
     return "unknown"
@@ -123,6 +124,7 @@ def flatten_spans(resource_spans):
 
 
 # ── Checks ───────────────────────────────────────────────────────────────────
+
 
 def verify_spans_received(all_spans):
     if not all_spans:
@@ -151,10 +153,7 @@ def verify_no_error_spans(all_spans):
         status = span.get("status", {})
         # OTLP StatusCode 2 = ERROR
         if status.get("code", 0) == 2:
-            errors.append(
-                f"  - {svc} / {span.get('name', '?')}: "
-                f"{status.get('message', '(no message)')}"
-            )
+            errors.append(f"  - {svc} / {span.get('name', '?')}: {status.get('message', '(no message)')}")
 
     if errors:
         print(f"FAIL: {len(errors)} span(s) with ERROR status:")
@@ -202,7 +201,7 @@ def verify_http_success(all_spans):
             failures.append(f"  - {svc} / {span.get('name', '?')} — http.status_code={status_code}")
 
     if failures:
-        print(f"  FAIL: HTTP server spans with non-200 status:")
+        print("  FAIL: HTTP server spans with non-200 status:")
         for line in failures:
             print(line)
         return False
@@ -211,6 +210,7 @@ def verify_http_success(all_spans):
 
 
 # ── Entry point ──────────────────────────────────────────────────────────────
+
 
 def main():
     parser = argparse.ArgumentParser(description="Verify integration test traces")

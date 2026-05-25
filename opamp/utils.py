@@ -1,6 +1,7 @@
 from typing import Union
 import json
 
+
 def get_container_config(config_map):
     """
     Extracts and parses the container configuration from the config map.
