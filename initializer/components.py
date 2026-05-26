@@ -1,3 +1,4 @@
+from typing import Union
 from .lib_handling import reorder_python_path, reload_distro_modules, handle_django_instrumentation, handle_eventlet_instrumentation
 
 handle_eventlet_instrumentation()
@@ -74,7 +75,7 @@ def initialize_components(trace_exporters=False, span_processor=None):
         # we will use the default value which is enable traces only.
         if opamp_connection_event.error:
             container_config = None
-            supported_signals = {"traceSignal": True}
+            supported_signals: dict[str, Union[str, bool]] = {"traceSignal": True}
             initial_sampler_config = None
             initial_remote_config = None
         else:
@@ -109,8 +110,8 @@ def initialize_components(trace_exporters=False, span_processor=None):
         odigos_sampler = initialize_traces_if_enabled(
             trace_exporters,
             resource,
-            span_processor,
             supported_signals,
+            span_processor,
             initial_sampler_config,
             initial_remote_config,
         )
@@ -132,8 +133,8 @@ def initialize_components(trace_exporters=False, span_processor=None):
 def initialize_traces_if_enabled(
     trace_exporters,
     resource,
+    signals: dict[str, Union[str, bool]],
     span_processor=None,
-    signals=None,
     initial_sampler_config=None,
     initial_remote_config=None,
 ):
@@ -301,7 +302,7 @@ def update_agent_config(conf: Config):
             proc.update_config(conf)
 
 
-def is_supported_python_version():
+def is_supported_python_version() -> bool:
     return sys.version_info >= MINIMUM_PYTHON_SUPPORTED_VERSION
 
 
@@ -374,11 +375,11 @@ class ProxyResource(Resource):
     @property
     def attributes(self):
         self._refresh_if_needed()
-        return self._cached.attributes
+        return self._cached.attributes if self._cached else None
 
     def merge(self, other: Resource):
         self._refresh_if_needed()
-        return self._cached.merge(other)
+        return self._cached.merge(other) if self._cached else None
 
 
 def _after_in_child():
@@ -390,7 +391,7 @@ def _after_in_child():
     #    Without this, the forked client's sampler is None and config updates
     #    from OpAMP heartbeats are silently dropped.
     provider = get_tracer_provider()
-    if isinstance(getattr(provider, "resource", None), ProxyResource):
+    if isinstance(provider, TracerProvider) and isinstance(provider.resource, ProxyResource):
         provider.resource._child_refreshed = False
     client = start_opamp_client(OpampConnectionEvent())
 

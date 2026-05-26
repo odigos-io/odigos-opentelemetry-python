@@ -1,4 +1,6 @@
+from typing import Union
 import json
+
 
 def get_container_config(config_map):
     """
@@ -13,7 +15,7 @@ def get_container_config(config_map):
         return {}
 
 
-def parse_first_message_signals(container_config): # type: ignore
+def parse_first_message_signals(container_config) -> dict[str, Union[str, bool]]:
     """
     Parses the trace, logs, and metrics signals from the container config.
     Signal is considered enabled if its key exists in the config.

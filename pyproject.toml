@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "odigos-opentelemetry-python"
-version = "1.0.86"
+version = "1.0.87"
 description = "Odigos Initializer for Python OpenTelemetry Components"
 requires-python = ">=3.9"
 authors = [
@@ -139,6 +139,8 @@ extend-exclude = [
     "build",
     "*.egg-info",
     "tests/integration/configurator",
+    "instrumentations/",
+    "*_pb2.py",
 ]
 
 [tool.ruff.lint]
@@ -161,4 +163,7 @@ exclude = [
     "dist",
     "build",
     "tests/integration/configurator",
+    "tests/integration/apps",
+    "instrumentations/",
+    "opamp/opamp_pb2.py"
 ]

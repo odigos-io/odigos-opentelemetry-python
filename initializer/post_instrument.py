@@ -1,6 +1,7 @@
 from opamp import opamp_registry
 from .distro import instrumentation_registry
 
+
 def run_post_hook():
     client = opamp_registry.get_client()
 

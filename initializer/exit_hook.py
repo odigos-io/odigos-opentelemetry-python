@@ -1,9 +1,12 @@
 import sys
+
+
 class ExitHooks(object):
     """
     The ExitHooks class intercepts program exits to capture the reason for termination.
     It hooks into sys.exit to record exit codes
     """
+
     def __init__(self):
         self.exit_code = None
         self.exception = None
@@ -11,7 +14,7 @@ class ExitHooks(object):
     def hook(self):
         self._orig_exit = sys.exit
         self._orig_excepthook = sys.excepthook
-        sys.exit = self.exit
+        sys.exit = self.exit  # ty: ignore[invalid-assignment]
         sys.excepthook = self.exc_handler
 
     def exit(self, code=0):

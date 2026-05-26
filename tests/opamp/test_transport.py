@@ -43,7 +43,6 @@ class TestFromEnv:
 # matching wire (unix socket OR tcp) and never accidentally use the other one.
 # We don't send real traffic - we mock both wires and check which one was hit.
 class TestPostRoutesThroughCorrectWire:
-
     def test_unix_transport_post_uses_unix_socket_and_not_requests(self):
         # Env says "use unix". post() should open a unix connection and never call requests [py library].
         mock_conn = Mock()
