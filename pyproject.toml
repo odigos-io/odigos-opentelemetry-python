@@ -42,7 +42,7 @@ dependencies = [
     "opentelemetry-instrumentation-cassandra == 0.61b0",
     "opentelemetry-instrumentation-celery == 0.61b0",
     "opentelemetry-instrumentation-click == 0.61b0",
-    "opentelemetry-instrumentation-confluent-kafka == 0.61b0",
+    "odigos-opentelemetry-instrumentation-confluent-kafka == 0.61b0",
     "opentelemetry-instrumentation-dbapi == 0.61b0",
     "opentelemetry-instrumentation-django == 0.61b0",
     "odigos-opentelemetry-instrumentation-elasticsearch == 0.61b0",
@@ -108,6 +108,7 @@ odigos = "initializer.distro.distro:OdigosDistro"
 [tool.uv.sources]
 odigos-opentelemetry-instrumentation-aiohttp-server = { workspace = true }
 odigos-opentelemetry-instrumentation-elasticsearch = { workspace = true }
+odigos-opentelemetry-instrumentation-confluent-kafka = { workspace = true }
 odigos-opentelemetry-instrumentation-openai-v2 = { workspace = true }
 odigos-opentelemetry-instrumentation-sqlalchemy = { workspace = true }
 
