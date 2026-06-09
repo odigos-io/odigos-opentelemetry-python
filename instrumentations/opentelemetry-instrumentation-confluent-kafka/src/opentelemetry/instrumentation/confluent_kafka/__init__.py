@@ -107,7 +107,7 @@ import confluent_kafka
 import wrapt
 from confluent_kafka import Consumer, Producer
 
-from opentelemetry import context, propagate, trace
+from opentelemetry import propagate, trace
 from opentelemetry.instrumentation.instrumentor import BaseInstrumentor
 from opentelemetry.instrumentation.utils import unwrap
 from opentelemetry.semconv._incubating.attributes.messaging_attributes import (
@@ -183,7 +183,6 @@ class ProxiedConsumer(Consumer):
         self._consumer = consumer
         self._tracer = tracer
         self._current_consume_span = None
-        self._current_context_token = None
         # See ProxiedProducer.__init__ for rationale.
         self.config = getattr(consumer, "config", None)
 
@@ -398,10 +397,8 @@ class ConfluentKafkaInstrumentor(BaseInstrumentor):
                     record.offset(),
                     operation=MessagingOperationTypeValues.PROCESS,
                 )
-            instance._current_context_token = context.attach(
-                trace.set_span_in_context(instance._current_consume_span)
-            )
-
+            # [Odigos fix] removed upstream context.attach of the consume span here
+            # (caused "Failed to detach context"); see _end_current_consume_span in utils.py
         return record
 
     @staticmethod
@@ -420,10 +417,8 @@ class ConfluentKafkaInstrumentor(BaseInstrumentor):
                     records[0].topic(),
                     operation=MessagingOperationTypeValues.PROCESS,
                 )
-            instance._current_context_token = context.attach(
-                trace.set_span_in_context(instance._current_consume_span)
-            )
-
+            # [Odigos fix] removed upstream context.attach of the consume span here
+            # (caused "Failed to detach context"); see _end_current_consume_span in utils.py
         return records
 
     @staticmethod

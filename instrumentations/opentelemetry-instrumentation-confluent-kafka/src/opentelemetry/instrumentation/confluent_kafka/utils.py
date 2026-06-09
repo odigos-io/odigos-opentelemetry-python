@@ -1,7 +1,7 @@
 from logging import getLogger
 from typing import List, Optional
 
-from opentelemetry import context, propagate
+from opentelemetry import propagate
 from opentelemetry.propagators import textmap
 from opentelemetry.semconv._incubating.attributes.messaging_attributes import (
     MESSAGING_MESSAGE_ID,
@@ -87,9 +87,11 @@ _kafka_getter = KafkaContextGetter()
 
 
 def _end_current_consume_span(instance):
-    if instance._current_context_token:
-        context.detach(instance._current_context_token)
-    instance._current_context_token = None
+    # [Odigos fix] 
+    # Upstream tried to detach a context token here (context.detach) that was attached at the end of the previous poll()/consume(). 
+    # When an app processes each message in its own contextvars.Context, that detach ran in a different Context and
+    # raised a ValueError with "Failed to detach context". 
+    # We removed the cross-call attach (see wrap_poll / wrap_consume), so there is no token to detach — we only end the span.
     instance._current_consume_span.end()
     instance._current_consume_span = None
 
