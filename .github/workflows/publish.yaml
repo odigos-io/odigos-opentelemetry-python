@@ -192,6 +192,22 @@ jobs:
           event-type: update-instrumentation-agents-version
           client-payload: '{"agents_category": "python", "new_agent_version": "${{ github.ref_name }}"}'
 
+      - name: Get sts token for Odigos VM Agent repo
+        id: sts-vmagent
+        uses: odigos-io/ci-core/sts@main
+        with:
+          scope: odigos-io/vm-agent
+          identity: trigger-agent-version-updater
+          output-git-config: "false"
+
+      - name: Trigger update instrumentation agents version workflow (VM Agent)
+        uses: peter-evans/repository-dispatch@v4
+        with:
+          token: ${{ steps.sts-vmagent.outputs.GH_TOKEN }}
+          repository: odigos-io/vm-agent
+          event-type: dependency-sync
+          client-payload: '{"agents_category": "python", "new_agent_version": "${{ github.ref_name }}"}'
+
       - name: Notify Slack
         if: always()
         uses: odigos-io/ci-core/.github/actions/slack-release-notification@main
