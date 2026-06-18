@@ -160,60 +160,13 @@ jobs:
       id-token: write
       contents: read
     steps:
-      - name: Get sts token for Odigos OSS repo
-        id: sts-oss
-        uses: odigos-io/ci-core/sts@main
+      - name: Trigger agents version update in consumer repos
+        uses: odigos-io/ci-core/dispatch-agent-version-update@main
         with:
-          scope: odigos-io/odigos
-          identity: trigger-agent-version-updater
-          output-git-config: "false"
-
-      - name: Trigger update instrumentation agents version workflow (OSS)
-        uses: peter-evans/repository-dispatch@v4
-        with:
-          token: ${{ steps.sts-oss.outputs.GH_TOKEN }}
-          repository: odigos-io/odigos
-          event-type: update-instrumentation-agents-version
-          client-payload: '{"agents_category": "python", "new_agent_version": "${{ github.ref_name }}"}'
-
-      - name: Get sts token for Odigos Enterprise repo
-        id: sts-enterprise
-        uses: odigos-io/ci-core/sts@main
-        with:
-          scope: odigos-io/odigos-enterprise
-          identity: trigger-agent-version-updater
-          output-git-config: "false"
-
-      - name: Trigger update instrumentation agents version workflow (Enterprise)
-        uses: peter-evans/repository-dispatch@v4
-        with:
-          token: ${{ steps.sts-enterprise.outputs.GH_TOKEN }}
-          repository: odigos-io/odigos-enterprise
-          event-type: update-instrumentation-agents-version
-          client-payload: '{"agents_category": "python", "new_agent_version": "${{ github.ref_name }}"}'
-
-      - name: Get sts token for Odigos VM Agent repo
-        id: sts-vmagent
-        uses: odigos-io/ci-core/sts@main
-        with:
-          scope: odigos-io/vm-agent
-          identity: trigger-agent-version-updater
-          output-git-config: "false"
-
-      - name: Trigger update instrumentation agents version workflow (VM Agent)
-        uses: peter-evans/repository-dispatch@v4
-        with:
-          token: ${{ steps.sts-vmagent.outputs.GH_TOKEN }}
-          repository: odigos-io/vm-agent
-          event-type: dependency-sync
-          client-payload: '{"agents_category": "python", "new_agent_version": "${{ github.ref_name }}"}'
-
-      - name: Notify Slack
-        if: always()
-        uses: odigos-io/ci-core/.github/actions/slack-release-notification@main
-        with:
-          webhook-url: ${{ secrets.ODIGOS_RELEASE_STATUS_WEBHOOK_URL }}
-          success-description: "Triggered the Odigos instrumentation agents version update (OSS + Enterprise)"
-          failure-description: "ERROR: Failed to trigger the Odigos instrumentation agents version update"
-          tag: ${{ github.ref_name }}
+          instrumentation_agent: python
+          version: ${{ github.ref_name }}
+          consumers: |
+            odigos
+            odigos-enterprise
+            vm-agent
 
