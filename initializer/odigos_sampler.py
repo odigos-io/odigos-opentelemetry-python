@@ -178,7 +178,8 @@ class OdigosSampler(Sampler):
         if server_address:
             server_address = strip_port(server_address)
         else:
-            # some instrumentations (like urllib) never puts a host attribute on the span. it sets only method + url, so if we want the host we need to extract it from the full url
+            # some instrumentations (like urllib) never puts a host attribute on the span. it sets only method + url,
+            # so if we want the host we need to extract it from the full url
             # default (old) semconv mode the full URL is http.url; in stable mode url.full.
             full_url = get_attribute(span_attributes, "url.full", "http.url")
             if full_url:
