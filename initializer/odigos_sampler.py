@@ -98,10 +98,10 @@ class OdigosSampler(Sampler):
                     matched = True
                 else:  # When we have a granular operation, check it vs the server/client rules specified in the noisy operation
                     matched = False
-                    if http_server_sample := http_operation_sample.get("httpServer"):
+                    if (http_server_sample := http_operation_sample.get("httpServer")) and kind == SpanKind.SERVER:
                         matched = self._match_http_server_sample_rule(http_server_sample, attributes) or matched
 
-                    if http_client_sample := http_operation_sample.get("httpClient"):
+                    if (http_client_sample := http_operation_sample.get("httpClient")) and kind == SpanKind.CLIENT:
                         matched = self._match_http_client_sample_rule(http_client_sample, attributes) or matched
 
                 # sampler_logger.debug(f'Noisy operation matched: {matched}, percentage: {percentage_to_sample}')
@@ -156,8 +156,10 @@ class OdigosSampler(Sampler):
             if target:
                 return self._match_rule_route_to_span(http_server_rule["route"], target)
 
-        if http_server_rule.get("routePrefix") and not (span_route or "").startswith(http_server_rule["routePrefix"]):
-            return False
+        if route_prefix := http_server_rule.get("routePrefix"):
+            candidate = span_route or target
+            if not candidate or not self._match_rule_route_to_span(route_prefix, candidate, route_has_prefix=True):
+                return False
         if http_server_rule.get("method") and http_server_rule["method"] != span_method:
             return False
 
@@ -175,6 +177,13 @@ class OdigosSampler(Sampler):
         server_address = get_attribute(span_attributes, server_attributes_semconv.SERVER_ADDRESS, "net.peer.name", "http.host")
         if server_address:
             server_address = strip_port(server_address)
+        else:
+            # some instrumentations (like urllib) never puts a host attribute on the span. it sets only method + url,
+            # so if we want the host we need to extract it from the full url
+            # default (old) semconv mode the full URL is http.url; in stable mode url.full.
+            full_url = get_attribute(span_attributes, "url.full", "http.url")
+            if full_url:
+                server_address = urlsplit(full_url).hostname
 
         # Old semconv for url is a target that we need to get the client_path from → new semconv: "url.template"/"url.path"
         client_path = get_attribute(span_attributes, "url.template", url_attributes_semconv.URL_PATH)
