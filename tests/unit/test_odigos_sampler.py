@@ -222,6 +222,91 @@ class TestShouldSample:
         assert result.trace_state.get("odigos") is None
 
 
+class TestSpanKindGating:
+    """httpServer operations must only match SERVER spans and httpClient only CLIENT
+    spans. Regression test for ignoring health-probe rule."""
+
+    # Mirrors the real head-sampling-http-client InstrumentationConfig.
+    CONFIG = {
+        "noisyOperations": [
+            {
+                "id": "health",
+                "name": "kubelet health probe",
+                "percentageAtMost": 0,
+                "operation": {"httpServer": {"route": "/healthz", "method": "GET"}},
+            },
+            {
+                "id": "outbound-exact",
+                "percentageAtMost": 50,
+                "operation": {
+                    "httpClient": {
+                        "serverAddress": "head-sampling-http-server",
+                        "templatedPath": "/http-match/exact/target",
+                    }
+                },
+            },
+        ],
+    }
+
+    def test_health_server_rule_does_not_decide_client_span(self, sampler):
+        sampler.update_config(self.CONFIG)
+        # urllib client span: only http.url (no http.route / http.target / url.path).
+        result = sampler.should_sample(
+            parent_context=None,
+            trace_id=0x0123456789ABCDEF0123456789ABCDEF,
+            name="GET",
+            kind=SpanKind.CLIENT,
+            attributes={
+                "http.method": "GET",
+                "http.url": "http://head-sampling-http-server:8080/http-match/exact/target",
+                "http.status_code": 200,
+            },
+        )
+        odigos_value = result.trace_state.get("odigos")
+        # The client exact rule (50%) must decide, not the 0% health-probe server rule.
+        assert "dr.id:outbound-exact" in odigos_value
+        assert "dr.p:50" in odigos_value
+        assert "dr.id:health" not in odigos_value
+
+    def test_health_server_rule_still_decides_server_probe_span(self, sampler):
+        sampler.update_config(self.CONFIG)
+        result = sampler.should_sample(
+            parent_context=None,
+            trace_id=0x0123456789ABCDEF0123456789ABCDEF,
+            name="GET /healthz",
+            kind=SpanKind.SERVER,
+            attributes={"http.method": "GET", "http.route": "/healthz"},
+        )
+        assert "dr.id:health" in result.trace_state.get("odigos")
+
+
+class TestHttpServerRoutePrefix:
+    """routePrefix must match per-segment with wildcard support, not literal startswith,
+    so templated routes (e.g. /http-match/tprefix/<tenant_id>/items) match a rule
+    routePrefix of /http-match/tprefix/*/items."""
+
+    RULE = {"routePrefix": "/http-match/tprefix/*/items"}
+
+    @pytest.mark.parametrize(
+        "route, expected",
+        [
+            pytest.param("/http-match/tprefix/<tenant_id>/items", True, id="flask-templated"),
+            pytest.param("/http-match/tprefix/:tenantId/items", True, id="express-templated"),
+            pytest.param("/http-match/tprefix/{tenantId}/items", True, id="spring-templated"),
+            pytest.param("/http-match/tprefix/<tenant_id>/items/<item_id>", True, id="deeper-nested"),
+            pytest.param("/http-match/tprefix/<tenant_id>/orders", False, id="wrong-suffix"),
+            pytest.param("/http-match/exact/target", False, id="unrelated-route"),
+        ],
+    )
+    def test_route_prefix_wildcard_match(self, sampler, route, expected):
+        assert sampler._match_http_server_sample_rule(self.RULE, {"http.route": route}) is expected
+
+    def test_literal_prefix_still_matches(self, sampler):
+        # Non-wildcard routePrefix must still match deeper concrete routes.
+        rule = {"routePrefix": "/http-match/prefix"}
+        assert sampler._match_http_server_sample_rule(rule, {"http.route": "/http-match/prefix/segment"}) is True
+
+
 class TestDryRun:
     """Tests for dry-run mode: spans must NEVER be dropped, but tracestate must
     record the would-be decision as `;dry:t` (kept) or `;dry:f` (dropped).
@@ -454,10 +539,20 @@ class TestHttpClientSemconv:
             pytest.param({"net.peer.name": "payments"}, id="old-net.peer.name"),
             pytest.param({"http.host": "payments"}, id="old-http.host-no-port"),
             pytest.param({"http.host": "payments:8080"}, id="old-http.host-with-port"),
+            # urllib emits no host attr; host must be derived from the full URL.
+            pytest.param({"url.full": "http://payments:8080/p"}, id="urllib-new-url.full"),
+            pytest.param({"http.url": "http://payments:8080/p"}, id="urllib-old-http.url"),
         ],
     )
     def test_server_address_matches_across_semconv(self, sampler, attributes):
         rule = {"serverAddress": "payments"}
+        assert sampler._match_http_client_sample_rule(rule, attributes) is True
+
+    def test_urllib_client_matches_server_address_and_path_from_full_url(self, sampler):
+        # opentelemetry-instrumentation-urllib sets only the full URL (no server.address,
+        # net.peer.name or http.host). Both serverAddress and templatedPath must still match.
+        rule = {"serverAddress": "head-sampling-http-server", "templatedPath": "/http-match/exact/target"}
+        attributes = {"http.url": "http://head-sampling-http-server:8080/http-match/exact/target"}
         assert sampler._match_http_client_sample_rule(rule, attributes) is True
 
     @pytest.mark.parametrize(
