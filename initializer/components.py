@@ -54,6 +54,7 @@ from .exit_hook import ExitHooks
 from .envs import set_static_otel_env
 
 from .odigos_sampler import OdigosSampler
+from .diagnose import apply_log_levels_from_opamp
 
 from opamp.config import Config
 from opamp import opamp_registry
@@ -103,6 +104,10 @@ def initialize_components(trace_exporters=False, span_processor=None):
                 initial_remote_config = client.get_initial_remote_config()
             except AttributeError:
                 initial_remote_config = None
+
+        # Let the remote config take over the diagnostics log levels from the environment variables.
+        # On the OpAMP error path container_config is None, which silences the loggers.
+        apply_log_levels_from_opamp(container_config)
 
         handle_django_instrumentation()
 
@@ -275,6 +280,10 @@ def update_agent_config(conf: Config):
     :return: If the `provider` is `None` or if `active_proc` is `None`, then the function will return
     without performing any further actions.
     """
+    # Update the diagnostics log levels on every remote config, even before the tracer provider exists.
+    if hasattr(conf, 'container_config'):
+        apply_log_levels_from_opamp(conf.container_config)
+
     provider = get_tracer_provider()
     if provider is None:
         return
