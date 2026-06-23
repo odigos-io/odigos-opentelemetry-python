@@ -69,7 +69,7 @@ class OpAMPHTTPClient:
             python_version = f'{sys.version_info.major}.{sys.version_info.minor}.{sys.version_info.micro}'
             error_message = f"Opentelemetry SDK require Python in version 3.8 or higher [{python_version} is not supported]"
 
-            # opamp_logger.warning(f"{error_message}, sending disconnect message to OpAMP server...")
+            opamp_logger.warning(f"{error_message}, sending disconnect message to OpAMP server...")
             self.send_unsupported_version_disconnect_message(error_message=error_message)
             self.opamp_connection_event.event.set()
             return
@@ -94,7 +94,7 @@ class OpAMPHTTPClient:
             self.worker()
 
         except Exception as e:
-            # opamp_logger.error(f"Error running OpAMP client: {e}")
+            opamp_logger.error(f"Error running OpAMP client: {e}")
             failure_message = self.get_agent_failure_disconnect_message(error_message=str(e))
             self.send_agent_to_server_message(failure_message)
 
@@ -234,7 +234,7 @@ class OpAMPHTTPClient:
                                 pass
 
                     if server_to_agent.flags & opamp_pb2.ServerToAgentFlags_ReportFullState:
-                        # opamp_logger.info("Received request to report full state")
+                        opamp_logger.info("Received request to report full state")
 
                         agent_description = self.get_agent_description()
                         agent_health = self.get_agent_health(component_health=True, status=AgentHealthStatus.HEALTHY.value)
@@ -330,7 +330,7 @@ class OpAMPHTTPClient:
         return config
 
     def send_heartbeat(self) -> opamp_pb2.ServerToAgent:  # type: ignore
-        # opamp_logger.debug("Sending heartbeat to OpAMP server...")
+        opamp_logger.debug("Sending heartbeat to OpAMP server...")
         try:
             agent_to_server = opamp_pb2.AgentToServer(remote_config_status=self.remote_config_status)
             return self.send_agent_to_server_message(agent_to_server)
@@ -419,7 +419,7 @@ class OpAMPHTTPClient:
 
     def shutdown(self, custom_failure_message: Optional[str] = None, component_health: bool = False):
         self.running = False
-        # opamp_logger.info("Sending agent disconnect message to OpAMP server...")
+        opamp_logger.info("Sending agent disconnect message to OpAMP server...")
         if custom_failure_message:
             disconnect_message = self.get_agent_failure_disconnect_message(
                 error_message=custom_failure_message,

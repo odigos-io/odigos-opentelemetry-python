@@ -71,10 +71,10 @@ class OdigosSampler(Sampler):
                     return SamplingResult(Decision.RECORD_AND_SAMPLE, attributes=attributes, trace_state=_get_parent_trace_state(parent_context))
                 else:
                     return SamplingResult(self._not_sampled_decision(), trace_state=_get_parent_trace_state(parent_context))
-            # sampler_logger.debug(f'Running Should_sample a span with the following attributes: {attributes}')
+            sampler_logger.debug(f'Running Should_sample a span with the following attributes: {attributes}')
 
             if self._config is None:
-                # sampler_logger.debug('No configuration is set, returning RECORD_AND_SAMPLE')
+                sampler_logger.debug('No configuration is set, returning RECORD_AND_SAMPLE')
                 return SamplingResult(Decision.RECORD_AND_SAMPLE, attributes=attributes, trace_state=_get_parent_trace_state(parent_context))
 
             is_dry_run: bool = self._config.get('dryRun', False)
@@ -90,7 +90,7 @@ class OdigosSampler(Sampler):
 
                 http_operation_sample: Optional[HeadSamplingOperationMatcher] = noisy_operation.get("operation")
 
-                # sampler_logger.debug(f'Evaluating noisy operation: {noisy_operation}')
+                sampler_logger.debug(f'Evaluating noisy operation: {noisy_operation}')
 
                 # No operation matcher -> rule applies workload-wide (matches every span)
                 # This supports Sampling rules that scope by sourceScopes (workload) without specific HTTP matcher
@@ -104,7 +104,7 @@ class OdigosSampler(Sampler):
                     if (http_client_sample := http_operation_sample.get("httpClient")) and kind == SpanKind.CLIENT:
                         matched = self._match_http_client_sample_rule(http_client_sample, attributes) or matched
 
-                # sampler_logger.debug(f'Noisy operation matched: {matched}, percentage: {percentage_to_sample}')
+                sampler_logger.debug(f'Noisy operation matched: {matched}, percentage: {percentage_to_sample}')
                 if matched and (winning_operation is None or percentage_to_sample < winning_operation.get("percentageAtMost", 0.0)):
                     winning_operation = noisy_operation
 
@@ -120,17 +120,17 @@ class OdigosSampler(Sampler):
 
                 # In dry-run mode, never actually drop spans
                 if is_dry_run:
-                    # sampler_logger.debug(f'Dry run [{trace_id}] would_be_sampled={sampled} (lowest_percentage={lowest_percentage})')
+                    sampler_logger.debug(f'Dry run [{trace_id}] would_be_sampled={sampled} (lowest_percentage={lowest_percentage})')
                     return SamplingResult(Decision.RECORD_AND_SAMPLE, attributes=attributes, trace_state=trace_state)
 
                 if sampled:
-                    # sampler_logger.debug(f'Trace [{trace_id}] is sampled with lowest percentage {lowest_percentage}')
+                    sampler_logger.debug(f'Trace [{trace_id}] is sampled with lowest percentage {lowest_percentage}')
                     return SamplingResult(Decision.RECORD_AND_SAMPLE, attributes=attributes, trace_state=trace_state)
                 else:
-                    # sampler_logger.debug(f'Trace [{trace_id}] is dropped with lowest percentage {lowest_percentage}')
+                    sampler_logger.debug(f'Trace [{trace_id}] is dropped with lowest percentage {lowest_percentage}')
                     return SamplingResult(self._not_sampled_decision(), trace_state=trace_state)
 
-            # sampler_logger.debug('No noisy operation matched, sampling the trace')
+            sampler_logger.debug('No noisy operation matched, sampling the trace')
             return SamplingResult(Decision.RECORD_AND_SAMPLE, attributes=attributes, trace_state=_get_parent_trace_state(parent_context))
 
     def _match_http_server_sample_rule(
