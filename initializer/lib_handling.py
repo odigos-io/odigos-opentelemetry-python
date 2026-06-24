@@ -88,19 +88,15 @@ def patch_otlp_span_flags() -> None:
     except ImportError:
         return
 
-    if hasattr(trace_encoder, "_odigos_trace_flags_patched"):
-        return
-
     original_encode_span = trace_encoder._encode_span
     original_encode_links = trace_encoder._encode_links
 
     # W3C TraceFlags is a single byte (values 0-255), and the encoder's existing
-    # flags only ever set the higher has-remote / is-remote bits. The two ranges
-    # never overlap, so adding the trace flags is equivalent to OR-ing them in.
+    # flags only ever set the higher has-remote / is-remote bits.
     def encode_span(sdk_span: ReadableSpan) -> PB2Span:
         encoded_span = original_encode_span(sdk_span)
         # THE FIX: fold the W3C trace flags into Span.flags (PR #4761).
-        encoded_span.flags += int(sdk_span.get_span_context().trace_flags)
+        encoded_span.flags |= int(sdk_span.get_span_context().trace_flags)
         return encoded_span
 
     def encode_links(links: Sequence[Link]) -> Optional[Sequence[PB2Span.Link]]:
@@ -109,7 +105,7 @@ def patch_otlp_span_flags() -> None:
             # Propagate the trace flags to links as well
             for link, encoded_link in zip(links, encoded_links):
                 # THE FIX: fold the W3C trace flags into Link.flags (PR #4761).
-                encoded_link.flags += int(link.context.trace_flags)
+                encoded_link.flags |= int(link.context.trace_flags)
         return encoded_links
 
     setattr(trace_encoder, "_encode_span", encode_span)
