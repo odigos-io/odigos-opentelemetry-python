@@ -44,8 +44,8 @@ from opentelemetry.trace import set_tracer_provider, get_tracer_provider
 # before reshuffling) and before opamp below (it imports protobuf—the app should own that).
 reorder_python_path()
 
-# Backport OTLP Span.flags trace-flags encoding 
-# (upstream PR #4761: https://github.com/open-telemetry/opentelemetry-python/pull/4761) 
+# Backport OTLP Span.flags trace-flags encoding
+# (upstream PR #4761: https://github.com/open-telemetry/opentelemetry-python/pull/4761)
 # onto the canonical exporter module now that sys.path prefers the agent's copy.
 patch_otlp_span_flags()
 
