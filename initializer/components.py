@@ -1,5 +1,11 @@
 from typing import Union
-from .lib_handling import reorder_python_path, reload_distro_modules, handle_django_instrumentation, handle_eventlet_instrumentation
+from .lib_handling import (
+    reorder_python_path,
+    reload_distro_modules,
+    handle_django_instrumentation,
+    handle_eventlet_instrumentation,
+    patch_otlp_span_flags,
+)
 
 handle_eventlet_instrumentation()
 
@@ -37,6 +43,11 @@ from opentelemetry.trace import set_tracer_provider, get_tracer_provider
 # Do this after the OpenTelemetry SDK imports above (load our SDK from the agent path
 # before reshuffling) and before opamp below (it imports protobuf—the app should own that).
 reorder_python_path()
+
+# Backport OTLP Span.flags trace-flags encoding 
+# (upstream PR #4761: https://github.com/open-telemetry/opentelemetry-python/pull/4761) 
+# onto the canonical exporter module now that sys.path prefers the agent's copy.
+patch_otlp_span_flags()
 
 from .version import VERSION
 from .exit_hook import ExitHooks
