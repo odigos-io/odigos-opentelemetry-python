@@ -30,6 +30,9 @@ EXPECTED_SCOPES = {
     "pythongunicorn": [
         "opentelemetry.instrumentation.starlette",
     ],
+    "fastapi-app": [
+        "opentelemetry.instrumentation.fastapi",
+    ],
     "sqlalchemy-app": [
         "opentelemetry.instrumentation.starlette",
         "opentelemetry.instrumentation.sqlalchemy",
