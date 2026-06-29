@@ -1383,6 +1383,7 @@ dependencies = [
 test = [
     { name = "pytest", version = "8.4.2", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version < '3.10'" },
     { name = "pytest", version = "9.0.2", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version >= '3.10'" },
+    { name = "pyyaml" },
 ]
 
 [package.dev-dependencies]
@@ -1460,6 +1461,7 @@ requires-dist = [
     { name = "packaging", specifier = "==24.2" },
     { name = "protobuf", specifier = "==5.29.6" },
     { name = "pytest", marker = "extra == 'test'", specifier = ">=8.0" },
+    { name = "pyyaml", marker = "extra == 'test'", specifier = ">=6.0" },
     { name = "typing-extensions", specifier = "==4.14.0" },
     { name = "urllib3", specifier = ">=2.6.3" },
     { name = "uuid7", specifier = "==0.1.0" },
