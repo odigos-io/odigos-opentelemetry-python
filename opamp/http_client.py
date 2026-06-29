@@ -5,7 +5,7 @@ import json
 import time
 import base64
 import threading
-import requests_odigos
+import http.client
 import logging
 
 from uuid_extensions import uuid7
@@ -251,8 +251,8 @@ class OpAMPHTTPClient:
                                     # Catch exception and don't update the config
                                     # The default config is preloaded when the EBPFSpanProcessor is initialized
                                     pass
-
-                except requests_odigos.RequestException:
+                # OSError contain all socket or network failures, and HTTPException is for HTTP protocol errors
+                except (OSError, http.client.HTTPException):
                     pass
                 self.condition.wait(30)
 
@@ -334,7 +334,7 @@ class OpAMPHTTPClient:
         try:
             agent_to_server = opamp_pb2.AgentToServer(remote_config_status=self.remote_config_status)
             return self.send_agent_to_server_message(agent_to_server)
-        except requests_odigos.RequestException:
+        except (OSError, http.client.HTTPException):
             pass
 
     def get_agent_description(self) -> opamp_pb2.AgentDescription:  # type: ignore

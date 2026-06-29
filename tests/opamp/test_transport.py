@@ -1,3 +1,4 @@
+import http.client
 import os
 from unittest.mock import Mock, patch
 
@@ -22,7 +23,7 @@ class TestFromEnv:
         with patch.dict(os.environ, {"ODIGOS_OPAMP_SERVER_HOST": "odigos-server:4318"}, clear=True):
             result = from_env()
         assert isinstance(result, TCPTransport)
-        assert result._url == "http://odigos-server:4318/v1/opamp"
+        assert result._host == "odigos-server:4318"
 
     def test_unix_takes_precedence_when_both_set(self):
         env = {
@@ -43,8 +44,8 @@ class TestFromEnv:
 # matching wire (unix socket OR tcp) and never accidentally use the other one.
 # We don't send real traffic - we mock both wires and check which one was hit.
 class TestPostRoutesThroughCorrectWire:
-    def test_unix_transport_post_uses_unix_socket_and_not_requests(self):
-        # Env says "use unix". post() should open a unix connection and never call requests [py library].
+    def test_unix_transport_post_uses_unix_socket(self):
+        # Env says "use unix". post() should open a unix connection and never a tcp one.
         mock_conn = Mock()
         mock_response = Mock(status=200)
         mock_response.read.return_value = b"unix-response"
@@ -56,50 +57,50 @@ class TestPostRoutesThroughCorrectWire:
 
         with (
             patch("opamp.transport._UnixHTTPConnection", return_value=mock_conn) as unix_conn_cls,
-            patch("opamp.transport.requests_odigos.post") as tcp_post,
+            patch("opamp.transport.http.client.HTTPConnection") as tcp_conn_cls,
         ):
             data = t.post(b"hello", {"Content-Type": "x"}, timeout=5)
 
         unix_conn_cls.assert_called_once_with("/sock", timeout=5)
         mock_conn.request.assert_called_once_with("POST", "/v1/opamp", body=b"hello", headers={"Content-Type": "x"})
-        tcp_post.assert_not_called()
+        tcp_conn_cls.assert_not_called()
         assert data == b"unix-response"
 
-    def test_tcp_transport_post_uses_requests_and_not_unix_socket(self):
-        # Env says "use tcp". post() should call requests_odigos and never open a unix connection.
-        mock_response = Mock(status_code=200, content=b"tcp-response")
-        mock_response.raise_for_status = Mock()
+    def test_tcp_transport_post_uses_tcp_connection_and_not_unix_socket(self):
+        # Env says "use tcp". post() should open a tcp connection and never a unix one.
+        mock_conn = Mock()
+        mock_response = Mock(status=200)
+        mock_response.read.return_value = b"tcp-response"
+        mock_conn.getresponse.return_value = mock_response
 
         with patch.dict(os.environ, {"ODIGOS_OPAMP_SERVER_HOST": "host:1234"}, clear=True):
             t = from_env()
         assert isinstance(t, TCPTransport)
 
         with (
-            patch("opamp.transport.requests_odigos.post", return_value=mock_response) as tcp_post,
+            patch("opamp.transport.http.client.HTTPConnection", return_value=mock_conn) as tcp_conn_cls,
             patch("opamp.transport._UnixHTTPConnection") as unix_conn_cls,
         ):
             data = t.post(b"hello", {"Content-Type": "x"}, timeout=5)
 
-        tcp_post.assert_called_once_with(
-            "http://host:1234/v1/opamp",
-            data=b"hello",
-            headers={"Content-Type": "x"},
-            timeout=5,
-        )
+        tcp_conn_cls.assert_called_once_with("host:1234", timeout=5)
+        mock_conn.request.assert_called_once_with("POST", "/v1/opamp", body=b"hello", headers={"Content-Type": "x"})
         unix_conn_cls.assert_not_called()
         assert data == b"tcp-response"
 
-    # If the unix server responds with an HTTP error (>=400), post() must raise
+    # If the server responds with an HTTP error (>=400), post() must raise
     # so the caller's try/except turns it into an empty ServerToAgent.
-    def test_unix_transport_raises_on_http_error_status(self):
+    def test_transport_raises_on_http_error_status(self):
         mock_conn = Mock()
-        mock_conn.getresponse.return_value = Mock(status=500)
+        mock_response = Mock(status=500)
+        mock_response.read.return_value = b""
+        mock_conn.getresponse.return_value = mock_response
 
         t = UnixTransport("/sock")
         with patch("opamp.transport._UnixHTTPConnection", return_value=mock_conn):
             try:
                 t.post(b"x", {}, timeout=1)
-            except RuntimeError as e:
+            except http.client.HTTPException as e:
                 assert "500" in str(e)
             else:
-                raise AssertionError("expected RuntimeError on 500 status")
+                raise AssertionError("expected HTTPException on 500 status")
