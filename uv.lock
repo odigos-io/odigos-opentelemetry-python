@@ -1461,7 +1461,7 @@ requires-dist = [
     { name = "protobuf", specifier = "==5.29.6" },
     { name = "pytest", marker = "extra == 'test'", specifier = ">=8.0" },
     { name = "typing-extensions", specifier = "==4.14.0" },
-    { name = "urllib3", specifier = ">=2.5.0" },
+    { name = "urllib3", specifier = ">=2.6.3" },
     { name = "uuid7", specifier = "==0.1.0" },
     { name = "wrapt", specifier = "==1.17.3" },
     { name = "zipp", specifier = "==3.20.2" },
