@@ -16,7 +16,6 @@ def setup_logging():
         handler.setFormatter(formatter)
         logger.addHandler(handler)
         logger.propagate = False  # Prevent logs from reaching the root logger
-        logger.disabled = True
 
     # Apply the diagnostics log levels from environment variables for the startup window, before the first OpAMP remote config.
     apply_log_levels_from_env()
