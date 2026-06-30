@@ -14,9 +14,5 @@ def setup_logging():
     odigos_logger.propagate = False  # Prevent logs from reaching the root logger
     odigos_logger.disabled = True  # Comment to enable the logger
 
-    # Suppress third-party loggers used by odigos-opentelemetry-python (before they are used)
-    logging.getLogger('urllib3_odigos').setLevel(logging.CRITICAL)
-    logging.getLogger('requests_odigos').setLevel(logging.CRITICAL)
-
 
 setup_logging()

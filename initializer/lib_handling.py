@@ -40,13 +40,7 @@ def reload_distro_modules() -> None:
         'typing_extensions',
     ]
 
-    excluded_modules = ['urllib3_odigos', 'requests_odigos']
-
     for module in list(sys.modules):
-        # Check if the module starts with any of the needed prefixes, but not with any of the excluded prefixes.
-        if any(module.startswith(prefix) for prefix in excluded_modules):
-            continue
-
         if any(module.startswith(prefix) for prefix in needed_module_prefixes):
             module_file = getattr(sys.modules[module], '__file__', None)  # Safely get __file__
             if module_file and ('/etc/odigos-vmagent/' in module_file or '/var/odigos/' in module_file):

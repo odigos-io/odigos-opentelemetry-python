@@ -2,19 +2,31 @@ import os
 import socket
 import http.client
 
-import requests_odigos
+_OPAMP_PATH = "/v1/opamp"
+
+
+def _post(conn: http.client.HTTPConnection, body: bytes, headers: dict) -> bytes:
+    try:
+        conn.request("POST", _OPAMP_PATH, body=body, headers=headers)
+        response = conn.getresponse()
+        status = response.status
+        data = response.read()
+        if status >= 400:
+            raise http.client.HTTPException(f"opamp POST returned status {status}")
+        return data
+    finally:
+        conn.close()
 
 
 class TCPTransport:
     """HTTP/1.1 over TCP. Talks to ODIGOS_OPAMP_SERVER_HOST."""
 
     def __init__(self, host: str):
-        self._url = f"http://{host}/v1/opamp"
+        self._host = host
 
     def post(self, body: bytes, headers: dict, timeout: float) -> bytes:
-        response = requests_odigos.post(self._url, data=body, headers=headers, timeout=timeout)
-        response.raise_for_status()
-        return response.content
+        conn = http.client.HTTPConnection(self._host, timeout=timeout)
+        return _post(conn, body, headers)
 
 
 class UnixTransport:
@@ -25,14 +37,7 @@ class UnixTransport:
 
     def post(self, body: bytes, headers: dict, timeout: float) -> bytes:
         conn = _UnixHTTPConnection(self._socket_path, timeout=timeout)
-        try:
-            conn.request("POST", "/v1/opamp", body=body, headers=headers)
-            response = conn.getresponse()
-            if response.status >= 400:
-                raise RuntimeError(f"opamp unix POST returned status {response.status}")
-            return response.read()
-        finally:
-            conn.close()
+        return _post(conn, body, headers)
 
 
 class _UnixHTTPConnection(http.client.HTTPConnection):
