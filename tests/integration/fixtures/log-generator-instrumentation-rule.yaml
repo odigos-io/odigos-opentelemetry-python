@@ -1,0 +1,17 @@
+apiVersion: odigos.io/v1alpha1
+kind: InstrumentationRule
+metadata:
+  name: log-generator-agent-diagnostics
+  namespace: odigos-system
+spec:
+  ruleName: Debug logging for log-generator
+  scopes:
+    languages:
+      - python
+    sources:
+      - namespace: log-generator
+        name: log-generator-app
+        kind: Deployment
+  agentDiagnostics:
+    odigosLogLevel: debug
+    openTelemetryComponentsLogLevel: debug

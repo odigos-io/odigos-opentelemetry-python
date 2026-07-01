@@ -1,19 +1,16 @@
 import logging
 import random
 
-from flask import Flask
+from fastapi import FastAPI
 
 # Configure the app's logging at DEBUG. Under instrumentation the agent must preserve this level.
 logging.basicConfig(level=logging.DEBUG)
+logger = logging.getLogger(__name__)
 
-app = Flask(__name__)
+app = FastAPI()
 
 
-@app.route("/rolldice")
+@app.get("/rolldice")
 def rolldice():
-    app.logger.debug("FLASK-DEBUG-OK")
+    logger.debug("FASTAPI-DEBUG-OK")
     return str(random.randint(1, 6))
-
-
-if __name__ == "__main__":
-    app.run(host="0.0.0.0", port=8080)

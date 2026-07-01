@@ -25,6 +25,7 @@ APPS=(
   "openai-app:8084:/test"
   "anthropic-app:8085:/test"
   "langchain-app:8086:/test"
+  "fastapi-app:8087:/rolldice"
 )
 
 STARTUP_WAIT=30             # seconds to wait for containers to start
@@ -137,6 +138,13 @@ done
 if [ "$LOG_FAIL" = true ]; then
   exit 1
 fi
+
+# ── 9. Verify agent diagnostics + head sampling (log-generator) ─────
+# InstrumentationRule + Sampling YAML fixtures are merged like OpAMP remote config.
+echo ""
+echo "── Verifying agent diagnostics + head sampling (log-generator) ──"
+uv sync --extra test --quiet
+uv run pytest "$SCRIPT_DIR/test_log_generator_remote_config.py" -q
 
 echo ""
 echo "══════════════════════════════════════════════════════════════════"

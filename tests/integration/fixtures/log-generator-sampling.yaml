@@ -1,0 +1,15 @@
+apiVersion: odigos.io/v1alpha1
+kind: Sampling
+metadata:
+  name: default
+  namespace: odigos-system
+spec:
+  name: default
+  noisyOperations:
+    - id: e2e-50pct
+      percentageAtMost: 50
+      sourceScopes:
+        sources:
+          - kind: Deployment
+            name: log-generator-app
+            namespace: log-generator
