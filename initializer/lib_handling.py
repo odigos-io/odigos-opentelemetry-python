@@ -90,7 +90,9 @@ def patch_otlp_span_flags() -> None:
     def encode_span(sdk_span: ReadableSpan) -> PB2Span:
         encoded_span = original_encode_span(sdk_span)
         # THE FIX: fold the W3C trace flags into Span.flags (PR #4761).
-        encoded_span.flags |= int(sdk_span.get_span_context().trace_flags)
+        span_context = sdk_span.get_span_context()
+        if span_context is not None:
+            encoded_span.flags |= int(span_context.trace_flags)
         return encoded_span
 
     def encode_links(links: Sequence[Link]) -> Optional[Sequence[PB2Span.Link]]:
