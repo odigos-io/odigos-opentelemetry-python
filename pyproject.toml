@@ -17,7 +17,7 @@ dependencies = [
     "idna == 3.10",
     "asgiref == 3.8.1",
     "certifi == 2025.1.31",
-    "charset-normalizer == 3.4.1",
+    "charset-normalizer == 3.4.7",
     "googleapis-common-protos == 1.66.0",
     "packaging == 24.2",
     "protobuf == 5.29.6",
