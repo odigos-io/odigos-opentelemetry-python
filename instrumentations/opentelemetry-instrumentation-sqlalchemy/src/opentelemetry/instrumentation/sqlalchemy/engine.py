@@ -22,25 +22,89 @@ from sqlalchemy.event import (  # pylint: disable=no-name-in-module
 )
 
 from opentelemetry import trace
+from opentelemetry.instrumentation._semconv import (
+    _OpenTelemetrySemanticConventionStability,
+    _OpenTelemetryStabilitySignalType,
+    _set_db_name,
+    _set_db_operation,
+    _set_db_statement,
+    _set_db_system,
+    _set_db_user,
+    _set_http_net_peer_name_client,
+    _set_http_peer_port_client,
+)
 from opentelemetry.instrumentation.sqlcommenter_utils import _add_sql_comment
 from opentelemetry.instrumentation.utils import (
     _get_opentelemetry_values,
     is_instrumentation_enabled,
 )
-from opentelemetry.semconv._incubating.attributes.db_attributes import (
-    DB_NAME,
-    DB_OPERATION,  # [Odigos fix] added for db.operation span attribute
-    DB_STATEMENT,
-    DB_SYSTEM,
-    DB_USER,
-)
 from opentelemetry.semconv._incubating.attributes.net_attributes import (
-    NET_PEER_NAME,
-    NET_PEER_PORT,
     NET_TRANSPORT,
     NetTransportValues,
 )
 from opentelemetry.trace.status import Status, StatusCode
+
+
+def _get_db_name_from_cursor_or_conn(vendor, conn, cursor):
+    """Return DB name from cursor or connection when available -- else None."""
+    if not vendor:
+        return None
+
+    vendor = vendor.lower()
+    db_name = None
+    if "postgres" in vendor:
+        info = getattr(getattr(cursor, "connection", None), "info", None)
+        if info and hasattr(info, "dbname"):
+            db_name = info.dbname
+    elif "mysql" in vendor:
+        db_name = _get_mysql_db_name(cursor)
+    elif "mssql" in vendor or "sqlserver" in vendor:
+        db_name = _get_mssql_db_name(cursor)
+        if not db_name:
+            engine = getattr(conn, "engine", None)
+            url = getattr(engine, "url", None)
+            db_name = getattr(url, "database", None)
+    else:
+        # Try connection for sqlite and others
+        engine = getattr(conn, "engine", None)
+        url = getattr(engine, "url", None)
+        db_name = getattr(url, "database", None)
+    return db_name
+
+
+def _get_mysql_db_name(cursor):
+    """Extract database name from MySQL cursor."""
+    # mysql-connector with c-extension uses _cnx
+    connection = getattr(cursor, "connection", None) or getattr(
+        cursor, "_cnx", None
+    )
+    if not connection:
+        return None
+    if hasattr(connection, "database"):
+        return connection.database
+    if hasattr(connection, "db"):
+        raw_db_name = connection.db
+        return (
+            raw_db_name.decode("utf-8")
+            if isinstance(raw_db_name, bytes)
+            else raw_db_name
+        )
+    return None
+
+
+def _get_mssql_db_name(cursor):
+    """Extract database name from MSSQL cursor."""
+    connection = getattr(cursor, "connection", None)
+    if not connection:
+        return None
+    if hasattr(connection, "database"):
+        return connection.database
+    if hasattr(connection, "db"):
+        return connection.db
+    info = getattr(connection, "info", None)
+    if info and hasattr(info, "database"):
+        return info.database
+    return None
 
 
 def _normalize_vendor(vendor):
@@ -74,7 +138,7 @@ def _wrap_create_async_engine(
 
         engine = func(*args, **kwargs)
         # [Odigos fix] handle proxied async engines that wrap the real engine in _engine
-        if hasattr(engine, '_engine'):
+        if hasattr(engine, "_engine"):
             EngineTracer(
                 tracer,
                 engine._engine.sync_engine,
@@ -114,7 +178,7 @@ def _wrap_create_engine(
 
         engine = func(*args, **kwargs)
         # [Odigos fix] handle proxied engines that wrap the real engine in _engine
-        if hasattr(engine, '_engine'):
+        if hasattr(engine, "_engine"):
             EngineTracer(
                 tracer,
                 engine._engine,
@@ -124,7 +188,6 @@ def _wrap_create_engine(
                 enable_attribute_commenter,
             )
             return engine
-
 
         EngineTracer(
             tracer,
@@ -145,13 +208,30 @@ def _wrap_connect(tracer):
         if not is_instrumentation_enabled():
             return func(*args, **kwargs)
 
+        # Initialize semantic conventions opt-in if needed
+        _OpenTelemetrySemanticConventionStability._initialize()
+        sem_conv_opt_in_mode_db = _OpenTelemetrySemanticConventionStability._get_opentelemetry_stability_opt_in_mode(
+            _OpenTelemetryStabilitySignalType.DATABASE,
+        )
+        sem_conv_opt_in_mode_http = _OpenTelemetrySemanticConventionStability._get_opentelemetry_stability_opt_in_mode(
+            _OpenTelemetryStabilitySignalType.HTTP,
+        )
+
         with tracer.start_as_current_span(
             "connect", kind=trace.SpanKind.CLIENT
         ) as span:
             if span.is_recording():
-                attrs, _ = _get_attributes_from_url(module.url)
+                attrs, _ = _get_attributes_from_url(
+                    module.url,
+                    sem_conv_opt_in_mode_db,
+                    sem_conv_opt_in_mode_http,
+                )
+                _set_db_system(
+                    attrs,
+                    _normalize_vendor(module.name),
+                    sem_conv_opt_in_mode_db,
+                )
                 span.set_attributes(attrs)
-                span.set_attribute(DB_SYSTEM, _normalize_vendor(module.name))
             return func(*args, **kwargs)
 
     return _wrap_connect_internal
@@ -169,6 +249,15 @@ class EngineTracer:
         commenter_options=None,
         enable_attribute_commenter=False,
     ):
+        # Initialize semantic conventions opt-in if needed
+        _OpenTelemetrySemanticConventionStability._initialize()
+        self._sem_conv_opt_in_mode_db = _OpenTelemetrySemanticConventionStability._get_opentelemetry_stability_opt_in_mode(
+            _OpenTelemetryStabilitySignalType.DATABASE,
+        )
+        self._sem_conv_opt_in_mode_http = _OpenTelemetrySemanticConventionStability._get_opentelemetry_stability_opt_in_mode(
+            _OpenTelemetryStabilitySignalType.HTTP,
+        )
+
         self.tracer = tracer
         self.connections_usage = connections_usage
         self.vendor = _normalize_vendor(engine.name)
@@ -265,7 +354,7 @@ class EngineTracer:
                 remove(weak_ref_target(), identifier, func)
         cls._remove_event_listener_params.clear()
 
-    # [Odigos fix] added attrs parameter to set DB_OPERATION attribute
+    # [Odigos fix] added attrs parameter to set the db.operation attribute
     def _operation_name(self, db_name, statement, attrs=None):
         parts = []
         if isinstance(statement, str):
@@ -275,12 +364,18 @@ class EngineTracer:
             # For some very special cases it might not record the correct statement if the SQL
             # dialect is too weird but in any case it shouldn't break anything.
             # Strip leading comments so we get the operation name.
-            operation = self._leading_comment_remover.sub("", statement).split()[0]
+            operation = self._leading_comment_remover.sub(
+                "", statement
+            ).split()[0]
             parts.append(operation)
 
-            # [Odigos fix] set db.operation since we know this came from a valid statement
+            # [Odigos fix] set db.operation to the bare operation verb since we know this
+            # came from a valid statement. Upstream instead records the full
+            # "<operation> <db_name>" span-name string as the attribute value.
             if attrs is not None:
-                attrs[DB_OPERATION] = operation
+                _set_db_operation(
+                    attrs, operation, self._sem_conv_opt_in_mode_db
+                )
         if db_name:
             parts.append(db_name)
         if not parts:
@@ -308,9 +403,13 @@ class EngineTracer:
 
     def _set_db_client_span_attributes(self, span, statement, attrs) -> None:
         """Uses statement and attrs to set attributes of provided Otel span"""
-        span.set_attribute(DB_STATEMENT, statement)
-        span.set_attribute(DB_SYSTEM, self.vendor)
-        for key, value in attrs.items():
+        span_attrs = dict(attrs)
+        _set_db_statement(span_attrs, statement, self._sem_conv_opt_in_mode_db)
+        _set_db_system(span_attrs, self.vendor, self._sem_conv_opt_in_mode_db)
+        # [Odigos fix] db.operation is set to the bare operation verb inside _operation_name
+        # (flows in via attrs), instead of upstream's _set_db_operation call here which used
+        # the full "<operation> <db_name>" span-name string.
+        for key, value in span_attrs.items():
             span.set_attribute(key, value)
 
     def _before_cur_exec(
@@ -319,15 +418,27 @@ class EngineTracer:
         if not is_instrumentation_enabled():
             return statement, params
 
-        attrs, found = _get_attributes_from_url(conn.engine.url)
+        attrs, found = _get_attributes_from_url(
+            conn.engine.url,
+            self._sem_conv_opt_in_mode_db,
+            self._sem_conv_opt_in_mode_http,
+        )
         if not found:
-            attrs = _get_attributes_from_cursor(self.vendor, cursor, attrs)
+            attrs = _get_attributes_from_cursor_or_conn(
+                self.vendor,
+                conn,
+                cursor,
+                attrs,
+                self._sem_conv_opt_in_mode_db,
+                self._sem_conv_opt_in_mode_http,
+            )
 
-        db_name = attrs.get(DB_NAME, "")
-        # [Odigos fix] pass attrs so _operation_name can set DB_OPERATION
-        operation_name = self._operation_name(db_name, statement, attrs)
+        # Extract db_name for operation name
+        db_name = _get_db_name_from_cursor_or_conn(self.vendor, conn, cursor)
+
+        # [Odigos fix] pass attrs so _operation_name sets the bare-verb db.operation
         span = self.tracer.start_span(
-            operation_name,
+            self._operation_name(db_name, statement, attrs),
             kind=trace.SpanKind.CLIENT,
         )
         with trace.use_span(span, end_on_exit=False):
@@ -336,10 +447,10 @@ class EngineTracer:
                     commenter_data = self._get_commenter_data(conn)
 
                     if self.enable_attribute_commenter:
-                        # just to handle type safety and avoid errors
+                        # just to handle type safety
                         statement = str(statement)
 
-                        # sqlcomment is added to executed query and db.statement span attribute
+                        # sqlcomment is added to executed query and db.statement and/or db.query.text span attribute
                         statement = _add_sql_comment(
                             statement, **commenter_data
                         )
@@ -349,7 +460,7 @@ class EngineTracer:
 
                     else:
                         # sqlcomment is only added to executed query
-                        # so db.statement is set before add_sql_comment
+                        # so db.statement and/or db.query.text is set before add_sql_comment
                         self._set_db_client_span_attributes(
                             span, statement, attrs
                         )
@@ -359,7 +470,9 @@ class EngineTracer:
 
                 else:
                     # no sqlcomment anywhere
-                    self._set_db_client_span_attributes(span, statement, attrs)
+                    self._set_db_client_span_attributes(
+                        span, statement, attrs
+                    )
 
         context._otel_span = span
 
@@ -390,42 +503,64 @@ def _handle_error(context):
     span.end()
 
 
-def _get_attributes_from_url(url):
+def _get_attributes_from_url(
+    url, sem_conv_opt_in_mode_db, sem_conv_opt_in_mode_http
+):
     """Set connection tags from the url. return true if successful."""
     attrs = {}
     if url.host:
-        attrs[NET_PEER_NAME] = url.host
+        _set_http_net_peer_name_client(
+            attrs, url.host, sem_conv_opt_in_mode_http
+        )
     if url.port:
-        attrs[NET_PEER_PORT] = url.port
+        _set_http_peer_port_client(attrs, url.port, sem_conv_opt_in_mode_http)
     if url.database:
-        attrs[DB_NAME] = url.database
+        _set_db_name(attrs, url.database, sem_conv_opt_in_mode_db)
     if url.username:
-        attrs[DB_USER] = url.username
+        _set_db_user(attrs, url.username, sem_conv_opt_in_mode_db)
     return attrs, bool(url.host)
 
 
-def _get_attributes_from_cursor(vendor, cursor, attrs):
+def _get_attributes_from_cursor_or_conn(
+    vendor,
+    conn,
+    cursor,
+    attrs,
+    sem_conv_opt_in_mode_db,
+    sem_conv_opt_in_mode_http,
+):
     """Attempt to set db connection attributes by introspecting the cursor."""
     if vendor == "postgresql":
         info = getattr(getattr(cursor, "connection", None), "info", None)
         if not info:
             return attrs
 
-        attrs[DB_NAME] = info.dbname
+        db_name = _get_db_name_from_cursor_or_conn(vendor, conn, cursor)
+        _set_db_name(attrs, db_name, sem_conv_opt_in_mode_db)
         is_unix_socket = info.host and info.host.startswith("/")
 
         if is_unix_socket:
             attrs[NET_TRANSPORT] = NetTransportValues.OTHER.value
             if info.port:
                 # postgresql enforces this pattern on all socket names
-                attrs[NET_PEER_NAME] = os.path.join(
-                    info.host, f".s.PGSQL.{info.port}"
+                _set_http_net_peer_name_client(
+                    attrs,
+                    os.path.join(info.host, f".s.PGSQL.{info.port}"),
+                    sem_conv_opt_in_mode_http,
                 )
         else:
             attrs[NET_TRANSPORT] = NetTransportValues.IP_TCP.value
-            attrs[NET_PEER_NAME] = info.host
+            _set_http_net_peer_name_client(
+                attrs, info.host, sem_conv_opt_in_mode_http
+            )
             if info.port:
-                attrs[NET_PEER_PORT] = int(info.port)
+                _set_http_peer_port_client(
+                    attrs, int(info.port), sem_conv_opt_in_mode_http
+                )
+    elif vendor == "sqlite":
+        db_name = _get_db_name_from_cursor_or_conn(vendor, conn, cursor)
+        _set_db_name(attrs, db_name, sem_conv_opt_in_mode_db)
+        # SQLite has no network attributes
     return attrs
 
 
