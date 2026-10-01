@@ -13,6 +13,7 @@ authors = [
 dependencies = [
     "uuid7 == 0.1.0",
     "urllib3 >= 2.6.3",  # security floor: urllib3 redirect/retry CVEs fixed in 2.5.0
+    "urllib3 >= 2.8.0; python_full_version >= '3.10'",  # security floor: GHSA-8988-9cw3-xx77, GHSA-vxq7-64xx-v4gw; 2.8.0 requires py>=3.10
     "zipp == 3.20.2",
     "idna == 3.10",
     "asgiref == 3.8.1",
