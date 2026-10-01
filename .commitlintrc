@@ -1,5 +1,7 @@
 {
-  "extends": ["@commitlint/config-conventional"],
+  "extends": [
+    "@commitlint/config-conventional"
+  ],
   "rules": {
     "type-enum": [
       2,
@@ -18,12 +20,45 @@
         "ci"
       ]
     ],
-    "scope-empty": [0],
-    "scope-case": [2, "always", "lower-case"],
-    "subject-empty": [2, "never"],
-    "header-max-length": [2, "always", 100],
-    "type-empty": [2, "never"],
-    "type-case": [2, "always", "lower-case"],
-    "subject-case": [0]
+    "scope-empty": [
+      0
+    ],
+    "scope-case": [
+      2,
+      "always",
+      "lower-case"
+    ],
+    "subject-empty": [
+      2,
+      "never"
+    ],
+    "header-max-length": [
+      2,
+      "always",
+      150
+    ],
+    "type-empty": [
+      2,
+      "never"
+    ],
+    "type-case": [
+      2,
+      "always",
+      "lower-case"
+    ],
+    "subject-case": [
+      0
+    ]
+  },
+  "parserPreset": {
+    "parserOpts": {
+      "headerPattern": "^(?:[A-Z][A-Z0-9]*-[1-9][0-9]*\\s*\\|\\s*)?(\\w+)(?:\\(([^)]*)\\))?(!)?: (.+)$",
+      "headerCorrespondence": [
+        "type",
+        "scope",
+        "breaking",
+        "subject"
+      ]
+    }
   }
 }
