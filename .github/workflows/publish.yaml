@@ -11,6 +11,9 @@ env:
 jobs:
   build:
     runs-on: ubuntu-latest
+    permissions:
+      id-token: write
+      contents: read
 
     steps:
       - name: Check out the code
@@ -53,24 +56,30 @@ jobs:
       - name: Build all instrumentations
         run: make build-instrumentations
 
-      - name: Publish patched instrumentations
-        env:
-          TWINE_USERNAME: "__token__"
-          TWINE_PASSWORD: ${{ secrets.PYPI_API_TOKEN }}
-        run: |
-          # uv build in a workspace outputs all wheels to root dist/
-          # Using --skip-existing in order to skip already uploaded instrumentation,
-          # In order to overwrite, a package needs to be removed manually from PyPI
-          uvx twine upload --skip-existing --non-interactive dist/odigos_opentelemetry_instrumentation_*
-
       - name: Build the package
         run: uv build
 
+      - name: Split dists for publishing
+        run: |
+          # uv build in a workspace outputs all wheels to root dist/;
+          # the publish action uploads whole directories, so separate the
+          # instrumentation dists from the main package dists
+          mkdir dist-instrumentations dist-main
+          mv dist/odigos_opentelemetry_instrumentation_* dist-instrumentations/
+          mv dist/odigos_opentelemetry_python-* dist-main/
+
+      - name: Publish patched instrumentations
+        uses: pypa/gh-action-pypi-publish@dc37677b2e1c63e2034f94d8a5b11f265b73ba33 # v1.14.2
+        with:
+          packages-dir: dist-instrumentations
+          # Skip already uploaded instrumentations; to overwrite, a package
+          # needs to be removed manually from PyPI
+          skip-existing: true
+
       - name: Publish to PyPI
-        env:
-          TWINE_USERNAME: "__token__"
-          TWINE_PASSWORD: ${{ secrets.PYPI_API_TOKEN }}
-        run: uvx twine upload --non-interactive dist/odigos_opentelemetry_python-*
+        uses: pypa/gh-action-pypi-publish@dc37677b2e1c63e2034f94d8a5b11f265b73ba33 # v1.14.2
+        with:
+          packages-dir: dist-main
 
   docker-release:
     runs-on: ubuntu-latest
