@@ -2,7 +2,7 @@ from setuptools import setup, find_packages
 
 setup(
     name="odigos-opentelemetry-python3.8",
-    version="1.0.73",
+    version="1.0.74",
     description="Odigos Initializer for Python OpenTelemetry Components",
     author="odigos-io",
     author_email="support@odigos.io",
@@ -29,7 +29,7 @@ setup(
         "asgiref==3.8.1",
         "deprecated==1.2.18",
         "requests == 2.32.3",
-        "certifi==2025.1.31",
+        "certifi==2026.10.19",
         "charset-normalizer==3.4.1",
         'googleapis-common-protos==1.66.0',
         'packaging==24.2',

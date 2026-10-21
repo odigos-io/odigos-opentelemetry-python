@@ -8,7 +8,7 @@ asgiref==3.8.1
     # via
     #   odigos-opentelemetry-python (setup.py)
     #   opentelemetry-instrumentation-asgi
-certifi==2025.1.31
+certifi==2026.10.19
     # via
     #   odigos-opentelemetry-python (setup.py)
     #   odigos-requests
