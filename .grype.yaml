@@ -1,0 +1,29 @@
+# Grype ignore rules for this repo (read automatically from the repo root by the vulnerability scans).
+#
+# Python 3.9 leg only. Every fix below requires Python >= 3.10, while this package still supports 3.9, so uv.lock
+# keeps the old version only under `python_full_version < '3.10'` (the >= 3.10 entries are on fixed versions and are
+# NOT ignored). anyio and aiohttp are pulled in only by the instrumentations' `instruments` extras (test installs),
+# not by the shipped agent bundle. Same decision as the urllib3 entry in odigos-enterprise's CVE ledger (RUN-1193).
+# Remove these rules when Python 3.9 support is dropped.
+ignore:
+  # anyio 4.12.1 (fix 4.14.2 requires Python >= 3.10)
+  - vulnerability: GHSA-82r6-8w77-94w6
+    package: {name: anyio, version: 4.12.1}
+  # aiohttp 3.13.5 (fixes 3.14.3 / 3.14.4 require Python >= 3.10)
+  - vulnerability: GHSA-2g87-pp6c-29x5
+    package: {name: aiohttp, version: 3.13.5}
+  - vulnerability: GHSA-5wr8-gcqf-gqf3
+    package: {name: aiohttp, version: 3.13.5}
+  - vulnerability: GHSA-9xw5-w5jj-pvcg
+    package: {name: aiohttp, version: 3.13.5}
+  - vulnerability: GHSA-cq5v-8q36-5273
+    package: {name: aiohttp, version: 3.13.5}
+  # urllib3 2.6.3 (fixes 2.7.0 / 2.8.0 require Python >= 3.10)
+  - vulnerability: GHSA-8988-9cw3-xx77
+    package: {name: urllib3, version: 2.6.3}
+  - vulnerability: GHSA-mf9v-mfxr-j63j
+    package: {name: urllib3, version: 2.6.3}
+  - vulnerability: GHSA-qccp-gfcp-xxvc
+    package: {name: urllib3, version: 2.6.3}
+  - vulnerability: GHSA-vxq7-64xx-v4gw
+    package: {name: urllib3, version: 2.6.3}
