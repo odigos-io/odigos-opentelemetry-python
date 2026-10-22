@@ -27,3 +27,12 @@ ignore:
     package: {name: urllib3, version: 2.6.3}
   - vulnerability: GHSA-vxq7-64xx-v4gw
     package: {name: urllib3, version: 2.6.3}
+
+  # virtualenv 21.14.5: dev-only (pulled in by the pre-commit dev tool, not shipped). Its fixes (21.14.7 / 21.14.9)
+  # require packaging >= 26.3 and typing-extensions >= 4.16 (Python < 3.11), which conflict with this package's
+  # exact runtime pins (packaging == 24.2, typing-extensions == 4.14.0); bumping those would change the shipped
+  # bundle. Remove when those runtime pins move.
+  - vulnerability: GHSA-c978-59m8-c77v
+    package: {name: virtualenv, version: 21.14.5}
+  - vulnerability: GHSA-vxj4-q4g9-crj7
+    package: {name: virtualenv, version: 21.14.5}
