@@ -12,19 +12,15 @@ authors = [
 ]
 dependencies = [
     "uuid7 == 0.1.0",
-    "urllib3 >= 2.6.3",  # security floor: urllib3 redirect/retry CVEs fixed in 2.5.0
     "zipp == 3.20.2",
-    "idna == 3.10",
     "asgiref == 3.8.1",
-    "certifi == 2025.1.31",
-    "charset-normalizer == 3.4.1",
-    "googleapis-common-protos == 1.66.0",
     "packaging == 24.2",
     "protobuf == 5.29.6",
     "importlib-metadata == 6.0",
     "wrapt == 1.17.3",
     "typing-extensions == 4.14.0",
-    "opentelemetry-exporter-otlp-proto-http == 1.41.1",
+    "opentelemetry-sdk == 1.41.1",
+    "opentelemetry-exporter-otlp-proto-common == 1.41.1",
     "opentelemetry-instrumentation == 0.62b1",
     "opentelemetry-instrumentation-aio-pika == 0.62b1",
     "opentelemetry-instrumentation-aiohttp-client == 0.62b1",
@@ -78,7 +74,6 @@ dependencies = [
     "opentelemetry-instrumentation-google-genai == 0.6b0",
     "opentelemetry-instrumentation-langchain == 0.50.1",
     "opentelemetry-instrumentation-openai-agents-v2 == 0.1.0",
-    "odigos-opentelemetry-instrumentation-openai-v2 == 2.3b0",
     "opentelemetry-instrumentation-vertexai == 2.1b0",
     "opentelemetry-instrumentation-weaviate == 0.50.1",
 ]
@@ -106,16 +101,12 @@ odigos = "initializer.distro.distro:OdigosDistro"
 odigos-opentelemetry-instrumentation-aiohttp-server = { workspace = true }
 odigos-opentelemetry-instrumentation-elasticsearch = { workspace = true }
 odigos-opentelemetry-instrumentation-confluent-kafka = { workspace = true }
-odigos-opentelemetry-instrumentation-openai-v2 = { workspace = true }
 odigos-opentelemetry-instrumentation-sqlalchemy = { workspace = true }
 
 [tool.uv.workspace]
 members = [
     "agent",
     "instrumentations/*",
-]
-exclude = [
-    "tests/integration/configurator",
 ]
 
 [tool.setuptools.packages.find]
@@ -136,7 +127,6 @@ extend-exclude = [
     "dist",
     "build",
     "*.egg-info",
-    "tests/integration/configurator",
     "instrumentations/",
     "*_pb2.py",
 ]
@@ -160,7 +150,6 @@ exclude = [
     ".venv",
     "dist",
     "build",
-    "tests/integration/configurator",
     "tests/integration/apps",
     "instrumentations/",
     "opamp/opamp_pb2.py"

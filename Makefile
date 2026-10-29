@@ -27,11 +27,12 @@ install:
 
 # Use this make command to publish a local version of the instrumentations, to be used with odiglet
 # (see README -> local development)
-build-release-docker: build
-	@echo "🐳 Building release Docker image..."
-	@cp dist/*.whl agent/
-	@docker build -f release.Dockerfile -t public.ecr.aws/odigos/agents/python-community:local . ; \
-		rm -f agent/*.whl
+build-release-docker:
+	@echo "🐳 Building release Docker images..."
+	@docker build -f release.Dockerfile -t public.ecr.aws/odigos/agents/python-community:local .
+	@docker build -f release.Dockerfile -t public.ecr.aws/odigos/agents/python-core:local \
+		--build-arg PACKAGE=odigos-opentelemetry-python \
+		--build-arg BUNDLE_DIR=python-core .
 
 clean:
 	@echo "🧹 Cleaning..."

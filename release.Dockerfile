@@ -1,28 +1,29 @@
-# Builds the configurator package.
+# Builds an agent bundle from this source tree, pinned to uv.lock.
 #
-# CI (publish.yaml): packages are already on PyPI, resolved normally.
-# Local testing:     `make build-release-docker` stages wheels into agent/ so --find-links picks them up.
+# The defaults build the python-community image. The same file builds python-core:
+#   --build-arg PACKAGE=odigos-opentelemetry-python --build-arg BUNDLE_DIR=python-core
+#
+# Used by publish.yaml (CI), `make build-release-docker` and the integration tests.
 
 # IMPORTANT: If changing the Python version below, update the Python dependency shared object filenames
 # in odiglet/pkg/instrumentation/fs/agents.go (e.g., cpython-311 must match the Python version).
-FROM python:3.11.9 AS python-community-build
+FROM python:3.11.9 AS bundle-build
+
+ARG PACKAGE=odigos-python-configurator
 
 RUN pip install uv
 
-WORKDIR /python-instrumentation
-COPY agent/ ./agent
-# Overrides agent/pyproject.toml's [tool.uv.sources].
-# it points odigos-opentelemetry-python to the local workspace — needed for local dev, but breaks inside Docker where there's no workspace.
+WORKDIR /src
+COPY . .
 
-# sed strips it, and makes uv treat the dependency as a normal package, resolved from:
-#   - make build-release-docker (locally): local .whl files via --find-links
-#   - publish.yaml, CI: PyPI (wheels are published before this Docker build runs)
-RUN sed -i '/\[tool\.uv\.sources\]/,/^$/d' agent/pyproject.toml
-RUN uv pip install ./agent/ --find-links ./agent/ --prerelease=allow --target workspace --system
+# The bundle is this environment's site-packages, installed exactly as locked.
+ENV UV_PROJECT_ENVIRONMENT=/venv
+RUN uv sync --frozen --no-dev --no-editable --package "${PACKAGE}"
 
 
 # Ultra-minimal base image - just for copying files
 FROM scratch
+ARG BUNDLE_DIR=python
 WORKDIR /instrumentations
 
-COPY --from=python-community-build /python-instrumentation/workspace /instrumentations/python
+COPY --from=bundle-build /venv/lib/python3.11/site-packages /instrumentations/${BUNDLE_DIR}

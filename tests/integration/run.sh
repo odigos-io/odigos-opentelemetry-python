@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 #
-# Builds the package from the current tree, spins up sample apps with the
+# Builds the agent from the current tree, spins up sample apps with the
 # OTel Collector via a shared instrumentation volume (replicating the
 # odiglet init-container pattern), sends traffic, and verifies that spans
 # arrive and no Python errors occur.
@@ -22,7 +22,6 @@ APPS=(
   "pythongunicorn:8000:/sub/home"
   "django-app:8082:/rolldice"
   "sqlalchemy-app:8083:/rolldice"
-  "openai-app:8084:/test"
   "anthropic-app:8085:/test"
   "langchain-app:8086:/test"
   "fastapi-app:8087:/rolldice"
@@ -40,33 +39,20 @@ cleanup() {
 }
 trap cleanup EXIT
 
-# ── 1. Build wheels ──────────────────────────────────────────────────
-echo "── Building wheels ──────────────────────────────────────────────"
+# ── 1. Prepare output directory ──────────────────────────────────────
 cd "$REPO_ROOT"
-rm -rf dist/
-make build
-
-# Copy instrumentation wheels into dist/ so Dockerfile.agent can find them
-for inst_dir in instrumentations/*/dist; do
-  [ -d "$inst_dir" ] && cp "$inst_dir"/* dist/
-done
-
-echo "  Wheels in dist/:"
-ls -1 dist/*.whl
-
-# ── 2. Prepare output directory ──────────────────────────────────────
 mkdir -p "$OUTPUT_DIR"
 rm -f "$OUTPUT_DIR/traces.json"
 touch "$OUTPUT_DIR/traces.json"
 chmod 777 "$OUTPUT_DIR" "$OUTPUT_DIR/traces.json"
 
-# ── 3. Build and start containers ───────────────────────────────────
+# ── 2. Build and start containers ───────────────────────────────────
 echo ""
 echo "── Starting containers ──────────────────────────────────────────"
 docker compose -f "$COMPOSE_FILE" build --no-cache
 docker compose -f "$COMPOSE_FILE" up -d
 
-# ── 4. Wait for containers to be up ─────────────────────────────────
+# ── 3. Wait for containers to be up ─────────────────────────────────
 echo ""
 echo "── Waiting ${STARTUP_WAIT}s for services to start ───────────────"
 sleep "$STARTUP_WAIT"
@@ -84,7 +70,7 @@ for entry in "${APPS[@]}"; do
   echo "  $svc is running"
 done
 
-# ── 5. Send traffic ─────────────────────────────────────────────────
+# ── 4. Send traffic ─────────────────────────────────────────────────
 echo ""
 echo "── Sending test traffic ─────────────────────────────────────────"
 for entry in "${APPS[@]}"; do
@@ -96,12 +82,12 @@ for entry in "${APPS[@]}"; do
   done
 done
 
-# ── 6. Wait for span flush ──────────────────────────────────────────
+# ── 5. Wait for span flush ──────────────────────────────────────────
 echo ""
 echo "── Waiting ${FLUSH_WAIT}s for spans to flush ────────────────────"
 sleep "$FLUSH_WAIT"
 
-# ── 7. Verify traces ────────────────────────────────────────────────
+# ── 6. Verify traces ────────────────────────────────────────────────
 # Runs verify.py which parses the collector's file-exporter output
 # (OTLP JSON lines) and asserts:
 #   - At least one span was received
@@ -119,7 +105,7 @@ uv run python "$SCRIPT_DIR/verify.py" \
   --traces-file "$OUTPUT_DIR/traces.json" \
   --expected-services "${EXPECTED_SERVICES[@]}"
 
-# ── 8. Check container logs for Python errors ────────────────────────
+# ── 7. Check container logs for Python errors ────────────────────────
 echo ""
 echo "── Checking container logs for Python errors ────────────────────"
 LOG_FAIL=false
@@ -139,7 +125,7 @@ if [ "$LOG_FAIL" = true ]; then
   exit 1
 fi
 
-# ── 9. Verify agent diagnostics + head sampling (log-generator) ─────
+# ── 8. Verify agent diagnostics + head sampling (log-generator) ─────
 # InstrumentationRule + Sampling YAML fixtures are merged like OpAMP remote config.
 echo ""
 echo "── Verifying agent diagnostics + head sampling (log-generator) ──"

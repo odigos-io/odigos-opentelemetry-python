@@ -12,6 +12,12 @@ authors = [
 ]
 dependencies = [
     "odigos-opentelemetry-python == 1.0.90",
+    "opentelemetry-exporter-otlp-proto-http == 1.41.1",
+    "urllib3 >= 2.6.3",  # security floor: urllib3 redirect/retry CVEs fixed in 2.5.0
+    "idna == 3.10",
+    "certifi == 2025.1.31",
+    "charset-normalizer == 3.4.1",
+    "googleapis-common-protos == 1.66.0",
 ]
 
 [tool.uv.sources]

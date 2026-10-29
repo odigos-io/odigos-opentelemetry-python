@@ -7,6 +7,7 @@ on:
 
 env:
   ECR_REPO: public.ecr.aws/odigos/agents/python-community
+  CORE_ECR_REPO: public.ecr.aws/odigos/agents/python-core
 
 jobs:
   build:
@@ -74,7 +75,7 @@ jobs:
 
   docker-release:
     runs-on: ubuntu-latest
-    # This runs after the release for the pypi has succeeded, we can simply install and run with the image build.
+    # Runs only after the PyPI release succeeded, so the images and PyPI ship the same version.
     needs: build
     permissions:
       contents: read
@@ -99,23 +100,12 @@ jobs:
           fi
           echo "✅ agent/pyproject.toml version and odigos-opentelemetry-python==${VERSION} are correct"
 
-      - name: Wait for PyPI availability
-        # The Docker build resolves dependencies from PyPI, but CDN propagation
-        # can lag behind the upload. Poll until the package is available.
+      # The images are built from this checkout, so they need the same version stamp as the PyPI package.
+      - name: Set initializer version from tag
         run: |
           TAG=${GITHUB_REF#refs/tags/}
           VERSION=${TAG#v}
-          echo "⏳ Waiting for odigos-opentelemetry-python==${VERSION} on PyPI..."
-          for i in $(seq 1 12); do
-            if curl -sf "https://pypi.org/pypi/odigos-opentelemetry-python/${VERSION}/json" > /dev/null; then
-              echo "✅ Package available on PyPI"
-              exit 0
-            fi
-            echo "  Not yet available, retrying in 5s... (attempt $i/12)"
-            sleep 5
-          done
-          echo "❌ Package not available on PyPI after 60s"
-          exit 1
+          sed -i "s/VERSION = \"development\"/VERSION = \"${VERSION}\"/" initializer/version.py
 
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
@@ -143,6 +133,19 @@ jobs:
           push: true
           build-args: TAG=${{ github.ref_name }}
           tags: ${{ env.ECR_REPO }}:${{ github.ref_name }},${{ env.ECR_REPO }}:latest
+
+      # The agent without an exporter, for configurators that bring their own span processing.
+      - name: Build and push core Docker image
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          platforms: linux/amd64,linux/arm64
+          file: release.Dockerfile
+          push: true
+          build-args: |
+            PACKAGE=odigos-opentelemetry-python
+            BUNDLE_DIR=python-core
+          tags: ${{ env.CORE_ECR_REPO }}:${{ github.ref_name }},${{ env.CORE_ECR_REPO }}:latest
 
       - name: Notify Slack
         uses: odigos-io/ci-core/.github/actions/slack-release-notification@main
