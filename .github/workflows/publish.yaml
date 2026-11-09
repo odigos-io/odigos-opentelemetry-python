@@ -167,6 +167,5 @@ jobs:
           version: ${{ github.ref_name }}
           consumers: |
             odigos
-            odigos-enterprise
             vm-agent
 
