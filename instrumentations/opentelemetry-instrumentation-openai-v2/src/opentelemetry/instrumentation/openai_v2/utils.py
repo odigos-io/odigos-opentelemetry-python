@@ -18,7 +18,6 @@ from os import environ
 from typing import Mapping
 from urllib.parse import urlparse
 
-from httpx import URL
 from openai import NotGiven
 
 from opentelemetry._logs import LogRecord
@@ -86,14 +85,18 @@ def set_server_address_and_port(client_instance, attributes):
     if not base_url:
         return
 
+    # openai < 3 hands us an httpx.URL, openai >= 3 an httpx2.URL; neither library is a
+    # dependency of this package, so read the URL duck-typed instead of importing httpx.
     port = -1
-    if isinstance(base_url, URL):
-        attributes[ServerAttributes.SERVER_ADDRESS] = base_url.host
-        port = base_url.port
-    elif isinstance(base_url, str):
+    if isinstance(base_url, str):
         url = urlparse(base_url)
         attributes[ServerAttributes.SERVER_ADDRESS] = url.hostname
         port = url.port
+    else:
+        host = getattr(base_url, "host", None)
+        if host:
+            attributes[ServerAttributes.SERVER_ADDRESS] = host
+        port = getattr(base_url, "port", None)
 
     if port and port != 443 and port > 0:
         attributes[ServerAttributes.SERVER_PORT] = port

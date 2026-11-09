@@ -43,11 +43,23 @@ jobs:
           uv run python -c "import initializer"
           uv run python -c "import opamp"
 
-      - name: Freeze dependencies
-        run: uv pip freeze > requirements.txt
+      # Scan what we release, not the development environment: assemble the agent exactly like
+      # release.Dockerfile does (agent/ + the wheels built above) into a target directory.
+      - name: Assemble the release artifact
+        run: |
+          set -euo pipefail
+          # `make build-instrumentations` (above) and `uv build` place every workspace wheel in dist/.
+          uv build
+          # Stage agent/ outside the workspace, as the Dockerfile's COPY does; inside the checkout uv
+          # would treat it as a workspace member and refuse to install it standalone.
+          stage="$(mktemp -d)"
+          cp -r agent "$stage/agent" && cp dist/*.whl "$stage/agent/"
+          sed -i '/\[tool\.uv\.sources\]/,/^$/d' "$stage/agent/pyproject.toml"
+          (cd "$stage" && uv pip install ./agent/ --find-links ./agent/ --prerelease=allow \
+            --target "$GITHUB_WORKSPACE/release-workspace" --python ${{ matrix.python-version }})
 
-      - name: Scan with critical-only failure
+      - name: Scan the release artifact (fail on CRITICAL)
         uses: odigos-io/ci-core/vulnerabilities-scanner@main
         with:
-          path: .
+          path: release-workspace
           severity-cutoff: "CRITICAL"
