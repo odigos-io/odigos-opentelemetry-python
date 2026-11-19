@@ -7,6 +7,8 @@ on:
 
 env:
   ECR_REPO: public.ecr.aws/odigos/agents/python-community
+  GCP_REPO: us-central1-docker.pkg.dev/odigos-cloud/agents/python-community
+  GCP_DOCKER_HOST: us-central1-docker.pkg.dev
 
 jobs:
   build:
@@ -123,6 +125,22 @@ jobs:
       - name: Set up QEMU
         uses: docker/setup-qemu-action@v3
 
+      - id: gcp-auth
+        name: Authenticate to Google Cloud
+        uses: google-github-actions/auth@v3
+        with:
+          token_format: 'access_token'
+          workload_identity_provider: ${{ secrets.GCP_WORKLOAD_IDENTITY_PROVIDER }}
+          service_account: ${{ secrets.GCP_SERVICE_ACCOUNT }}
+          access_token_lifetime: 1200s
+
+      - name: Login to Artifact Registry
+        uses: docker/login-action@v4
+        with:
+          registry: ${{ env.GCP_DOCKER_HOST }}
+          username: oauth2accesstoken
+          password: ${{ steps.gcp-auth.outputs.access_token }}
+
       - name: Configure AWS credentials
         uses: aws-actions/configure-aws-credentials@v4
         with:
@@ -142,7 +160,7 @@ jobs:
           file: release.Dockerfile
           push: true
           build-args: TAG=${{ github.ref_name }}
-          tags: ${{ env.ECR_REPO }}:${{ github.ref_name }},${{ env.ECR_REPO }}:latest
+          tags: ${{ env.ECR_REPO }}:${{ github.ref_name }},${{ env.GCP_REPO }}:${{ github.ref_name }}
 
       - name: Notify Slack
         uses: odigos-io/ci-core/.github/actions/slack-release-notification@main
